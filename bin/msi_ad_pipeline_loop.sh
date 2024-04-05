@@ -45,7 +45,7 @@ create_folders()
     fi
 }
 
-for SUB in sub-0106/ses-*;do
+for SUB in sub-0074/ses-* sub-0085/ses-* sub-0099/ses-*;do #sub-0106/ses-*
 	for NRD in 0;do # 0 1 2
 		for PRT in dmri;do #  dmri79 6shell
 			if [[ $SUB == "sub-779253/ses-13mo" && $PRT == "dmri79" ]]; then
