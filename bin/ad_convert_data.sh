@@ -8,6 +8,9 @@ BIDSFOLDER=$DATAFOLDER/bids
 cd $DICOMFOLDER
 for SUBSESS in 20*;do
     SUB=$(echo $SUBSESS | cut -d '-' -f3)
+	if [[ "$SUB" == "ADAI"* ]];then
+		SUB=$(echo $SUB | cut -d '_' -f2)
+	fi
 	SUBstr=$(printf %04d $SUB)
     SESS=01
 	SESSstr=$SESS

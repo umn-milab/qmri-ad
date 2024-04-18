@@ -1,6 +1,6 @@
 #!/bin/bash
-DATAFOLDER=/home/porto-raid4/nestrasil-data/AD
-MIRRORFOLDER=rlaboune@mesabi.msi.umn.edu:/home/shapiroe/shared/AD
+DATAFOLDER=/home/porto-raid4/nestrasil-data/ADAI
+MIRRORFOLDER=rlaboune@mesabi.msi.umn.edu:/home/shapiroe/shared/ADAI
 
 rsyncommand="rsync -e ssh -avzur --no-o --no-g --relative"
 
