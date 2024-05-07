@@ -45,7 +45,7 @@ create_folders()
     fi
 }
 
-for SUB in sub-0058/ses-* sub-0074/ses-* sub-0085/ses-* sub-0099/ses-* sub-0104/ses-* sub-0106/ses-* sub-0112/ses-* sub-0136/ses-* sub-0161/ses-*;do #sub-0106/ses-*
+for SUB in sub-0058/ses-* ;do # sub-0074/ses-* sub-0085/ses-* sub-0099/ses-* sub-0104/ses-* sub-0106/ses-* sub-0112/ses-* sub-0136/ses-* sub-0161/ses-*
 	for NRD in 0;do # 0 1 2
 		for PRT in dmri;do #  dmri79 6shell
 			if [[ $SUB == "sub-779253/ses-13mo" && $PRT == "dmri79" ]]; then
@@ -66,7 +66,7 @@ for SUB in sub-0058/ses-* sub-0074/ses-* sub-0085/ses-* sub-0099/ses-* sub-0104/
 	                SNRJOBFOLDER=$RESULTFOLDER/snr-$PRTFOLDER
                 fi
                 create_folders $JOBFOLDER $SUB
-                if [ ! -f $JOBFOLDER/$SUB/dsistudio/Superior_Cerebellar_Peduncle/bedpostX.Superior_Cerebellar_Peduncle.stat.txt ] || [ ! -f $JOBFOLDER/$SUB/dsistudio/Reticular_Tract_R/bedpostX.Reticular_Tract_R.stat.txt ] || [ ! -f $JOBFOLDER/$SUB/dsistudio-tract_voxel_ratio-16/Superior_Cerebellar_Peduncle/bedpostX.Superior_Cerebellar_Peduncle.stat.txt ] || [ ! -f $JOBFOLDER/$SUB/dsistudio-tract_voxel_ratio-16/Reticular_Tract_R/bedpostX.Reticular_Tract_R.stat.txt ];then
+                if [ ! -f $JOBFOLDER/$SUB/dsistudio/Superior_Cerebellar_Peduncle/bedpostX.Superior_Cerebellar_Peduncle.stat.txt ] || [ ! -f $JOBFOLDER/$SUB/dsistudio/Reticular_Tract_R/bedpostX.Reticular_Tract_R.stat.txt ] || [ ! -f $JOBFOLDER/$SUB/dsistudio-tract_voxel_ratio-16/Superior_Cerebellar_Peduncle/bedpostX.Superior_Cerebellar_Peduncle.stat.txt ] || [ ! -f $JOBFOLDER/$SUB/dsistudio-tract_voxel_ratio-16/Reticular_Tract_R/bedpostX.Reticular_Tract_R.stat.txt ] || [ ! -f $JOBFOLDER/$SUB/eddy.qc/qc.pdf ];then
                     STAGE=1
                     for STAGE in `seq 1 9`;do
                         if [ $STAGE -eq 1 ];then

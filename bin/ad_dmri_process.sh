@@ -116,6 +116,11 @@ main()
 		#    cp $MODFILEFOLDER/eddy_input.bval $RESULTFOLDER/eddy_input.bval
 		#    cp $MODFILEFOLDER/eddy.eddy_rotated_bvecs $RESULTFOLDER/eddy.eddy_rotated_bvecs
 	    #fi
+		if [ ! -f $RESULTFOLDER/eddy.qc/qc.pdf ]; then
+		    eddyquad_function $RESULTFOLDER # Call function for eddy
+	    else
+		    echo "${green}$(date +%x_%T): eddy_quad on data in $RESULTFOLDER folder has been done before.${normal}"
+	    fi
     elif [ $STAGE -eq 3 ] || [ $STAGE -eq 0 ];then
 	    if [ ! -f $RESULTFOLDER/dti_FA.nii.gz ]; then
 		    dtifit_function $RESULTFOLDER		# Call function for dtifit
@@ -431,6 +436,18 @@ eddy_function()
 	${EDDYCMD} --imain=eddy_input.nii.gz --mask=b0_topup_mean_brain_mask.nii.gz --index=index.txt --acqp=acq_file.txt --bvecs=eddy_input.bvec --bvals=eddy_input.bval --topup=topup --out=eddy --json=eddy_input_pa.json -v --data_is_shelled --repol --ol_type=both --fwhm=10,6,0,0,0,0 --mporder=6 --s2v_niter=6 --niter=6 > eddy_stdout.txt # --ol_ec=2 add if necessary regarding no outliers and linked correspondence https://www.jiscmail.ac.uk/cgi-bin/webadmin?A2=FSL;38fa964.1912
 	echo "${yellow}$(date +%x_%T): eddy on data in $DATA folder is done.${normal}"
 }
+#-----------------------------------------------------------------------------------------------------------
+#-----------------------------------------------------------------------------------------------------------
+# Function which is called for eddy_quad
+eddyquad_function()
+{
+	DATA=$1
+	echo "${yellow}$(date +%x_%T): Starting eddy_quad on data in $DATA folder!${normal}"
+	cd $DATA
+	eddy_quad eddy -idx index.txt -par acq_file.txt -m b0_topup_mean_brain_mask.nii.gz -b eddy_input.bval  > eddyquad_stdout.txt
+	echo "${yellow}$(date +%x_%T): eddy_quad on data in $DATA folder is done.${normal}"
+}
+
 #-----------------------------------------------------------------------------------------------------------
 #-----------------------------------------------------------------------------------------------------------
 # Function which is called for estimation of DTI model using dtifit
