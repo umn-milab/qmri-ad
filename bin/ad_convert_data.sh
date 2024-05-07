@@ -1,6 +1,6 @@
 #!/bin/bash
-DATAFOLDER=/home/range1-raid1/labounek/data-on-porto/AD
-#DATAFOLDER=/home/shapiroe/shared/AD
+DATAFOLDER=/home/range1-raid1/labounek/data-on-porto/ADAI
+#DATAFOLDER=/home/shapiroe/shared/ADAI
 
 DICOMFOLDER=$DATAFOLDER/dicom
 BIDSFOLDER=$DATAFOLDER/bids
