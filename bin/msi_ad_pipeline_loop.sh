@@ -45,7 +45,7 @@ create_folders()
     fi
 }
 
-for SUB in sub-0050/ses-* ;do # sub-0058/ses-* sub-0074/ses-* sub-0085/ses-* sub-0099/ses-* sub-0104/ses-* sub-0105/ses-* sub-0106/ses-* sub-0112/ses-* sub-0115/ses-* sub-0117/ses-* sub-0127/ses-* sub-0136/ses-* sub-0141/ses-* sub-0142/ses-* sub-0161/ses-*
+for SUB in sub-0065/ses-* ;do # sub-0050/ses-* sub-0058/ses-* sub-0074/ses-* sub-0085/ses-* sub-0099/ses-* sub-0104/ses-* sub-0105/ses-* sub-0106/ses-* sub-0112/ses-* sub-0115/ses-* sub-0117/ses-* sub-0127/ses-* sub-0136/ses-* sub-0141/ses-* sub-0142/ses-* sub-0161/ses-*
 	for NRD in 0;do # 0 1 2
 		for PRT in dmri;do #  dmri79 6shell
 			if [[ $SUB == "sub-779253/ses-13mo" && $PRT == "dmri79" ]]; then
@@ -80,7 +80,7 @@ for SUB in sub-0050/ses-* ;do # sub-0058/ses-* sub-0074/ses-* sub-0085/ses-* sub
                             NTASKS=1
                             MEM=15g
                             TMP=5g
-                            QUEUE=v100 #,k40 #a100-4 # working on mesabi: v100,k40
+                            QUEUE=a100-4  #v100 # working on mesabi: v100,k40 #,k40
                         elif [ $STAGE -eq 3 ];then
                             TIME="94:45:00"
                             NTASKS=$MAXCPUS
@@ -92,7 +92,7 @@ for SUB in sub-0050/ses-* ;do # sub-0058/ses-* sub-0074/ses-* sub-0085/ses-* sub
                             NTASKS=1
                             MEM=5g
                             TMP=5g
-                            QUEUE=v100 #,k40 #a100-4 # working on mesabi: v100,k40
+                            QUEUE=a100-4  #v100 # working on mesabi: v100,k40 #,k40
                         elif [ $STAGE -eq 5 ];then
                             TIME="00:10:00"
                             NTASKS=16
@@ -119,8 +119,8 @@ for SUB in sub-0050/ses-* ;do # sub-0058/ses-* sub-0074/ses-* sub-0085/ses-* sub
                         fi
                         if [ $STAGE -eq 2 ] || [ $STAGE -eq 4 ];then
                             echo "#SBATCH --gres=gpu:1" >> $PBSFILE.sh
-                            echo "module load cuda/9.1 cuda-sdk/9.1" >> $PBSFILE.sh
-							#echo "module load cuda/11.2 cuda-sdk/11.2" >> $PBSFILE.sh
+                            #echo "module load cuda/9.1 cuda-sdk/9.1" >> $PBSFILE.sh
+							echo "module load cuda/11.2 cuda-sdk/11.2" >> $PBSFILE.sh
                         fi
                         if [ $STAGE -ge 6 ];then
                             echo "module load singularity" >> $PBSFILE.sh
