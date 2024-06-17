@@ -1,5 +1,5 @@
 #!/bin/bash
-DATAFOLDER=rlaboune@mesabi.msi.umn.edu:/home/shapiroe/shared/ADAI
+DATAFOLDER=rlaboune@agate.msi.umn.edu:/home/shapiroe/shared/ADAI
 MIRRORFOLDER=/home/porto-raid4/nestrasil-data/msi-rsync
 
 rsyncommand="rsync -e ssh -avzur --no-o --no-g --relative"
@@ -10,4 +10,4 @@ if [ ! -d $MIRRORFOLDER ];then
 fi
 
 `echo $rsyncommand $DATAFOLDER/results/dmri $MIRRORFOLDER` # $DATAFOLDER/bids
-#rm -r rlaboune@mesabi.msi.umn.edu\:
+#rm -r rlaboune@agate.msi.umn.edu\:
