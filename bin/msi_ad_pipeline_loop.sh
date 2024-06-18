@@ -3,6 +3,7 @@
 PROJECTFOLDER=$1
 MAXCPUS=16
 DSICPUS=128
+CUDAVERSION=11.2
 RESULTFOLDER=$PROJECTFOLDER/results
 cd $PROJECTFOLDER/bids
 
@@ -120,12 +121,12 @@ for SUB in sub-0065/ses-* ;do # sub-0050/ses-* sub-0058/ses-* sub-0074/ses-* sub
                         if [ $STAGE -eq 2 ] || [ $STAGE -eq 4 ];then
                             echo "#SBATCH --gres=gpu:1" >> $PBSFILE.sh
                             #echo "module load cuda/9.1 cuda-sdk/9.1" >> $PBSFILE.sh
-							echo "module load cuda/11.2 cuda-sdk/11.2" >> $PBSFILE.sh
+							echo "module load cuda/$CUDAVERSION cuda-sdk/$CUDAVERSION" >> $PBSFILE.sh
                         fi
                         if [ $STAGE -ge 6 ];then
                             echo "module load singularity" >> $PBSFILE.sh
                         fi
-				        echo "ad_dmri_pipeline.sh $NRD $PRT $SUB $PROJECTFOLDER $STAGE $MAXCPUS $DSICPUS > $PBSFILE.stdout" >> $PBSFILE.sh		
+				        echo "ad_dmri_pipeline.sh $NRD $PRT $SUB $PROJECTFOLDER $STAGE $MAXCPUS $DSICPUS $CUDAVERSION > $PBSFILE.stdout" >> $PBSFILE.sh		
 				        chmod 775 $PBSFILE.sh
 				        dt=$(date '+%Y/%m/%d %H:%M:%S');
 				        if	[ $STAGE -le 5 ];then			

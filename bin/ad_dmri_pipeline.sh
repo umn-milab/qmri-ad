@@ -6,6 +6,7 @@ DATAFOLDER=$4
 STAGE=$5
 MAXCPUS=$6
 DSICPUS=$7
+CUDAVERSION=$8
 
 # Define BINDIR
 export BINDIR=$(echo $0 | sed 's:/[^/]*$::' | sed 's:/[^/]*$::')
@@ -38,4 +39,4 @@ if [ ! -d $DMRI79RESULT ];then
     chmod -R 770 $DMRI79RESULT
 fi
 
-ad_dmri_process.sh $NIIFOLDER/$SUB/dwi $DMRI79RESULT/$SUB $SUB dmri $MODFILEFOLDER $STAGE $MAXCPUS $DSICPUS
+ad_dmri_process.sh $NIIFOLDER/$SUB/dwi $DMRI79RESULT/$SUB $SUB dmri $MODFILEFOLDER $STAGE $MAXCPUS $DSICPUS $CUDAVERSION

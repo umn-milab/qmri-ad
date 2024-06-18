@@ -7,6 +7,7 @@ MODFILEFOLDER=$5
 STAGE=$6
 MAXCPUS=$7
 DSICPUS=$8
+CUDAVERSION=$9
 
 if [ $STAGE -eq 2 ];then
     export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=$MAXCPUS
@@ -432,7 +433,11 @@ eddy_function()
 	echo "${yellow}$(date +%x_%T): Starting eddy on data in $DATA folder!${normal}"
 	cd $DATA
 	#EDDYCMD="eddy_openmp"
-	EDDYCMD="eddy_cuda9.1"
+	if [ $CUDAVERSION == "9.1" ];then 
+		EDDYCMD="eddy_cuda9.1"
+	else
+		EDDYCMD="eddy_cuda10.2"
+	fi
 	${EDDYCMD} --imain=eddy_input.nii.gz --mask=b0_topup_mean_brain_mask.nii.gz --index=index.txt --acqp=acq_file.txt --bvecs=eddy_input.bvec --bvals=eddy_input.bval --topup=topup --out=eddy --json=eddy_input_pa.json -v --data_is_shelled --repol --ol_type=both --fwhm=10,6,0,0,0,0 --mporder=6 --s2v_niter=6 --niter=6 > eddy_stdout.txt # --ol_ec=2 add if necessary regarding no outliers and linked correspondence https://www.jiscmail.ac.uk/cgi-bin/webadmin?A2=FSL;38fa964.1912
 	echo "${yellow}$(date +%x_%T): eddy on data in $DATA folder is done.${normal}"
 }
