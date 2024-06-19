@@ -81,7 +81,7 @@ for SUB in sub-0060/ses-* ;do # sub-0073/ses-* sub-0105/ses-* sub-0115/ses-* sub
                             NTASKS=1
                             MEM=15g
                             TMP=5g
-                            QUEUE=a100-4  #v100 # working on mesabi: v100,k40 #,k40
+                            QUEUE=a100-4,a100-8  #v100 # working on mesabi: v100,k40 #,k40
                         elif [ $STAGE -eq 3 ];then
                             TIME="94:45:00"
                             NTASKS=$MAXCPUS
@@ -93,7 +93,7 @@ for SUB in sub-0060/ses-* ;do # sub-0073/ses-* sub-0105/ses-* sub-0115/ses-* sub
                             NTASKS=1
                             MEM=5g
                             TMP=5g
-                            QUEUE=a100-4  #v100 # working on mesabi: v100,k40 #,k40
+                            QUEUE=a100-4,a100-8  #v100 # working on mesabi: v100,k40 #,k40
                         elif [ $STAGE -eq 5 ];then
                             TIME="00:10:00"
                             NTASKS=16
