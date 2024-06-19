@@ -7,6 +7,8 @@ function bcp_bedpostx2trackvis(data_folder)
     AD = load_untouch_nii('dti_AD.nii.gz');
     RD = load_untouch_nii('dti_RD.nii.gz');
     FA = load_untouch_nii('dti_FA.nii.gz');
+	t1 = load_untouch_nii('dmri_mprage.nii.gz');
+	t1nn = load_untouch_nii('dmri_mprage_nn.nii.gz');
     
     cd(bedpostx_folder)
     theta1 = load_untouch_nii('mean_th1samples.nii.gz');
@@ -63,6 +65,8 @@ function bcp_bedpostx2trackvis(data_folder)
     fib.f1dispersion = double(reshape(f1dispersion.img,1,[]));
     fib.f2dispersion = double(reshape(f2dispersion.img,1,[]));
     fib.f3dispersion = double(reshape(f3dispersion.img,1,[]));
+	fib.t1 = double(reshape(t1.img,1,[]));
+	fib.t1nn = double(reshape(t1nn.img,1,[]));
     
     % flip xy: you may need to make sure that this orientation is correct
     % do not flip RL orientatzion
@@ -144,6 +148,14 @@ function bcp_bedpostx2trackvis(data_folder)
     fib.f3dispersion = reshape(fib.f3dispersion,fib.dimension);
     fib.f3dispersion = fib.f3dispersion(:,fib.dimension(2):-1:1,:);
     fib.f3dispersion = reshape(fib.f3dispersion,1,[]);
+
+	fib.t1 = reshape(fib.t1,fib.dimension);
+    fib.t1 = fib.t1(:,fib.dimension(2):-1:1,:);
+    fib.t1 = reshape(fib.t1,1,[]);
+
+	fib.t1nn = reshape(fib.t1nn,fib.dimension);
+    fib.t1nn = fib.t1nn(:,fib.dimension(2):-1:1,:);
+    fib.t1nn = reshape(fib.t1nn,1,[]);
 
 %     % flip xy: you may need to make sure that this orientation is correct
 %     fib.fa0 = reshape(fib.fa0,fib.dimension);

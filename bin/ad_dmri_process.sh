@@ -8,6 +8,8 @@ STAGE=$6
 MAXCPUS=$7
 DSICPUS=$8
 CUDAVERSION=$9
+ANATFOLDER=${10}
+MPRFOLDER=${11}
 
 if [ $STAGE -eq 2 ];then
     export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=$MAXCPUS
@@ -62,6 +64,12 @@ main()
 		JSON_AP=$NIIFOLDER/$APSTRING.json
 		JSON_PA=$NIIFOLDER/$PASTRING.json
 	fi
+	if [ -f $ANATFOLDER/sub-*_ses-*_acq-mprage_T1w.nii.gz ];then
+		MPRAGE=$(ls $ANATFOLDER/sub-*_ses-*_acq-mprage_T1w.nii.gz)
+	else
+		MPRAGE=$(ls $ANATFOLDER/sub-*_ses-*_acq-mprage_run-*_T1w.nii.gz | sort -V | tail -n 1)
+	fi
+	MPRAGEFILENAME=$(echo ${MPRAGE//*\/})
 	
 	PROTDIR=$(echo ${BVAL_AP} | sed 's:.*/::' | cut -d '_' -f3 | cut -d '-' -f2 | cut -d 'd' -f1)
 	
@@ -89,8 +97,24 @@ main()
 		mkdir -p $RESULTFOLDER/dsistudio-tract_voxel_ratio-16
 		chmod 770 $RESULTFOLDER/dsistudio-tract_voxel_ratio-16
 	fi
+	if [ ! -d $MPRFOLDER ];then
+		mkdir -p $MPRFOLDER
+		chmod 770 $MPRFOLDER
+	fi
 
     if [ $STAGE -eq 1 ] || [ $STAGE -eq 0 ]; then
+		if [ ! -f $MPRFOLDER/mprage_brain.nii.gz ];then
+			dt=$(date '+%Y/%m/%d %H:%M:%S');
+			echo "$dt $SUB: Brain extraction started"
+			OLDFOLDER=`pwd`
+			cd $MPRFOLDER
+			cp $MPRAGE $MPRAGEFILENAME
+			ln -s $MPRAGEFILENAME mprage.nii.gz
+			bet mprage.nii.gz mprage_brain.nii.gz -m -o -B -f 0.25
+			cd $OLDFOLDER
+			dt=$(date '+%Y/%m/%d %H:%M:%S');
+			echo "$dt $SUB: Brain extraction done"
+		fi
 	    if [ ! -f $RESULTFOLDER/b0.nii.gz ] || [ ! -f $RESULTFOLDER/eddy_input_ap.json ];then
 		    diff_prep $DMRI_AP $DMRI_PA $READOUT $RESULTFOLDER $BVAL_AP $BVAL_PA $BVEC_AP $BVEC_PA	$PROTOCOL $JSON_AP $JSON_PA # Call diff_preop function
 	    else
@@ -224,6 +248,37 @@ main()
 		    dt=$(date '+%Y/%m/%d %H:%M:%S');
 		    echo "$dt $SUB: JHU-FA to diff registration done"
         fi
+		if [ -f $MPRFOLDER/mprage_brain.nii.gz ];then
+			if [ ! -f $RESULTFOLDER/flirt_diff2nat.mat ];then
+		    	dt=$(date '+%Y/%m/%d %H:%M:%S');
+		    	echo "$dt $SUB: flirt diff-mprage registration started"
+		    	flirt -in $RESULTFOLDER/dti_FA.nii.gz -ref $MPRFOLDER/mprage_brain.nii.gz -omat $RESULTFOLDER/flirt_diff2nat.mat -cost mutualinfo -interp sinc
+		    	convert_xfm -omat $RESULTFOLDER/flirt_nat2diff.mat -inverse $RESULTFOLDER/flirt_diff2nat.mat
+		    	dt=$(date '+%Y/%m/%d %H:%M:%S');
+		    	echo "$dt $SUB: flirt diff-mprage registration done"
+			fi
+			if [ -f $MPRFOLDER/mprage_lesion.nii.gz ] && [ ! -f $RESULTFOLDER/dmri_lesion.nii.gz ];then
+				dt=$(date '+%Y/%m/%d %H:%M:%S');
+		    	echo "$dt $SUB: warp lesion to diff started"
+		    	flirt -in $MPRFOLDER/mprage_lesion.nii.gz -ref $RESULTFOLDER/dti_FA.nii.gz -applyxfm -init $RESULTFOLDER/flirt_nat2diff.mat -interp nearestneighbour -out $RESULTFOLDER/dmri_lesion.nii.gz
+		    	dt=$(date '+%Y/%m/%d %H:%M:%S');
+		    	echo "$dt $SUB: warp lesion to diff done"
+			fi
+			if [ ! -f $RESULTFOLDER/dmri_mprage.nii.gz ];then
+			    dt=$(date '+%Y/%m/%d %H:%M:%S');
+		    	echo "$dt $SUB: warp mprage to diff started"
+		    	flirt -in $MPRFOLDER/mprage_brain.nii.gz -ref $RESULTFOLDER/dti_FA.nii.gz -applyxfm -init $RESULTFOLDER/flirt_nat2diff.mat -interp sinc -out $RESULTFOLDER/dmri_mprage.nii.gz
+		    	dt=$(date '+%Y/%m/%d %H:%M:%S');
+		    	echo "$dt $SUB: warp mprage to diff done"
+			fi
+			if [ ! -f $RESULTFOLDER/dmri_mprage_nn.nii.gz ];then
+			    dt=$(date '+%Y/%m/%d %H:%M:%S');
+		    	echo "$dt $SUB: warp mprage to diff utilizing nn started"
+		    	flirt -in $MPRFOLDER/mprage_brain.nii.gz -ref $RESULTFOLDER/dti_FA.nii.gz -applyxfm -init $RESULTFOLDER/flirt_nat2diff.mat -interp nearestneighbour -out $RESULTFOLDER/dmri_mprage_nn.nii.gz
+		    	dt=$(date '+%Y/%m/%d %H:%M:%S');
+		    	echo "$dt $SUB: warp mprage to diff utilizing nn done"
+			fi
+		fi
     elif [ $STAGE -eq 4 ] || [ $STAGE -eq 0 ];then
 	    if [ $STAGE -eq 0 ] && [ $HOSTNAME != "atlas11.cmrr.umn.edu" ] && [ $HOSTNAME != "porto.cmrr.umn.edu" ];then
 		    echo "$dt $SUB: terminated prior to bedpostx due to non-working CUDA"
