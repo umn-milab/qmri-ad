@@ -46,7 +46,7 @@ create_folders()
     fi
 }
 
-for SUB in sub-0073/ses-* ;do # sub-0073/ses-* sub-0105/ses-* sub-0115/ses-* sub-0117/ses-* sub-0120/ses-* sub-0126/ses-* sub-0127/ses-* sub-0134/ses-* sub-0137/ses-* sub-0141/ses-* sub-0142/ses-* sub-0144/ses-* sub-0149/ses-* sub-0185/ses-* sub-0050/ses-* sub-0065/ses-* sub-0058/ses-* sub-0074/ses-* sub-0085/ses-* sub-0099/ses-* sub-0104/ses-* sub-0105/ses-* sub-0106/ses-* sub-0112/ses-* sub-0115/ses-* sub-0117/ses-* sub-0127/ses-* sub-0136/ses-* sub-0141/ses-* sub-0142/ses-* sub-0161/ses-* # sub-0060/ses-*
+for SUB in sub-0060/ses-* sub-0073/ses-* sub-0105/ses-* sub-0115/ses-* sub-0117/ses-* sub-0120/ses-* sub-0126/ses-* sub-0127/ses-* sub-0134/ses-* sub-0137/ses-* sub-0141/ses-* sub-0142/ses-* sub-0144/ses-* sub-0149/ses-* sub-0185/ses-* sub-0050/ses-* sub-0065/ses-* sub-0058/ses-* sub-0074/ses-* sub-0085/ses-* sub-0099/ses-* sub-0104/ses-* sub-0105/ses-* sub-0106/ses-* sub-0112/ses-* sub-0115/ses-* sub-0117/ses-* sub-0127/ses-* sub-0136/ses-* sub-0141/ses-* sub-0142/ses-* sub-0161/ses-* ;do # sub-0060/ses-* sub-0073/ses-* sub-0105/ses-* sub-0115/ses-* sub-0117/ses-* sub-0120/ses-* sub-0126/ses-* sub-0127/ses-* sub-0134/ses-* sub-0137/ses-* sub-0141/ses-* sub-0142/ses-* sub-0144/ses-* sub-0149/ses-* sub-0185/ses-* sub-0050/ses-* sub-0065/ses-* sub-0058/ses-* sub-0074/ses-* sub-0085/ses-* sub-0099/ses-* sub-0104/ses-* sub-0105/ses-* sub-0106/ses-* sub-0112/ses-* sub-0115/ses-* sub-0117/ses-* sub-0127/ses-* sub-0136/ses-* sub-0141/ses-* sub-0142/ses-* sub-0161/ses-*
 	for NRD in 0;do # 0 1 2
 		for PRT in dmri;do #  dmri79 6shell
 			if [[ $SUB == "sub-779253/ses-13mo" && $PRT == "dmri79" ]]; then
