@@ -74,8 +74,8 @@ for SUB in sub-0040/ses-* ;do
                         if [ $STAGE -eq 1 ];then
                             TIME="48:45:00"
                             NTASKS=2
-                            MEM=15g
-                            TMP=15g
+                            MEM=24g
+                            TMP=24g
                             QUEUE=msismall
                         elif [ $STAGE -eq 2 ];then
                             TIME="06:15:00"
