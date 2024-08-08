@@ -9,5 +9,5 @@ if [ ! -d $MIRRORFOLDER ];then
 	chmod 770 $MIRRORFOLDER
 fi
 
-`echo $rsyncommand $DATAFOLDER/results/dmri $MIRRORFOLDER` # $DATAFOLDER/bids
+`echo $rsyncommand $DATAFOLDER/tables $DATAFOLDER/results/dmri $MIRRORFOLDER` # $DATAFOLDER/bids
 #rm -r rlaboune@agate.msi.umn.edu\:
