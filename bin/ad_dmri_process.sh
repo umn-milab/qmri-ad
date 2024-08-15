@@ -472,6 +472,7 @@ diff_prep()
 		cp ${BVAL_PA} eddy_input.bval
 		cp ${BVEC_PA} eddy_input.bvec
 		cp ${JSON_PA} eddy_input_pa.json
+		cp ${DMRI_PA} eddy_input.nii.gz
 
 		phpa=$(cat ${JSON_PA} | grep \"PhaseEncodingDirection\" | cut -d '"' -f4 | cut -d '"' -f1)
 
