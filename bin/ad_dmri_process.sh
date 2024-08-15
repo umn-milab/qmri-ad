@@ -531,7 +531,7 @@ topup_function()
 	DATA=$1
 	echo "${yellow}$(date +%x_%T): Starting topup on data in $DATA folder!${normal}"
 	cd $DATA
-	if [ -f acq_note.txt ] && [ ! -f b0_all.nii.gz ];then
+	if [ -f acq_note.txt ] && [ ! -f b0_all_topup.nii.gz ];then
 		topup --imain=b0_all.nii.gz --datain=acq_file.txt --out=topup --subsamp=1,1,1,1,1,1,1,1,1 --config=b02b0.cnf --iout=b0_topup --fout=field_topup > topup_stdout.txt # -v
 		ln -s b0_all_topup.nii.gz b0_topup.nii.gz
 		chmod 660 b0_all_topup.nii.gz
