@@ -1,0 +1,255 @@
+clear all;
+close all; clc;
+
+csv_path = '/home/range1-raid1/labounek/data-on-porto/ADNI/ADNI_ADAI_match';
+csv_filename = 'idaSearch_8_05_2024.csv';
+adai_filename = 'ADAI-ADAI.csv';
+
+tbl = readtable(fullfile(csv_path,csv_filename),'PreserveVariableNames',1);
+adai = readtable(fullfile(csv_path,adai_filename),'PreserveVariableNames',1);
+
+dmri_pos = strcmp(table2cell(tbl(:,'Modality')),'DTI') & strcmp(table2cell(tbl(:,'Description')),'Axial MB DTI');
+
+tbl = tbl(dmri_pos,:);
+
+females = strcmp(table2cell(tbl(:,'Sex')),'F');
+age = cell2mat(table2cell(tbl(:,'Age')));
+weight = cell2mat(table2cell(tbl(:,'Weight')));
+grp = table2cell(tbl(:,'Research Group'));
+visit = table2cell(tbl(:,'Visit'));
+imaging_protocol = table2cell(tbl(:,'Imaging Protocol'));
+phase = table2cell(tbl(:,'Phase'));
+
+subid = table2cell(tbl(:,'Subject ID'));
+
+sub = unique(subid);
+
+adai_females = strcmp(table2cell(adai(:,'Sex')),'F');
+adai_age = cell2mat(table2cell(adai(:,'Age[y]')));
+adai_weight = cell2mat(table2cell(adai(:,'Weight[kg]')));
+adai_height = cell2mat(table2cell(adai(:,'Height[cm]')));
+adai_bmi = cell2mat(table2cell(adai(:,'BMI')));
+
+
+
+tbl0 = cell(size(sub,1),size(tbl,2));
+tbl0(:,1) = sub;
+tbl0_grp_match = zeros(size(sub,1),1);
+for ind = 1:size(sub,1)  
+    
+    if strcmp(sub(ind,1),'002_S_6652')
+        disp('yes')
+    end
+    
+    ps = strcmp(subid,sub{ind,1});
+    
+    sub_grp = grp(ps,1);
+    sub_grp_match = strcmp(sub_grp,sub_grp(1,1));
+    
+    if sum(sub_grp_match) == size(sub_grp_match,1)
+        tbl0_grp_match(ind,1) = 1;
+    end
+    
+    psage = age;
+    psage(ps==0) = 350;
+    
+    ps = find(psage==min(psage),1);
+    
+    tbl0(ind,2) = table2cell(tbl(ps,'Project'));
+    tbl0(ind,3) = table2cell(tbl(ps,'Phase'));
+    tbl0(ind,4) = table2cell(tbl(ps,'Sex'));
+    tbl0(ind,5) = table2cell(tbl(ps,'Weight'));
+    tbl0(ind,6) = table2cell(tbl(ps,'Research Group'));
+    tbl0(ind,7) = table2cell(tbl(ps,'Visit'));
+    tbl0(ind,8) = table2cell(tbl(ps,'Study Date'));
+    tbl0(ind,9) = table2cell(tbl(ps,'Archive Date'));
+    tbl0(ind,10) = table2cell(tbl(ps,'Age'));
+    tbl0(ind,11) = table2cell(tbl(ps,'Modality'));
+    tbl0(ind,12) = table2cell(tbl(ps,'Description'));
+    tbl0(ind,13) = table2cell(tbl(ps,'Imaging Protocol'));
+    tbl0(ind,14) = table2cell(tbl(ps,'Image ID'));
+end
+
+tbl0_females = strcmp(tbl0(:,4),'F');
+tbl0_age = cell2mat(tbl0(:,10));
+tbl0_weight = cell2mat(tbl0(:,5));
+tbl0_grp = tbl0(:,6);
+tbl0_visit = tbl0(:,7);
+tbl0_imaging_protocol = tbl0(:,13);
+tbl0_phase = tbl0(:,3);
+
+[~, p_age] = ttest2(tbl0_age,adai_age);
+[~, p_weight] = ttest2(tbl0_weight,adai_weight);
+
+
+
+tbl_stat{2,1} = 'All scans';
+tbl_stat{3,1} = 'First scan';
+tbl_stat{4,1} = 'ADAI';
+tbl_stat{5,1} = 'p-ttest2';
+
+
+tbl_stat{1,2} = 'N';
+tbl_stat{2,2} = size(tbl,1);
+tbl_stat{3,2} = size(tbl0,1);
+tbl_stat{4,2} = size(adai,1);
+
+tbl_stat{1,3} = 'Females';
+tbl_stat{2,3} = sum(females);
+tbl_stat{3,3} = sum(tbl0_females);
+tbl_stat{4,3} = sum(adai_females);
+
+tbl_stat{1,4} = 'Females [%]';
+tbl_stat{2,4} = [num2str(100*sum(females)/size(tbl,1),'%.1f') '%'];
+tbl_stat{3,4} = [num2str(100*sum(tbl0_females)/size(tbl0,1),'%.1f') '%'];
+tbl_stat{4,4} = [num2str(100*sum(adai_females)/size(adai,1),'%.1f') '%'];
+
+tbl_stat{1,5} = 'Age-Mean';
+tbl_stat{2,5} = mean(age);
+tbl_stat{3,5} = mean(tbl0_age);
+tbl_stat{4,5} = mean(adai_age);
+tbl_stat{5,5} = p_age;
+
+
+tbl_stat{1,6} = 'Age-STD';
+tbl_stat{2,6} = std(age);
+tbl_stat{3,6} = std(tbl0_age);
+tbl_stat{4,6} = std(adai_age);
+
+tbl_stat{1,7} = 'Age-Min';
+tbl_stat{2,7} = min(age);
+tbl_stat{3,7} = min(tbl0_age);
+tbl_stat{4,7} = min(adai_age);
+
+tbl_stat{1,8} = 'Age-Max';
+tbl_stat{2,8} = max(age);
+tbl_stat{3,8} = max(tbl0_age);
+tbl_stat{4,8} = max(adai_age);
+
+tbl_stat{1,9} = 'Weight-Mean';
+tbl_stat{2,9} = mean(weight);
+tbl_stat{3,9} = mean(tbl0_weight);
+tbl_stat{4,9} = mean(adai_weight);
+tbl_stat{5,9} = p_weight;
+
+tbl_stat{1,10} = 'Weight-STD';
+tbl_stat{2,10} = std(weight);
+tbl_stat{3,10} = std(tbl0_weight);
+tbl_stat{4,10} = std(adai_weight);
+
+tbl_stat{1,11} = 'Weight-Min';
+tbl_stat{2,11} = min(weight(weight>0));
+tbl_stat{3,11} = min(tbl0_weight(tbl0_weight>0));
+tbl_stat{4,11} = min(adai_weight(adai_weight>0));
+
+tbl_stat{1,12} = 'Weight-Max';
+tbl_stat{2,12} = max(weight);
+tbl_stat{3,12} = max(tbl0_weight);
+tbl_stat{4,12} = max(adai_weight);
+
+tbl_stat{1,13} = 'AD';
+tbl_stat{2,13} = sum(strcmp(grp,'AD'));
+tbl_stat{3,13} = sum(strcmp(tbl0_grp,'AD'));
+
+tbl_stat{1,14} = 'CN';
+tbl_stat{2,14} = sum(strcmp(grp,'CN'));
+tbl_stat{3,14} = sum(strcmp(tbl0_grp,'CN'));
+
+tbl_stat{1,15} = 'EMCI';
+tbl_stat{2,15} = sum(strcmp(grp,'EMCI'));
+tbl_stat{3,15} = sum(strcmp(tbl0_grp,'EMCI'));
+
+tbl_stat{1,16} = 'LMCI';
+tbl_stat{2,16} = sum(strcmp(grp,'LMCI'));
+tbl_stat{3,16} = sum(strcmp(tbl0_grp,'LMCI'));
+
+tbl_stat{1,17} = 'MCI';
+tbl_stat{2,17} = sum(strcmp(grp,'MCI'));
+tbl_stat{3,17} = sum(strcmp(tbl0_grp,'MCI'));
+
+tbl_stat{1,18} = 'SMC';
+tbl_stat{2,18} = sum(strcmp(grp,'SMC'));
+tbl_stat{3,18} = sum(strcmp(tbl0_grp,'SMC'));
+
+tbl_stat{1,19} = 'ADNI Screening';
+tbl_stat{2,19} = [num2str(100*sum(strcmp(visit,'ADNI Screening'))/size(tbl,1),'%.1f') '%'];
+tbl_stat{3,19} = [num2str(100*sum(strcmp(tbl0_visit,'ADNI Screening'))/size(tbl0,1),'%.1f') '%'];
+
+tbl_stat{1,20} = 'ADNI3 Initial Visit-Cont Pt';
+tbl_stat{2,20} = [num2str(100*sum(strcmp(visit,'ADNI3 Initial Visit-Cont Pt'))/size(tbl,1),'%.1f') '%'];
+tbl_stat{3,20} = [num2str(100*sum(strcmp(tbl0_visit,'ADNI3 Initial Visit-Cont Pt'))/size(tbl0,1),'%.1f') '%'];
+
+tbl_stat{1,21} = 'ADNI3 Year 1 Visit';
+tbl_stat{2,21} = [num2str(100*sum(strcmp(visit,'ADNI3 Year 1 Visit'))/size(tbl,1),'%.1f') '%'];
+tbl_stat{3,21} = [num2str(100*sum(strcmp(tbl0_visit,'ADNI3 Year 1 Visit'))/size(tbl0,1),'%.1f') '%'];
+
+tbl_stat{1,22} = 'ADNI3 Year 2 Visit';
+tbl_stat{2,22} = [num2str(100*sum(strcmp(visit,'ADNI3 Year 2 Visit'))/size(tbl,1),'%.1f') '%'];
+tbl_stat{3,22} = [num2str(100*sum(strcmp(tbl0_visit,'ADNI3 Year 2 Visit'))/size(tbl0,1),'%.1f') '%'];
+
+tbl_stat{1,23} = 'ADNI3 Year 3 Visit';
+tbl_stat{2,23} = [num2str(100*sum(strcmp(visit,'ADNI3 Year 3 Visit'))/size(tbl,1),'%.1f') '%'];
+tbl_stat{3,23} = [num2str(100*sum(strcmp(tbl0_visit,'ADNI3 Year 3 Visit'))/size(tbl0,1),'%.1f') '%'];
+
+tbl_stat{1,24} = 'ADNI3 Year 4 Visit';
+tbl_stat{2,24} = [num2str(100*sum(strcmp(visit,'ADNI3 Year 4 Visit'))/size(tbl,1),'%.1f') '%'];
+tbl_stat{3,24} = [num2str(100*sum(strcmp(tbl0_visit,'ADNI3 Year 4 Visit'))/size(tbl0,1),'%.1f') '%'];
+
+tbl_stat{1,25} = 'ADNI3 Year 5 Visit';
+tbl_stat{2,25} = [num2str(100*sum(strcmp(visit,'ADNI3 Year 5 Visit'))/size(tbl,1),'%.1f') '%'];
+tbl_stat{3,25} = [num2str(100*sum(strcmp(tbl0_visit,'ADNI3 Year 5 Visit'))/size(tbl0,1),'%.1f') '%'];
+
+tbl_stat{1,26} = 'ADNI 3';
+tbl_stat{2,26} = [num2str(100*sum(strcmp(phase,'ADNI 3'))/size(tbl,1),'%.1f') '%'];
+tbl_stat{3,26} = [num2str(100*sum(strcmp(tbl0_phase,'ADNI 3'))/size(tbl0,1),'%.1f') '%'];
+
+tbl_stat{1,27} = 'Manufacturer=SIEMENS;Field Strength=3.0;Gradient Directions=126.0';
+tbl_stat{2,27} = [num2str(100*sum(strcmp(imaging_protocol,'Manufacturer=SIEMENS;Field Strength=3.0;Gradient Directions=126.0'))/size(tbl,1),'%.1f') '%'];
+tbl_stat{3,27} = [num2str(100*sum(strcmp(tbl0_imaging_protocol,'Manufacturer=SIEMENS;Field Strength=3.0;Gradient Directions=126.0'))/size(tbl0,1),'%.1f') '%'];
+
+tbl_stat{1,28} = 'Research Group match';
+tbl_stat{3,28} = [num2str(100*sum(tbl0_grp_match)/size(tbl0,1),'%.1f') '%'];
+
+tbl_stat{1,29} = 'Height-Mean';
+% tbl_stat{2,29} = mean(height);
+% tbl_stat{3,29} = mean(tbl0_height);
+tbl_stat{4,29} = mean(adai_height);
+% tbl_stat{5,29} = p_height;
+
+tbl_stat{1,30} = 'Height-STD';
+% tbl_stat{2,30} = std(height);
+% tbl_stat{3,30} = std(tbl0_height);
+tbl_stat{4,30} = std(adai_height);
+
+tbl_stat{1,31} = 'Height-Min';
+% tbl_stat{2,31} = min(height(height>0));
+% tbl_stat{3,31} = min(tbl0_height(tbl0_height>0));
+tbl_stat{4,31} = min(adai_height(adai_height>0));
+
+tbl_stat{1,32} = 'Height-Max';
+% tbl_stat{2,32} = max(height);
+% tbl_stat{3,32} = max(tbl0_height);
+tbl_stat{4,32} = max(adai_height);
+
+tbl_stat{1,33} = 'BMI-Mean';
+% tbl_stat{2,33} = mean(bmi);
+% tbl_stat{3,33} = mean(tbl0_bmi);
+tbl_stat{4,33} = mean(adai_bmi);
+% tbl_stat{5,33} = p_bmi;
+
+tbl_stat{1,34} = 'BMI-STD';
+% tbl_stat{2,34} = std(bmi);
+% tbl_stat{3,34} = std(tbl0_bmi);
+tbl_stat{4,34} = std(adai_bmi);
+
+tbl_stat{1,35} = 'BMI-Min';
+% tbl_stat{2,35} = min(bmi(bmi>0));
+% tbl_stat{3,35} = min(tbl0_bmi(tbl0_bmi>0));
+tbl_stat{4,35} = min(adai_bmi(adai_bmi>0));
+
+tbl_stat{1,36} = 'BMI-Max';
+% tbl_stat{2,36} = max(bmi);
+% tbl_stat{3,36} = max(tbl0_bmi);
+tbl_stat{4,36} = max(adai_bmi);
+
+tbl_stat = tbl_stat';
