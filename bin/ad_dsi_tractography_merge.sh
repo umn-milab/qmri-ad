@@ -38,9 +38,13 @@ for TRACT in Acoustic_Radiation_L Acoustic_Radiation_R Anterior_Commissure Arcua
 			    fi
 			    TRACTFILE=$RESULTFOLDER/$folder/$SUB/$DSIBASENAME/${TRACT}/bedpostX.${TRACT}
 				EDDYFILE=$RESULTFOLDER/$folder/$SUB/eddy.nii.gz
+				ACQNOTEFILE=$RESULTFOLDER/$folder/$SUB/acq_note.txt
+				ACQPARAMLINK=$RESULTFOLDER/$folder/$SUB/acqparams.txt
 				DWIPAFILE=$NIIFOLDER/$SUB/dwi/sub-*_ses-*_acq-mb3_dir-PA_dwi.nii.gz
 				DWIAPFILE=$NIIFOLDER/$SUB/dwi/sub-*_ses-*_acq-mb3_dir-AP_dwi.nii.gz
-				if [ -f $EDDYFILE ];then
+				if [ -f $ACQNOTEFILE ] && [ -L $ACQPARAMLINK ] && [ -f $EDDYFILE ];then
+					PREPROC=synb0disco+topup+eddy
+				elif [ -f $EDDYFILE ];then
 					PREPROC=topup+eddy
 				else
 					PREPROC=NaN

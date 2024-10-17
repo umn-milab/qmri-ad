@@ -16,6 +16,16 @@ if [ $STAGE -eq 2 ];then
     export OMP_NUM_THREADS=$MAXCPUS
 fi
 
+if [ $STAGE -eq 0 ];then
+    HDDLIST=/home/porto-raid1,/home/porto-raid2,/home/porto-raid3,/home/porto-raid4,/home/porto-raid5,/home/range1-raid1,/home/range4-raid1
+	FSLICENSE=/home/range1-raid1/labounek/lib/freesurfer7/license.txt
+	SYNB0SIFFILE=/home/range1-raid1/labounek/data-on-porto/lib/Synb0-DISCO/synb0-disco_v3.1.sif
+else
+	HDDLIST=/home/shapiroe
+	FSLICENSE=/common/software/install/manual/freesurfer/7.4.1/license.txt
+	SYNB0SIFFILE=/home/shapiroe/rlaboune/lib/Synb0-DISCO/synb0-disco_v3.1.sif
+fi
+
 MODFILEFOLDER=$MODFILEFOLDER/$PROTOCOL/$SUB
 
 red=`tput setaf 1`
@@ -71,7 +81,7 @@ main()
 	fi
 	MPRAGEFILENAME=$(echo ${MPRAGE//*\/})
 	
-	PROTDIR=$(echo ${BVAL_AP} | sed 's:.*/::' | cut -d '_' -f3 | cut -d '-' -f2 | cut -d 'd' -f1)
+	PROTDIR=$(echo ${BVAL_PA} | sed 's:.*/::' | cut -d '_' -f3 | cut -d '-' -f2 | cut -d 'd' -f1)
 	
 	if [ ! -d $RESULTFOLDER ];then
 		mkdir -p $RESULTFOLDER
@@ -125,7 +135,9 @@ main()
 	    else
 		    echo "${green}$(date +%x_%T): topup on data in $RESULTFOLDER folder has been done before.${normal}"
 	    fi
-    elif [ $STAGE -eq 2 ] || [ $STAGE -eq 0 ];then
+	fi
+    
+	if [ $STAGE -eq 2 ] || [ $STAGE -eq 0 ];then
 	    if [ ! -f $RESULTFOLDER/eddy.nii.gz ]; then
 	        if [ $STAGE -eq 0 ];then
 		        export LD_LIBRARY_PATH=/opt/local/cuda-9.1/lib64:$LD_LIBRARY_PATH
@@ -146,7 +158,9 @@ main()
 	    else
 		    echo "${green}$(date +%x_%T): eddy_quad on data in $RESULTFOLDER folder has been done before.${normal}"
 	    fi
-    elif [ $STAGE -eq 3 ] || [ $STAGE -eq 0 ];then
+	fi    
+	
+	if [ $STAGE -eq 3 ] || [ $STAGE -eq 0 ];then
 	    if [ ! -f $RESULTFOLDER/dti_FA.nii.gz ]; then
 		    dtifit_function $RESULTFOLDER		# Call function for dtifit
 	    else
@@ -279,7 +293,9 @@ main()
 		    	echo "$dt $SUB: warp mprage to diff utilizing nn done"
 			fi
 		fi
-    elif [ $STAGE -eq 4 ] || [ $STAGE -eq 0 ];then
+	fi
+
+    if [ $STAGE -eq 4 ] || [ $STAGE -eq 0 ];then
 	    if [ $STAGE -eq 0 ] && [ $HOSTNAME != "atlas11.cmrr.umn.edu" ] && [ $HOSTNAME != "porto.cmrr.umn.edu" ];then
 		    echo "$dt $SUB: terminated prior to bedpostx due to non-working CUDA"
 		    exit
@@ -295,7 +311,9 @@ main()
 		    dt=$(date '+%Y/%m/%d %H:%M:%S');
 		    echo "$dt $SUB: bedpostx_gpu done"
 	    fi
-    elif [ $STAGE -eq 5 ] || [ $STAGE -eq 0 ];then
+	fi
+
+    if [ $STAGE -eq 5 ] || [ $STAGE -eq 0 ];then
 	    #SESSNAME=$(echo $SUB | awk -F'/' '{print $2}')
 	    if [ ! -f $RESULTFOLDER/dsistudio/bedpostX.fib.gz ]; then
 		    dt=$(date '+%Y/%m/%d %H:%M:%S');
@@ -309,7 +327,9 @@ main()
 		if [ ! -f $RESULTFOLDER/dsistudio-tract_voxel_ratio-16/bedpostX.fib.gz ]; then
 			cp $RESULTFOLDER/dsistudio/bedpostX.fib.gz $RESULTFOLDER/dsistudio-tract_voxel_ratio-16/bedpostX.fib.gz
 		fi
-    elif [ $STAGE -eq 6 ] || [ $STAGE -eq 7 ] || [ $STAGE -eq 8 ] || [ $STAGE -eq 9 ];then
+	fi
+
+    if [ $STAGE -eq 6 ] || [ $STAGE -eq 7 ] || [ $STAGE -eq 8 ] || [ $STAGE -eq 9 ];then
 		if [ $STAGE -eq 6 ] || [ $STAGE -eq 7 ];then # Dose not work for Stage=0
 			DSIFOLDER=dsistudio
 		elif [ $STAGE -eq 8 ] || [ $STAGE -eq 9 ];then
@@ -368,94 +388,138 @@ diff_prep()
 
 	cd $DATA
 	
+	if [ -f ${DMRI_AP} ];then
 	
-	fslmerge -a eddy_input.nii.gz ${DMRI_AP} ${DMRI_PA} # Merge AP and PA ZOOMit data into one file
-	
-	firstCharacter="`cat ${BVAL_PA}`"
-	firstCharacter=${firstCharacter:0:1}
-	if [ $firstCharacter == " " ];then
-		echo "`cat ${BVAL_AP}``cat ${BVAL_PA}`" > eddy_input.bval	# Create eddy_input.bval file by merge bval files of RESOLVE_AP and RESOLVE_PA
-	else
-		echo "`cat ${BVAL_AP}` `cat ${BVAL_PA}`" > eddy_input.bval	# Create eddy_input.bval file by merge bval files of RESOLVE_AP and RESOLVE_PA
-	fi
-	firstCharacter="`cat ${BVEC_PA}`"
-	firstCharacter=${firstCharacter:0:1}
-	if [ $firstCharacter == " " ];then
-		paste -d "" ${BVEC_AP} ${BVEC_PA} > eddy_input.bvec
-	else
-		paste -d " " ${BVEC_AP} ${BVEC_PA} > eddy_input.bvec	# Create eddy_input.bvec file by merge bvec files of RESOLVE_AP and RESOLVE_PA
-	fi
-	
-	cp ${JSON_AP} eddy_input_ap.json
-	cp ${JSON_PA} eddy_input_pa.json
-	
-	B0INDEX=""
-	fslsplit eddy_input.nii.gz temporary	# Split RESOLVE data into infividual images
-	B0IND=0
-	IMAGEID=0
-	CATCH=0
-	B0USE=4
-
-	B0AP=13
-
-	MERGECOMMAND="fslmerge -a b0.nii.gz" 
-	for BVAL in `cat eddy_input.bval`;do			# Create variable B0INDEX containg order of b0 images in merged file
-		if [ $BVAL -le 70 ] && [ $CATCH -lt $B0USE ];then
-			B0IND=$(($B0IND+1))
-			#fslmaths temporary`printf %04d $IMAGEID`.nii.gz -kernel 2D -fmedian temporary`printf %04d $IMAGEID`.nii.gz
-			MERGECOMMAND="$MERGECOMMAND temporary`printf %04d $IMAGEID`.nii.gz"
-			CATCH=$(($CATCH+1))
-		elif [ $BVAL -le 70 ] && [ $CATCH == $(($B0AP-1)) ];then
-			CATCH=0
-		elif [ $BVAL -le 70 ] && [ $CATCH -ge $B0USE ];then
-			CATCH=$(($CATCH+1))
+		fslmerge -a eddy_input.nii.gz ${DMRI_AP} ${DMRI_PA} # Merge AP and PA ZOOMit data into one file
+		
+		firstCharacter="`cat ${BVAL_PA}`"
+		firstCharacter=${firstCharacter:0:1}
+		if [ $firstCharacter == " " ];then
+			echo "`cat ${BVAL_AP}``cat ${BVAL_PA}`" > eddy_input.bval	# Create eddy_input.bval file by merge bval files of RESOLVE_AP and RESOLVE_PA
+		else
+			echo "`cat ${BVAL_AP}` `cat ${BVAL_PA}`" > eddy_input.bval	# Create eddy_input.bval file by merge bval files of RESOLVE_AP and RESOLVE_PA
 		fi
-		B0INDEX="$B0INDEX $B0IND"
-		IMAGEID=$(($IMAGEID+1))
-	done
-	echo $B0INDEX > index.txt
-	B0NUM=`cat index.txt | awk '{print $NF}'`			# Count number of b0 images in merged file
+		firstCharacter="`cat ${BVEC_PA}`"
+		firstCharacter=${firstCharacter:0:1}
+		if [ $firstCharacter == " " ];then
+			paste -d "" ${BVEC_AP} ${BVEC_PA} > eddy_input.bvec
+		else
+			paste -d " " ${BVEC_AP} ${BVEC_PA} > eddy_input.bvec	# Create eddy_input.bvec file by merge bvec files of RESOLVE_AP and RESOLVE_PA
+		fi
+		
+		cp ${JSON_AP} eddy_input_ap.json
+		cp ${JSON_PA} eddy_input_pa.json
+		
+		B0INDEX=""
+		fslsplit eddy_input.nii.gz temporary	# Split RESOLVE data into infividual images
+		B0IND=0
+		IMAGEID=0
+		CATCH=0
+		B0USE=4
+
+		B0AP=13
+
+		MERGECOMMAND="fslmerge -a b0.nii.gz" 
+		for BVAL in `cat eddy_input.bval`;do			# Create variable B0INDEX containg order of b0 images in merged file
+			if [ $BVAL -le 70 ] && [ $CATCH -lt $B0USE ];then
+				B0IND=$(($B0IND+1))
+				#fslmaths temporary`printf %04d $IMAGEID`.nii.gz -kernel 2D -fmedian temporary`printf %04d $IMAGEID`.nii.gz
+				MERGECOMMAND="$MERGECOMMAND temporary`printf %04d $IMAGEID`.nii.gz"
+				CATCH=$(($CATCH+1))
+			elif [ $BVAL -le 70 ] && [ $CATCH == $(($B0AP-1)) ];then
+				CATCH=0
+			elif [ $BVAL -le 70 ] && [ $CATCH -ge $B0USE ];then
+				CATCH=$(($CATCH+1))
+			fi
+			B0INDEX="$B0INDEX $B0IND"
+			IMAGEID=$(($IMAGEID+1))
+		done
+		echo $B0INDEX > index.txt
+		B0NUM=`cat index.txt | awk '{print $NF}'`			# Count number of b0 images in merged file
 
 
-	ph=$(cat ${JSON_AP} | grep \"PhaseEncodingDirection\" | cut -d '"' -f4 | cut -d '"' -f1)
-	if [ $ph == "j-" ];then
-		echo "0 -1 0 $READOUT" > acq_file.txt
-	elif [ $ph == "j" ];then
-		echo "0 1 0 $READOUT" > acq_file.txt
-	elif [ $ph == "i" ];then
-		echo "1 0 0 $READOUT" > acq_file.txt
-	elif [ $ph == "i-" ];then
-		echo "-1 0 0 $READOUT" > acq_file.txt
-	fi
-	for MES in `seq 2 $B0NUM`;do					# Create acq_file which is necessary for topup
-		if [ $MES -eq $B0USE ];then
-			ph1=$ph
-		fi
-		if [ $MES -gt $B0USE ];then
-			ph=$(cat ${JSON_PA} | grep \"PhaseEncodingDirection\" | cut -d '"' -f4 | cut -d '"' -f1)    
-		fi
+		ph=$(cat ${JSON_AP} | grep \"PhaseEncodingDirection\" | cut -d '"' -f4 | cut -d '"' -f1)
 		if [ $ph == "j-" ];then
-			echo "0 -1 0 $READOUT" >> acq_file.txt
+			echo "0 -1 0 $READOUT" > acq_file.txt
 		elif [ $ph == "j" ];then
-			echo "0 1 0 $READOUT" >> acq_file.txt
+			echo "0 1 0 $READOUT" > acq_file.txt
 		elif [ $ph == "i" ];then
-			echo "1 0 0 $READOUT" >> acq_file.txt
+			echo "1 0 0 $READOUT" > acq_file.txt
 		elif [ $ph == "i-" ];then
-			echo "-1 0 0 $READOUT" >> acq_file.txt
+			echo "-1 0 0 $READOUT" > acq_file.txt
 		fi
-	done
+		for MES in `seq 2 $B0NUM`;do					# Create acq_file which is necessary for topup
+			if [ $MES -eq $B0USE ];then
+				ph1=$ph
+			fi
+			if [ $MES -gt $B0USE ];then
+				ph=$(cat ${JSON_PA} | grep \"PhaseEncodingDirection\" | cut -d '"' -f4 | cut -d '"' -f1)    
+			fi
+			if [ $ph == "j-" ];then
+				echo "0 -1 0 $READOUT" >> acq_file.txt
+			elif [ $ph == "j" ];then
+				echo "0 1 0 $READOUT" >> acq_file.txt
+			elif [ $ph == "i" ];then
+				echo "1 0 0 $READOUT" >> acq_file.txt
+			elif [ $ph == "i-" ];then
+				echo "-1 0 0 $READOUT" >> acq_file.txt
+			fi
+		done
 
-	`echo $MERGECOMMAND`						# Create file containing only b0 images
-	rm temporary*.nii.gz
+		`echo $MERGECOMMAND`						# Create file containing only b0 images
+		rm temporary*.nii.gz
+	else
+		cp ${BVAL_PA} eddy_input.bval
+		cp ${BVEC_PA} eddy_input.bvec
+		cp ${JSON_PA} eddy_input_pa.json
+		cp ${DMRI_PA} eddy_input.nii.gz
+
+		phpa=$(cat ${JSON_PA} | grep \"PhaseEncodingDirection\" | cut -d '"' -f4 | cut -d '"' -f1)
+
+		cp $MPRFOLDER/mprage_brain.nii.gz T1.nii.gz
+		fslsplit $DMRI_PA patemporary
+		mv patemporary0000.nii.gz b0.nii.gz
+		rm patemporary*
+		if [ $phpa == "j-" ];then
+			echo "0 -1 0 $READOUT" > acq_file.txt
+		elif [ $phpa == "j" ];then
+			echo "0 1 0 $READOUT" > acq_file.txt
+		elif [ $phpa == "i" ];then
+			echo "1 0 0 $READOUT" > acq_file.txt
+		elif [ $phpa == "i-" ];then
+			echo "-1 0 0 $READOUT" > acq_file.txt
+		fi
+		echo "0 1 0 0.000000" >> acq_file.txt
+		ln -s acq_file.txt acqparams.txt
+
+		singularity run -e -B /var,/run,/tmp -B $HDDLIST -B $DATA/:/INPUTS -B $DATA/:/OUTPUTS -B $FSLICENSE:/extra/freesurfer/license.txt $SYNB0SIFFILE --stripped > symb0-disco.stdout
+
+		B0INDEX="1"
+		PS=1
+		for BVAL in `cat eddy_input.bval`;do
+			if [ $PS -eq 1 ];then
+				PS=2
+			else
+				B0INDEX="$B0INDEX 1"
+			fi
+		done
+		echo $B0INDEX > index.txt
+		
+		if [ -f b0_all_topup.nii.gz ];then
+			ln -s b0_all_topup.nii.gz b0_topup.nii.gz
+			chmod 660 b0_all_topup.nii.gz
+			chmod 660 topup*
+		fi
+
+		echo "Same phase encoding acquisition" > acq_note.txt
+		chmod 660 acq_note.txt
+	fi
 
 	chmod 660 eddy_input*
 	chmod 660 index.txt
 	chmod 660 b0.nii.gz
 	chmod 660 acq_file.txt
-	if [ $ph1 == $ph ];then
-		echo "Same phase encoding acquisition" > acq_note.txt
-		chmod 660 acq_note.txt
-	fi
+
 	echo "${yellow}$(date +%x_%T): Preprocessing of diffusion data in $DATA folder is done.${normal}"
 	
 }
@@ -467,7 +531,14 @@ topup_function()
 	DATA=$1
 	echo "${yellow}$(date +%x_%T): Starting topup on data in $DATA folder!${normal}"
 	cd $DATA
-	topup --imain=b0.nii.gz --datain=acq_file.txt --out=topup --subsamp=1,1,1,1,1,1,1,1,1 --config=b02b0.cnf --iout=b0_topup --fout=field_topup > topup_stdout.txt # -v
+	if [ -f acq_note.txt ] && [ ! -f b0_all_topup.nii.gz ];then
+		topup --imain=b0_all.nii.gz --datain=acq_file.txt --out=topup --subsamp=1,1,1,1,1,1,1,1,1 --config=b02b0.cnf --iout=b0_topup --fout=field_topup > topup_stdout.txt # -v
+		ln -s b0_all_topup.nii.gz b0_topup.nii.gz
+		chmod 660 b0_all_topup.nii.gz
+		chmod 660 topup*
+	elif [ ! -f acq_note.txt ];then
+		topup --imain=b0.nii.gz --datain=acq_file.txt --out=topup --subsamp=1,1,1,1,1,1,1,1,1 --config=b02b0.cnf --iout=b0_topup --fout=field_topup > topup_stdout.txt # -v
+	fi
 	fslmaths b0_topup.nii.gz -Tmean b0_topup_mean.nii.gz # mean b0
 	bet b0_topup_mean.nii.gz b0_topup_mean_brain -m -o -f 0.25 
 	fslmaths b0_topup_mean_brain.nii.gz -thr 20 b0_topup_mean_brain.nii.gz
