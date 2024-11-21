@@ -184,6 +184,15 @@
                 "SeriesDescription": "Axial MB DTI AP",
 				"PhaseEncodingDirection": "j-"
             }
+        },
+		{
+            "datatype": "dwi",
+            "suffix": "dwi",
+            "custom_entities": "acq-mb3_dir-PA",
+            "criteria": {
+                "SeriesDescription": "Axial MB DTI",
+				"PhaseEncodingDirection": "j"
+            }
         }
     ]
 }
