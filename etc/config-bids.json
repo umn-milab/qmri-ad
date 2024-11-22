@@ -158,6 +158,33 @@
 				"PhaseEncodingDirection": "j"
             }
         },
+		{
+            "datatype": "func",
+            "suffix": "bold",
+			"custom_entities": "task-restEyesOpen_dir-AP",
+            "criteria": {
+                "SeriesDescription": "Axial MB rsfMRI (Eyes Open)",
+				"PhaseEncodingDirection": "j-"
+            }
+        },
+		{
+            "datatype": "func",
+            "suffix": "bold",
+			"custom_entities": "task-restEyesOpen_dir-RL",
+            "criteria": {
+                "SeriesDescription": "Axial MB rsfMRI (Eyes Open)",
+				"PhaseEncodingDirection": "i"
+            }
+        },
+		{
+            "datatype": "func",
+            "suffix": "bold",
+			"custom_entities": "task-restEyesOpen_dir-PA",
+            "criteria": {
+                "SeriesDescription": "Axial - Advanced fMRI_64 Channel",
+				"PhaseEncodingDirection": "j"
+            }
+        },
         {
             "datatype": "dwi",
             "suffix": "dwi",
@@ -192,6 +219,15 @@
             "criteria": {
                 "SeriesDescription": "Axial MB DTI",
 				"PhaseEncodingDirection": "j"
+            }
+        },
+		{
+            "datatype": "dwi",
+            "suffix": "dwi",
+            "custom_entities": "acq-mb3_dir-AP",
+            "criteria": {
+                "SeriesDescription": "Axial MB DTI",
+				"PhaseEncodingDirection": "j-"
             }
         }
     ]
