@@ -388,7 +388,7 @@ diff_prep()
 
 	cd $DATA
 	
-	if [ -f ${DMRI_AP} ];then
+	if [ -f ${DMRI_AP} ] && [ -f ${DMRI_PA} ];then
 	
 		fslmerge -a eddy_input.nii.gz ${DMRI_AP} ${DMRI_PA} # Merge AP and PA ZOOMit data into one file
 		
@@ -469,15 +469,28 @@ diff_prep()
 		`echo $MERGECOMMAND`						# Create file containing only b0 images
 		rm temporary*.nii.gz
 	else
-		cp ${BVAL_PA} eddy_input.bval
-		cp ${BVEC_PA} eddy_input.bvec
-		cp ${JSON_PA} eddy_input_pa.json
-		cp ${DMRI_PA} eddy_input.nii.gz
+		if [ -f ${DMRI_PA} ];then
+			cp ${BVAL_PA} eddy_input.bval
+			cp ${BVEC_PA} eddy_input.bvec
+			cp ${JSON_PA} eddy_input_pa.json
+			cp ${DMRI_PA} eddy_input.nii.gz
 
-		phpa=$(cat ${JSON_PA} | grep \"PhaseEncodingDirection\" | cut -d '"' -f4 | cut -d '"' -f1)
+			phpa=$(cat ${JSON_PA} | grep \"PhaseEncodingDirection\" | cut -d '"' -f4 | cut -d '"' -f1)
+
+			fslsplit $DMRI_PA patemporary
+		else
+			cp ${BVAL_AP} eddy_input.bval
+			cp ${BVEC_AP} eddy_input.bvec
+			cp ${JSON_AP} eddy_input_pa.json
+			cp ${DMRI_AP} eddy_input.nii.gz
+
+			phpa=$(cat ${JSON_AP} | grep \"PhaseEncodingDirection\" | cut -d '"' -f4 | cut -d '"' -f1)
+
+			fslsplit $DMRI_AP patemporary
+		fi
 
 		cp $MPRFOLDER/mprage_brain.nii.gz T1.nii.gz
-		fslsplit $DMRI_PA patemporary
+		
 		mv patemporary0000.nii.gz b0.nii.gz
 		rm patemporary*
 		if [ $phpa == "j-" ];then
