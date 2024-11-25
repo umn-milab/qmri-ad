@@ -46,11 +46,11 @@ create_folders()
     fi
 }
 
-for SUB in sub-*/ses-* ;do
-#for SUB in sub-0060/ses-* sub-0073/ses-* sub-0105/ses-* sub-0115/ses-* sub-0117/ses-* sub-0120/ses-* sub-0126/ses-* sub-0127/ses-* sub-0134/ses-* sub-0137/ses-* sub-0141/ses-* sub-0142/ses-* sub-0144/ses-* sub-0149/ses-* sub-0185/ses-* sub-0050/ses-* sub-0065/ses-* sub-0058/ses-* sub-0074/ses-* sub-0085/ses-* sub-0099/ses-* sub-0104/ses-* sub-0106/ses-* sub-0112/ses-* sub-0136/ses-* sub-0161/ses-* ;do # sub-0060/ses-* sub-0073/ses-* sub-0105/ses-* sub-0115/ses-* sub-0117/ses-* sub-0120/ses-* sub-0126/ses-* sub-0127/ses-* sub-0134/ses-* sub-0137/ses-* sub-0141/ses-* sub-0142/ses-* sub-0144/ses-* sub-0149/ses-* sub-0185/ses-* sub-0050/ses-* sub-0065/ses-* sub-0058/ses-* sub-0074/ses-* sub-0085/ses-* sub-0099/ses-* sub-0104/ses-* sub-0106/ses-* sub-0112/ses-* sub-0136/ses-* sub-0161/ses-*
+#for SUB in sub-*/ses-* ;do
+for SUB in sub-007S6255/ses-bl sub-007S6515/ses-bl sub-067S2301/ses-m78 sub-067S2304/ses-m78 sub-067S4767/ses-m60 sub-067S6045/ses-bl sub-341S6494/ses-bl ;do # sub-0060/ses-* sub-0073/ses-* sub-0105/ses-* sub-0115/ses-* sub-0117/ses-* sub-0120/ses-* sub-0126/ses-* sub-0127/ses-* sub-0134/ses-* sub-0137/ses-* sub-0141/ses-* sub-0142/ses-* sub-0144/ses-* sub-0149/ses-* sub-0185/ses-* sub-0050/ses-* sub-0065/ses-* sub-0058/ses-* sub-0074/ses-* sub-0085/ses-* sub-0099/ses-* sub-0104/ses-* sub-0106/ses-* sub-0112/ses-* sub-0136/ses-* sub-0161/ses-*
 	for NRD in 0;do # 0 1 2
 		for PRT in dmri;do #  dmri79 6shell
-			if [ ! -f $PROJECTFOLDER/bids/$SUB/dwi/sub-*_ses-*_acq-mb3_dir-PA_dwi.nii.gz ] && [ ! -f $PROJECTFOLDER/bids/$SUB/dwi/sub-*_ses-*_acq-acq-mb3_dir-AP_dwi.nii.gz ];then
+			if [ ! -f $PROJECTFOLDER/bids/$SUB/dwi/sub-*_ses-*_acq-mb3_dir-PA_dwi.nii.gz ] && [ ! -f $PROJECTFOLDER/bids/$SUB/dwi/sub-*_ses-*_acq-mb3_dir-AP_dwi.nii.gz ];then
 				echo "$SUB-$PRT-$NRD: dMRI data were not acquired."
 			elif [[ $SUB == "sub-779253/ses-13mo" && $PRT == "dmri79" ]]; then
 				echo "$SUB-$PRT-$NRD: dMRI data of poor quality or non-preprocessed"
