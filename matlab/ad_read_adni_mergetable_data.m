@@ -523,7 +523,8 @@ set(gca,'Fontsize',14,'LineWidth',2)
 
 %% MMSE MATCHING
 age_max_limit = age_max;
-match_pos = b_mmse>=min(a_mmse) & b_age<=age_max_limit & strcmp(b_race,'White') & strcmp(b_ethnicity,'Not Hisp/Latino');
+% match_pos = b_mmse>=min(a_mmse) & b_age<=age_max_limit & strcmp(b_race,'White') & strcmp(b_ethnicity,'Not Hisp/Latino');
+match_pos = b_age<=age_max_limit & strcmp(b_race,'White') & strcmp(b_ethnicity,'Not Hisp/Latino');
 
 adni_matched = adni(match_pos,:);
 

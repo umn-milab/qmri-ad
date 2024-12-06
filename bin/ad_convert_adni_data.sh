@@ -29,8 +29,8 @@ while IFS=$'\t' read -r -a data; do
 		#echo $YYYY
 
 		DICOMDATA=$DICOMFOLDER/$SUB/*/$YYYY-$MM-$DD*/*
-		#if [ ! -d $BIDSFOLDER/$SUBstr/$SESSstr/dwi ];then
-		if [ $SUBstr == "sub-341S6494" ] && [ $SESSstr == "ses-bl" ];then
+		if [ ! -d $BIDSFOLDER/$SUBstr/$SESSstr/dwi ];then
+		#if [ $SUBstr == "sub-341S6494" ] && [ $SESSstr == "ses-bl" ];then
 			echo "dcm2bids -d $DICOMDATA -o $BIDSFOLDER -c ~/git/qmri-ad/etc/config-bids.json -p $SUBstr -s $SESSstr"
 			dcm2bids -d $DICOMDATA -o $BIDSFOLDER -c ~/git/qmri-ad/etc/config-bids.json -p $SUBstr -s $SESSstr
 			#exit
