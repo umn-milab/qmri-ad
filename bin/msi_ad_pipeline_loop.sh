@@ -70,7 +70,7 @@ for SUB in sub-*/ses-* ;do
 	                SNRJOBFOLDER=$RESULTFOLDER/snr-$PRTFOLDER
                 fi
                 create_folders $JOBFOLDER $SUB
-                if [ ! -f $JOBFOLDER/$SUB/dsistudio/Superior_Cerebellar_Peduncle/bedpostX.Superior_Cerebellar_Peduncle.stat.txt ] || [ ! -f $JOBFOLDER/$SUB/dsistudio/Reticular_Tract_R/bedpostX.Reticular_Tract_R.stat.txt ] || [ ! -f $JOBFOLDER/$SUB/dsistudio-tract_voxel_ratio-16/Superior_Cerebellar_Peduncle/bedpostX.Superior_Cerebellar_Peduncle.stat.txt ] || [ ! -f $JOBFOLDER/$SUB/dsistudio-tract_voxel_ratio-16/Reticular_Tract_R/bedpostX.Reticular_Tract_R.stat.txt ] || [ ! -f $JOBFOLDER/$SUB/eddy.qc/qc.pdf ];then
+                if [ ! -f $JOBFOLDER/$SUB/dsistudio/Superior_Cerebellar_Peduncle/bedpostX.Superior_Cerebellar_Peduncle.*.txt ] || [ ! -f $JOBFOLDER/$SUB/dsistudio/Parietal_Aslant_Tract_R/bedpostX.Parietal_Aslant_Tract_R.*.txt ] || [ ! -f $JOBFOLDER/$SUB/dsistudio-tract_voxel_ratio-16/Superior_Cerebellar_Peduncle/bedpostX.Superior_Cerebellar_Peduncle.*.txt ] || [ ! -f $JOBFOLDER/$SUB/dsistudio-tract_voxel_ratio-16/Parietal_Aslant_Tract_R/bedpostX.Parietal_Aslant_Tract_R.*.txt ] || [ ! -f $JOBFOLDER/$SUB/eddy.qc/qc.pdf ];then
                     STAGE=1
                     for STAGE in `seq 1 9`;do
                         if [ $STAGE -eq 1 ];then

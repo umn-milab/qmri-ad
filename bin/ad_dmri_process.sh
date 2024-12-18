@@ -347,7 +347,7 @@ main()
 			HDDLIST=/home/shapiroe
         fi
         if [ -f $RESULTFOLDER/$DSIFOLDER/bedpostX.fib.gz ]; then
-            if ( [ ! -f $RESULTFOLDER/dsistudio/Reticular_Tract_R/bedpostX.Reticular_Tract_R.stat.txt ] && [ $STAGE -eq 6 ] ) || ( [ ! -f $RESULTFOLDER/dsistudio/Superior_Cerebellar_Peduncle/bedpostX.Superior_Cerebellar_Peduncle.stat.txt ] && [ $STAGE -eq 7 ] ) || ( [ ! -f $RESULTFOLDER/dsistudio-tract_voxel_ratio-16/Reticular_Tract_R/bedpostX.Reticular_Tract_R.stat.txt ] && [ $STAGE -eq 8 ] ) || ( [ ! -f $RESULTFOLDER/dsistudio-tract_voxel_ratio-16/Superior_Cerebellar_Peduncle/bedpostX.Superior_Cerebellar_Peduncle.stat.txt ] && [ $STAGE -eq 9 ] ); then
+            if ( [ ! -f $RESULTFOLDER/dsistudio/Parietal_Aslant_Tract_R/bedpostX.Parietal_Aslant_Tract_R.*.txt ] && [ $STAGE -eq 6 ] ) || ( [ ! -f $RESULTFOLDER/dsistudio/Superior_Cerebellar_Peduncle/bedpostX.Superior_Cerebellar_Peduncle.*.txt ] && [ $STAGE -eq 7 ] ) || ( [ ! -f $RESULTFOLDER/dsistudio-tract_voxel_ratio-16/Parietal_Aslant_Tract_R/bedpostX.Parietal_Aslant_Tract_R.*.txt ] && [ $STAGE -eq 8 ] ) || ( [ ! -f $RESULTFOLDER/dsistudio-tract_voxel_ratio-16/Superior_Cerebellar_Peduncle/bedpostX.Superior_Cerebellar_Peduncle.*.txt ] && [ $STAGE -eq 9 ] ); then
                 dt=$(date '+%Y/%m/%d %H:%M:%S');
 			    echo "$dt $SUB: tractography in DSI Studio started"
 			    echo "$dt $SUB: tractography in DSI Studio started" > $DSITRACTLOGFILE.txt
