@@ -74,10 +74,10 @@ for SUB in sub-*/ses-* ;do
                     STAGE=1
                     for STAGE in `seq 1 9`;do
                         if [ $STAGE -eq 1 ];then
-                            TIME="48:45:00"
+                            TIME="58:45:00"
                             NTASKS=2
-                            MEM=24g
-                            TMP=24g
+                            MEM=32g
+                            TMP=32g
                             QUEUE=msismall
                         elif [ $STAGE -eq 2 ];then
                             TIME="06:15:00"

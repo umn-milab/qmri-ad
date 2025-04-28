@@ -113,17 +113,19 @@ main()
 	fi
 
     if [ $STAGE -eq 1 ] || [ $STAGE -eq 0 ]; then
-		if [ ! -f $MPRFOLDER/mprage_brain.nii.gz ];then
-			dt=$(date '+%Y/%m/%d %H:%M:%S');
-			echo "$dt $SUB: Brain extraction started"
-			OLDFOLDER=`pwd`
-			cd $MPRFOLDER
-			cp $MPRAGE $MPRAGEFILENAME
-			ln -s $MPRAGEFILENAME mprage.nii.gz
-			bet mprage.nii.gz mprage_brain.nii.gz -m -o -B -f 0.25
-			cd $OLDFOLDER
-			dt=$(date '+%Y/%m/%d %H:%M:%S');
-			echo "$dt $SUB: Brain extraction done"
+		if [ ! -z $MPRAGE ];then
+			if [ ! -f $MPRFOLDER/mprage_brain.nii.gz ];then
+				dt=$(date '+%Y/%m/%d %H:%M:%S');
+				echo "$dt $SUB: Brain extraction started"
+				OLDFOLDER=`pwd`
+				cd $MPRFOLDER
+				cp $MPRAGE $MPRAGEFILENAME
+				ln -s $MPRAGEFILENAME mprage.nii.gz
+				bet mprage.nii.gz mprage_brain.nii.gz -m -o -B -f 0.25
+				cd $OLDFOLDER
+				dt=$(date '+%Y/%m/%d %H:%M:%S');
+				echo "$dt $SUB: Brain extraction done"
+			fi
 		fi
 	    if [ ! -f $RESULTFOLDER/b0.nii.gz ] || [ ! -f $RESULTFOLDER/eddy_input_ap.json ];then
 		    diff_prep $DMRI_AP $DMRI_PA $READOUT $RESULTFOLDER $BVAL_AP $BVAL_PA $BVEC_AP $BVEC_PA	$PROTOCOL $JSON_AP $JSON_PA # Call diff_preop function
@@ -468,7 +470,7 @@ diff_prep()
 
 		`echo $MERGECOMMAND`						# Create file containing only b0 images
 		rm temporary*.nii.gz
-	else
+	elif [ -f $MPRFOLDER/mprage_brain.nii.gz ];then 
 		if [ -f ${DMRI_PA} ];then
 			cp ${BVAL_PA} eddy_input.bval
 			cp ${BVEC_PA} eddy_input.bvec
@@ -526,6 +528,8 @@ diff_prep()
 
 		echo "Same phase encoding acquisition" > acq_note.txt
 		chmod 660 acq_note.txt
+	else
+		echo "Neither PA+AP dMRI nor dMRI+mprage were acquired."
 	fi
 
 	chmod 660 eddy_input*

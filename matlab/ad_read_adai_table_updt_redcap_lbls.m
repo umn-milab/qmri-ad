@@ -5,27 +5,27 @@ clc;
 csv_path = '/home/range1-raid1/labounek/data-on-porto/ADAI/RedCap';
 % csv_filename = 'BreakthroughsInADBlo_DATA_2024-10-08_1057.csv';
 % csv_filename = 'BreakthroughsInADBlo_DATA_2025-01-21_1520.csv';
-csv_filename = 'BreakthroughsInADBlo_DATA_2025-04-03_1842.csv';
+csv_filename = 'BreakthroughsInADBlo_DATA_LABELS_2025-04-03_1829.csv';
 
 
 tbl = readtable(fullfile(csv_path,csv_filename),'PreserveVariableNames',1);
 
-pidn = cell2mat(table2cell(tbl(:,'pidn')));
+pidn = cell2mat(table2cell(tbl(:,'PIDN')));
 pidn_uni = unique(pidn);
 
-rpt = table2cell(tbl(:,'redcap_repeat_instrument'));
-rpt_inst = cell2mat(table2cell(tbl(:,'redcap_repeat_instance')));
+rpt = table2cell(tbl(:,'Repeat Instrument'));
+rpt_inst = cell2mat(table2cell(tbl(:,'Repeat Instance')));
 
 
-pidn2 = cell2mat(table2cell(tbl(strcmp(rpt,'participant_demographics'),'pidn')));
-sex = cell2mat(table2cell(tbl(strcmp(rpt,'participant_demographics'),'sex')));
+pidn2 = cell2mat(table2cell(tbl(strcmp(rpt,'participant_demographics'),'PIDN')));
+sex = cell2mat(table2cell(tbl(strcmp(rpt,'participant_demographics'),'Sex')));
 homeless = cell2mat(table2cell(tbl(strcmp(rpt,'participant_demographics'),'homeless')));
 tribe = cell2mat(table2cell(tbl(strcmp(rpt,'participant_demographics'),'tribe')));
 hp_memprob = cell2mat(table2cell(tbl(strcmp(rpt,'participant_demographics'),'hp_memprob')));
 hp_mem_comp = cell2mat(table2cell(tbl(strcmp(rpt,'participant_demographics'),'hp_mem_comp')));
 
 mmse_date = table2cell(tbl(strcmp(rpt,'mmse') & rpt_inst==1,'mmse_date'));
-mmse_pind = cell2mat(table2cell(tbl(strcmp(rpt,'mmse') & rpt_inst==1,'pidn')));
+mmse_pind = cell2mat(table2cell(tbl(strcmp(rpt,'mmse') & rpt_inst==1,'PIDN')));
 mmse_totalscore_val = cell2mat(table2cell(tbl(strcmp(rpt,'mmse') & rpt_inst==1,'mmse_totalscore')));
 
 data_adai_cell = cell(size(sex,1),1);
@@ -49,7 +49,7 @@ hp_conditions_names = {'Hypertension' 'Hyperlipidemia' 'Kidney_disease' 'Heart_p
     'Other_miscellaneous_conditions/diagnoses' 'None'};
 
 hp_date = table2cell(tbl(strcmp(rpt,'hp_for_second_visit') & rpt_inst==1,'hp_date'));
-hp_pind = cell2mat(table2cell(tbl(strcmp(rpt,'hp_for_second_visit') & rpt_inst==1,'pidn')));
+hp_pind = cell2mat(table2cell(tbl(strcmp(rpt,'hp_for_second_visit') & rpt_inst==1,'PIDN')));
 height_val = cell2mat(table2cell(tbl(strcmp(rpt,'hp_for_second_visit') & rpt_inst==1,'height')));
 weight_val = cell2mat(table2cell(tbl(strcmp(rpt,'hp_for_second_visit') & rpt_inst==1,'weight')));
 dom_hand_val = cell2mat(table2cell(tbl(strcmp(rpt,'hp_for_second_visit') & rpt_inst==1,'dom_hand')));
@@ -82,7 +82,7 @@ hp_impairment_val = cell2mat(table2cell(tbl(strcmp(rpt,'hp_for_second_visit') & 
 hp_conditions_val2 = cell2mat(table2cell(tbl(strcmp(rpt,'hp_for_second_visit') & rpt_inst==2,hp_tidx1:hp_tidx2)));
 
 hp_date2 = table2cell(tbl(strcmp(rpt,'hp_for_second_visit') & rpt_inst==2,'hp_date'));
-hp_pind2 = cell2mat(table2cell(tbl(strcmp(rpt,'hp_for_second_visit') & rpt_inst==2,'pidn')));
+hp_pind2 = cell2mat(table2cell(tbl(strcmp(rpt,'hp_for_second_visit') & rpt_inst==2,'PIDN')));
 height_val2 = cell2mat(table2cell(tbl(strcmp(rpt,'hp_for_second_visit') & rpt_inst==2,'height')));
 weight_val2 = cell2mat(table2cell(tbl(strcmp(rpt,'hp_for_second_visit') & rpt_inst==2,'weight')));
 dom_hand_val2 = cell2mat(table2cell(tbl(strcmp(rpt,'hp_for_second_visit') & rpt_inst==2,'dom_hand')));
@@ -214,12 +214,10 @@ for ind = 1:size(hp_pind2,1)
 end
 
 
-% tr_tidx1 = find(string(tbl.Properties.VariableNames) == "tr_vb12");
-% tr_tidx2 = find(string(tbl.Properties.VariableNames) == "tr_ptau181");
-tr_tidx1 = find(string(tbl.Properties.VariableNames) == "tr_pidn");
-tr_tidx2 = find(string(tbl.Properties.VariableNames) == "tr_apoee4");
+tr_tidx1 = find(string(tbl.Properties.VariableNames) == "tr_vb12");
+tr_tidx2 = find(string(tbl.Properties.VariableNames) == "tr_ptau181");
 
-tr_pind = cell2mat(table2cell(tbl(strcmp(rpt,'test_results') & rpt_inst==1,'pidn')));
+tr_pind = cell2mat(table2cell(tbl(strcmp(rpt,'test_results') & rpt_inst==1,'PIDN')));
 
 tr_val = cell2mat(table2cell(tbl(strcmp(rpt,'test_results') & rpt_inst==1,tr_tidx1:tr_tidx2)));
 tr_data_names = tbl.Properties.VariableNames(tr_tidx1:tr_tidx2);
