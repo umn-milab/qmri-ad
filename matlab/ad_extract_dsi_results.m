@@ -95,6 +95,7 @@ if extract_data == 1
     adai_apoe2 = NaN*ones(size(adai_subsess));
     adai_mmse = NaN*ones(size(adai_subsess));
     a_subsess = cellstr(strcat(adai.SUB,'/',adai.SESS));
+    pos_dmri = zeros(size(a_subsess));
     for ind = 1:size(adai_subsess,1)
         pos = strcmp(a_subsess,adai_subsess{ind,1});
         adai_sex{ind,1} =  adai.Sex(pos,1);
@@ -109,6 +110,8 @@ if extract_data == 1
         adai_apoe3(ind,1) = adai.tr_apoee3(pos,1);
         adai_apoe2(ind,1) = adai.tr_apoee2(pos,1);
         adai_mmse(ind,1) = adai.mmse_totalscore(pos,1);
+        
+        pos_dmri = pos_dmri + pos;
     end
     
     adni_sex = cell(size(adni_subsess));
@@ -164,6 +167,10 @@ if extract_data == 1
     adni_selection = ones(size(adni_age));
     adni_selection(adni_apoe4==2 | isnan(adni_apoe4)) = 0;
     adni_selection(adni_mmse<23) = 0;
+    
+    pos_nodmri = ones(size(pos_dmri)) - pos_dmri;
+    adai_nodmri_mmse = adai.mmse_totalscore(pos_nodmri & ~isnan(adai.tr_apoee4) & adai.tr_apoee4~=2 );
+    adai_nodmri_apoe4 = adai.tr_apoee4(pos_nodmri & ~isnan(adai.tr_apoee4) & adai.tr_apoee4~=2);
     
     %% Filter selected data only
 %     subsess = subsess(selection~=0);
@@ -249,6 +256,8 @@ if extract_data == 1
     apoe4_adai_noncarrier_mmse = [ mean(mmse(race==1 & apoe4_bin==0),'omitnan') std(mmse(race==1 & apoe4_bin==0),'omitnan') ];
     [~, pT_adai_apoe4_mmse] = ttest2(mmse(race==1 & apoe4_bin==0),mmse(race==1 & apoe4_bin==1));
     pW_adai_apoe4_mmse = ranksum(mmse(race==1 & apoe4_bin==0),mmse(race==1 & apoe4_bin==1));
+    apoe4_adai_carrier_mmse_quantile = quantile(mmse(race==1 & apoe4_bin==1),[0.5 0.25 0.75]) ;
+    apoe4_adai_noncarrier_mmse_quantile = quantile(mmse(race==1 & apoe4_bin==0),[0.5 0.25 0.75]);
     
     apoe4_adai_carrier_hypertension(1,1) = sum(hypertension==1 & race==1 & apoe4_bin==1);
     apoe4_adai_carrier_hypertension(1,2) = sum(hypertension==1 & race==1 & apoe4_bin==1) / sum(race==1 & apoe4_bin==1);
@@ -281,6 +290,8 @@ if extract_data == 1
     apoe4_adni_noncarrier_mmse = [ mean(mmse(race==0 & apoe4_bin==0),'omitnan') std(mmse(race==0 & apoe4_bin==0),'omitnan') ];
     [~, pT_adni_apoe4_mmse] = ttest2(mmse(race==0 & apoe4_bin==0),mmse(race==0 & apoe4_bin==1));
     pW_adni_apoe4_mmse = ranksum(mmse(race==0 & apoe4_bin==0),mmse(race==0 & apoe4_bin==1));
+    apoe4_adni_carrier_mmse_quantile = quantile(mmse(race==0 & apoe4_bin==1),[0.5 0.25 0.75]);
+    apoe4_adni_noncarrier_mmse_quantile = quantile(mmse(race==0 & apoe4_bin==0),[0.5 0.25 0.75]);
     
     apoe4_adni_carrier_hypertension(1,1) = sum(hypertension==1 & race==0 & apoe4_bin==1);
     apoe4_adni_carrier_hypertension(1,2) = sum(hypertension==1 & race==0 & apoe4_bin==1) / sum(race==0 & apoe4_bin==1);
@@ -315,6 +326,9 @@ if extract_data == 1
 %     adai_apoe4_bin(adai_apoe4>1) = NaN;
     adai_female = strcmp(adai_sex,'F');
     
+    adai_nodmri_mmse_quantile = quantile(adai_nodmri_mmse,[0.5 0.25 .75]);
+    pW_adai_nodmri_mmse = ranksum(adai_nodmri_mmse,adai_mmse);
+    
     %% ADNI selection
     adni_sex = adni_sex(adni_selection~=0);
     adni_age = adni_age(adni_selection~=0);
@@ -339,6 +353,13 @@ if extract_data == 1
     adni_female = strcmp(adni_sex,'F');
     
     adni_list = table(adni_ptid,adni_viscode,'VariableNames',{'PTID','VISCODE'});
+    
+    %% Chi-squared statistics - femnales and hypertension for ADAI and ADNI separately
+    [chitbl_adai_female,chi2stat_adai_female,chi_p_adai_female] = crosstab(adai_apoe4_bin,adai_female);
+    [chitbl_adai_hypertension,chi2stat_adai_hypertension,chi_p_adai_hypertension] = crosstab(adai_apoe4_bin,adai_hypertension);
+    
+    [chitbl_adni_female,chi2stat_adni_female,chi_p_adni_female] = crosstab(adni_apoe4_bin,adni_female);
+    [chitbl_adni_hypertension,chi2stat_adni_hypertension,chi_p_adni_hypertension] = crosstab(adni_apoe4_bin,adni_hypertension);
     
     %% Demographic stats
     stats_demography{1,2} = 'ADAI';
@@ -431,7 +452,18 @@ if extract_data == 1
     [~, stats_demography{6,4}] = ttest2(adai_education,adni_education);
     [~, stats_demography{7,4}] = ttest2(adai_mmse,adni_mmse);
     
+    adai_mmse_quantile = quantile(adai_mmse,[0.5 0.25 0.75]);
+    adni_mmse_quantile = quantile(adni_mmse,[0.5 0.25 0.75]);
+    pW_mmse_NHWvsAI = ranksum(adai_mmse,adni_mmse);
     
+    %% Chi-squared statistics - femnales and hypertension
+    x1 = [ ones(size(adai_female)); 2*ones(size(adni_female))];
+    x2 = [adai_female; adni_female];
+    [chitbl_female,chi2stat_female,chi_p_female] = crosstab(x1,x2);
+    
+    x1 = [ ones(size(adai_hypertension)); 2*ones(size(adni_hypertension))];
+    x2 = [adai_hypertension; adni_hypertension];
+    [chitbl_hypertension,chi2stat_hypertension,chi_p_hypertension] = crosstab(x1,x2);
     %% Define tract database and tracts of interest
     tract_list = {
             'Anterior_Commissure'
