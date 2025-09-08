@@ -17,6 +17,8 @@ adni_metadata_filename = 'ADSP_PHC_ADNI_T1_1.0_MetaData_05Aug2024.csv';
 adni_medhist_filename = 'MEDHIST_07Jul2025.csv';
 adni_modhach_filename = 'MODHACH_07Jul2025.csv';
 adni_labdata_filename = 'All_Subjects_LABDATA_08Jul2025.csv';
+adni_vitals_filename = 'VITALS_08Sep2025.csv';
+
 
 tbl = readtable(fullfile(csv_path,csv_filename),'PreserveVariableNames',1);
 plasma = readtable(fullfile(csv_path,plasma_filename),'PreserveVariableNames',1);
@@ -24,6 +26,7 @@ adni_metadata = readtable(fullfile(csv_path,adni_metadata_filename),'PreserveVar
 adni_medhist = readtable(fullfile(csv_path,adni_medhist_filename),'PreserveVariableNames',1);
 adni_modhach = readtable(fullfile(csv_path,adni_modhach_filename),'PreserveVariableNames',1);
 adni_labdata = readtable(fullfile(csv_path,adni_labdata_filename),'PreserveVariableNames',1);
+adni_vitals = readtable(fullfile(csv_path,adni_vitals_filename),'PreserveVariableNames',1);
 
 ptid = table2cell(unique(plasma(:,'PTID')));
 
@@ -50,7 +53,7 @@ count_irregular = 0;
 for ind = 1:size(adni,1)
     rid = cell2mat(table2cell( adni(ind,strcmp(adni_names,'RID')) ));
     viscode = table2cell( adni(ind,strcmp(adni_names,'VISCODE')) );
-    if strcmp(viscode,'bl')
+    if strcmp(viscode,'bl') || strcmp(viscode,'sc')
         vis0 = 0;
     else
         vis0 = str2double(viscode{1,1}(2:end));
@@ -69,7 +72,7 @@ for ind = 1:size(adni,1)
             vis = table2cell( adni_metadata( rid_pos , strcmp(adni_metadata.Properties.VariableNames,'LONI_VISCODE2')) );
             vis_num = zeros(size(vis));
             for vs = 1:size(vis,1)
-                if ~strcmp(vis{vs,1},'bl')
+                if ~strcmp(vis{vs,1},'bl') || ~strcmp(vis{vs,1},'sc')
                     vis_num(vs,1) = str2double(vis{vs,1}(2:end));
                 end
             end
@@ -83,6 +86,69 @@ for ind = 1:size(adni,1)
     else
         mtdt(ind,:) = adni_metadata(rid_pos & viscode_pos,find(strcmp(adni_metadata.Properties.VariableNames,'MEM')==1):find(strcmp(adni_metadata.Properties.VariableNames,'APOE3COUNT')==1));
     end
+    
+    %% VITALS DIGGING
+    rid_pos = cell2mat(table2cell( adni_vitals( : , strcmp(adni_vitals.Properties.VariableNames,'RID')) )) == rid;
+    weight = adni_vitals( rid_pos, ...
+        strcmp(adni_vitals.Properties.VariableNames,'VISCODE') | ...
+        strcmp(adni_vitals.Properties.VariableNames,'VISCODE2') | ...
+        strcmp(adni_vitals.Properties.VariableNames,'VSWEIGHT') | ...
+        strcmp(adni_vitals.Properties.VariableNames,'VSWTUNIT') ...
+        );
+    height = adni_vitals( rid_pos, ...
+        strcmp(adni_vitals.Properties.VariableNames,'VISCODE') | ...
+        strcmp(adni_vitals.Properties.VariableNames,'VISCODE2') | ...
+        strcmp(adni_vitals.Properties.VariableNames,'VSHEIGHT') | ...
+        strcmp(adni_vitals.Properties.VariableNames,'VSHTUNIT') ...
+        );
+    
+    weight = weight( ~( cell2mat(table2cell(weight(:,'VSWEIGHT')))<0 | isnan(cell2mat(table2cell(weight(:,'VSWEIGHT')))) ) , : );
+    height = height( ~( cell2mat(table2cell(height(:,'VSHEIGHT')))<0 | isnan(cell2mat(table2cell(height(:,'VSHEIGHT')))) ) , : );
+    
+    weight_pos_pounds = cell2mat(table2cell(weight(:,'VSWTUNIT')))==1;
+    height_pos_inches = cell2mat(table2cell(height(:,'VSHTUNIT')))==1;
+    
+    if sum(weight_pos_pounds)>0
+        for wnd = 1:size(weight,1)
+            if weight_pos_pounds(wnd,1) == 1
+                weight(wnd,'VSWEIGHT') = table(cell2mat(table2cell(weight(wnd,'VSWEIGHT')))*0.453592);
+                weight(wnd,'VSWTUNIT') = table(2);
+            end
+        end
+    end
+    
+    if sum(height_pos_inches)>0
+        for wnd = 1:size(height,1)
+            if height_pos_inches(wnd,1) == 1
+                height(wnd,'VSHEIGHT') = table(convlength(cell2mat(table2cell(height(wnd,'VSHEIGHT'))),'in','m')*100);
+                height(wnd,'VSHTUNIT') = table(2);
+            end
+        end
+    end
+    
+    wght_pos = strcmp( table2cell(weight(:,'VISCODE')) , viscode ) | strcmp( table2cell(weight(:,'VISCODE2')) , viscode );
+    if sum(wght_pos)>0
+        tmp = cell2mat(table2cell( weight ( wght_pos , 'VSWEIGHT' ) ));
+    elseif strcmp(viscode,'bl') && sum(strcmp( table2cell(weight(:,'VISCODE')) , 'sc' ) | strcmp( table2cell(weight(:,'VISCODE2')) , 'sc' ))>0
+        tmp = cell2mat(table2cell( weight ( strcmp( table2cell(weight(:,'VISCODE')) , 'sc' ) | strcmp( table2cell(weight(:,'VISCODE2')) , 'sc' ) , 'VSWEIGHT' ) ));
+    elseif strcmp(viscode,'sc') && sum(strcmp( table2cell(weight(:,'VISCODE')) , 'bl' ) | strcmp( table2cell(weight(:,'VISCODE2')) , 'bl' ))>0
+        tmp = cell2mat(table2cell( weight ( strcmp( table2cell(weight(:,'VISCODE')) , 'bl' ) | strcmp( table2cell(weight(:,'VISCODE2')) , 'bl' ) , 'VSWEIGHT' ) ));
+    else
+        tmp = cell2mat(table2cell( weight ( : , 'VSWEIGHT' ) ));
+    end
+    wght(ind,1) =  mean(tmp,'omitnan');
+    
+    hght_pos = strcmp( table2cell(height(:,'VISCODE')) , viscode ) | strcmp( table2cell(height(:,'VISCODE2')) , viscode );
+    if sum(hght_pos)>0
+        tmp = cell2mat(table2cell( height ( hght_pos , 'VSHEIGHT' ) ));
+    elseif strcmp(viscode,'bl') && sum(strcmp( table2cell(height(:,'VISCODE')) , 'sc' ) | strcmp( table2cell(height(:,'VISCODE2')) , 'sc' ))>0
+        tmp = cell2mat(table2cell( height ( strcmp( table2cell(height(:,'VISCODE')) , 'sc' ) | strcmp( table2cell(height(:,'VISCODE2')) , 'sc' ) , 'VSHEIGHT' ) ));
+    elseif strcmp(viscode,'sc') && sum(strcmp( table2cell(height(:,'VISCODE')) , 'bl' ) | strcmp( table2cell(height(:,'VISCODE2')) , 'bl' ))>0
+        tmp = cell2mat(table2cell( height ( strcmp( table2cell(height(:,'VISCODE')) , 'bl' ) | strcmp( table2cell(height(:,'VISCODE2')) , 'bl' ) , 'VSHEIGHT' ) ));
+    else
+        tmp = cell2mat(table2cell( height ( : , 'VSHEIGHT' ) ));
+    end
+    hght(ind,1) =  mean(tmp,'omitnan');
     
     %% MEDHIST DIGGING
     rid_pos = cell2mat(table2cell( adni_medhist( : , strcmp(adni_medhist.Properties.VariableNames,'RID')) )) == rid;
@@ -152,12 +218,18 @@ for ind = 1:size(adni,1)
     else
         labdata(ind,:) = {NaN};
     end
+    
 end
 
 age = array2table(age,'VariableNames',{'Age-At-Visit'});
+bmi = wght ./ (hght/100).^2;
+hght = array2table(hght,'VariableNames',{'Height'});
+wght = array2table(wght,'VariableNames',{'Weight'});
+bmi = array2table(bmi,'VariableNames',{'BMI'});
 
-adni = [adni mtdt mdhst modhach labdata age];
-adni_names = [adni_names mtdt.Properties.VariableNames mdhst.Properties.VariableNames modhach.Properties.VariableNames labdata.Properties.VariableNames age.Properties.VariableNames];
+adni = [adni mtdt mdhst modhach labdata age hght wght bmi];
+adni_names = [adni_names mtdt.Properties.VariableNames mdhst.Properties.VariableNames modhach.Properties.VariableNames labdata.Properties.VariableNames ...
+    age.Properties.VariableNames hght.Properties.VariableNames wght.Properties.VariableNames bmi.Properties.VariableNames];
 
 egfr = zeros(size(adni,1),1);
 for ind = 1:size(adni,1)
