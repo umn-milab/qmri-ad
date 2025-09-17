@@ -136,7 +136,11 @@ for ind = 1:size(adni,1)
     else
         tmp = cell2mat(table2cell( weight ( : , 'VSWEIGHT' ) ));
     end
-    wght(ind,1) =  mean(tmp,'omitnan');
+    if mean(tmp,'omitnan') > 275
+        wght(ind,1) = median(cell2mat(table2cell(weight(:,'VSWEIGHT'))),'omitnan');
+    else
+        wght(ind,1) =  mean(tmp,'omitnan');
+    end
     
     hght_pos = strcmp( table2cell(height(:,'VISCODE')) , viscode ) | strcmp( table2cell(height(:,'VISCODE2')) , viscode );
     if sum(hght_pos)>0
@@ -147,6 +151,13 @@ for ind = 1:size(adni,1)
         tmp = cell2mat(table2cell( height ( strcmp( table2cell(height(:,'VISCODE')) , 'bl' ) | strcmp( table2cell(height(:,'VISCODE2')) , 'bl' ) , 'VSHEIGHT' ) ));
     else
         tmp = cell2mat(table2cell( height ( : , 'VSHEIGHT' ) ));
+    end
+    if sum(tmp>250)>0
+        for wnd = 1:size(tmp,1)
+            if tmp(wnd,1)>250
+                tmp(wnd,1) = convlength(tmp(wnd,1)/100,'m','in');
+            end
+        end
     end
     hght(ind,1) =  mean(tmp,'omitnan');
     
