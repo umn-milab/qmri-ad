@@ -113,17 +113,19 @@ main()
 	fi
 
     if [ $STAGE -eq 1 ] || [ $STAGE -eq 0 ]; then
-		if [ ! -f $MPRFOLDER/mprage_brain.nii.gz ];then
-			dt=$(date '+%Y/%m/%d %H:%M:%S');
-			echo "$dt $SUB: Brain extraction started"
-			OLDFOLDER=`pwd`
-			cd $MPRFOLDER
-			cp $MPRAGE $MPRAGEFILENAME
-			ln -s $MPRAGEFILENAME mprage.nii.gz
-			bet mprage.nii.gz mprage_brain.nii.gz -m -o -B -f 0.25
-			cd $OLDFOLDER
-			dt=$(date '+%Y/%m/%d %H:%M:%S');
-			echo "$dt $SUB: Brain extraction done"
+		if [ ! -z $MPRAGE ];then
+			if [ ! -f $MPRFOLDER/mprage_brain.nii.gz ];then
+				dt=$(date '+%Y/%m/%d %H:%M:%S');
+				echo "$dt $SUB: Brain extraction started"
+				OLDFOLDER=`pwd`
+				cd $MPRFOLDER
+				cp $MPRAGE $MPRAGEFILENAME
+				ln -s $MPRAGEFILENAME mprage.nii.gz
+				bet mprage.nii.gz mprage_brain.nii.gz -m -o -B -f 0.25
+				cd $OLDFOLDER
+				dt=$(date '+%Y/%m/%d %H:%M:%S');
+				echo "$dt $SUB: Brain extraction done"
+			fi
 		fi
 	    if [ ! -f $RESULTFOLDER/b0.nii.gz ] || [ ! -f $RESULTFOLDER/eddy_input_ap.json ];then
 		    diff_prep $DMRI_AP $DMRI_PA $READOUT $RESULTFOLDER $BVAL_AP $BVAL_PA $BVEC_AP $BVEC_PA	$PROTOCOL $JSON_AP $JSON_PA # Call diff_preop function
@@ -347,7 +349,7 @@ main()
 			HDDLIST=/home/shapiroe
         fi
         if [ -f $RESULTFOLDER/$DSIFOLDER/bedpostX.fib.gz ]; then
-            if ( [ ! -f $RESULTFOLDER/dsistudio/Reticular_Tract_R/bedpostX.Reticular_Tract_R.stat.txt ] && [ $STAGE -eq 6 ] ) || ( [ ! -f $RESULTFOLDER/dsistudio/Superior_Cerebellar_Peduncle/bedpostX.Superior_Cerebellar_Peduncle.stat.txt ] && [ $STAGE -eq 7 ] ) || ( [ ! -f $RESULTFOLDER/dsistudio-tract_voxel_ratio-16/Reticular_Tract_R/bedpostX.Reticular_Tract_R.stat.txt ] && [ $STAGE -eq 8 ] ) || ( [ ! -f $RESULTFOLDER/dsistudio-tract_voxel_ratio-16/Superior_Cerebellar_Peduncle/bedpostX.Superior_Cerebellar_Peduncle.stat.txt ] && [ $STAGE -eq 9 ] ); then
+            if ( [ ! -f $RESULTFOLDER/dsistudio/Parietal_Aslant_Tract_R/bedpostX.Parietal_Aslant_Tract_R.*.txt ] && [ $STAGE -eq 6 ] ) || ( [ ! -f $RESULTFOLDER/dsistudio/Superior_Cerebellar_Peduncle/bedpostX.Superior_Cerebellar_Peduncle.*.txt ] && [ $STAGE -eq 7 ] ) || ( [ ! -f $RESULTFOLDER/dsistudio-tract_voxel_ratio-16/Parietal_Aslant_Tract_R/bedpostX.Parietal_Aslant_Tract_R.*.txt ] && [ $STAGE -eq 8 ] ) || ( [ ! -f $RESULTFOLDER/dsistudio-tract_voxel_ratio-16/Superior_Cerebellar_Peduncle/bedpostX.Superior_Cerebellar_Peduncle.*.txt ] && [ $STAGE -eq 9 ] ); then
                 dt=$(date '+%Y/%m/%d %H:%M:%S');
 			    echo "$dt $SUB: tractography in DSI Studio started"
 			    echo "$dt $SUB: tractography in DSI Studio started" > $DSITRACTLOGFILE.txt
@@ -388,7 +390,7 @@ diff_prep()
 
 	cd $DATA
 	
-	if [ -f ${DMRI_AP} ];then
+	if [ -f ${DMRI_AP} ] && [ -f ${DMRI_PA} ];then
 	
 		fslmerge -a eddy_input.nii.gz ${DMRI_AP} ${DMRI_PA} # Merge AP and PA ZOOMit data into one file
 		
@@ -468,16 +470,29 @@ diff_prep()
 
 		`echo $MERGECOMMAND`						# Create file containing only b0 images
 		rm temporary*.nii.gz
-	else
-		cp ${BVAL_PA} eddy_input.bval
-		cp ${BVEC_PA} eddy_input.bvec
-		cp ${JSON_PA} eddy_input_pa.json
-		cp ${DMRI_PA} eddy_input.nii.gz
+	elif [ -f $MPRFOLDER/mprage_brain.nii.gz ];then 
+		if [ -f ${DMRI_PA} ];then
+			cp ${BVAL_PA} eddy_input.bval
+			cp ${BVEC_PA} eddy_input.bvec
+			cp ${JSON_PA} eddy_input_pa.json
+			cp ${DMRI_PA} eddy_input.nii.gz
 
-		phpa=$(cat ${JSON_PA} | grep \"PhaseEncodingDirection\" | cut -d '"' -f4 | cut -d '"' -f1)
+			phpa=$(cat ${JSON_PA} | grep \"PhaseEncodingDirection\" | cut -d '"' -f4 | cut -d '"' -f1)
+
+			fslsplit $DMRI_PA patemporary
+		else
+			cp ${BVAL_AP} eddy_input.bval
+			cp ${BVEC_AP} eddy_input.bvec
+			cp ${JSON_AP} eddy_input_pa.json
+			cp ${DMRI_AP} eddy_input.nii.gz
+
+			phpa=$(cat ${JSON_AP} | grep \"PhaseEncodingDirection\" | cut -d '"' -f4 | cut -d '"' -f1)
+
+			fslsplit $DMRI_AP patemporary
+		fi
 
 		cp $MPRFOLDER/mprage_brain.nii.gz T1.nii.gz
-		fslsplit $DMRI_PA patemporary
+		
 		mv patemporary0000.nii.gz b0.nii.gz
 		rm patemporary*
 		if [ $phpa == "j-" ];then
@@ -513,6 +528,8 @@ diff_prep()
 
 		echo "Same phase encoding acquisition" > acq_note.txt
 		chmod 660 acq_note.txt
+	else
+		echo "Neither PA+AP dMRI nor dMRI+mprage were acquired."
 	fi
 
 	chmod 660 eddy_input*
