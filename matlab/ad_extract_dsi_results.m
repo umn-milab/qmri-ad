@@ -14,13 +14,13 @@ project_folder2=fullfile(data_folder,'ADNI','ADNI_ADAI_match');
 table_folder2=fullfile(project_folder2,'tables');
 
 jhu_roi = 'reconstruction_specific';
-save_path = fullfile(project_folder,'pictures','ad_paper_export_20250422');
+save_path = fullfile(project_folder,'pictures','ad_paper_export_20251107');
 % jhu_roi = 'same'; % Use NORDIC JHU mask for JHU-atlas based dMRI value extraction
 % save_folder = fullfile(project_folder,'pictures','bcp_paper_export_same_jhu_roi');
 extract_data_file = fullfile(project_folder,'results',extract_data_filename);
 extract_data_file_meanstd = [extract_data_file(1:end-4) '_meanstd.mat'];
 
-extract_data = 1;
+extract_data = 0;
 estimate_stats = 1;
 
 if estimate_stats ~= 1
@@ -34,6 +34,7 @@ if extract_data ~= 1
         end
         load(extract_data_file)
         extract_data = 0;
+        save_path = fullfile(project_folder,'pictures','ad_paper_export_20251107');
         if modst == 1
             estimate_stats = 0;
         end
@@ -690,8 +691,8 @@ if estimate_stats == 1
        for metr = 1:size(tract_data,1)
            vec = squeeze(tract_data(metr,trct,selection2==1));
            
-           tbl = table(vec,apoe4_bin==1,sex,age,hypertension==1,race_cat,'VariableNames',{'y','APOE4','Sex','Age','Hypertension','Race'});
-           tbl2 = table(vec,apoe4_bin==1,sex,age,hypertension==1,race==1,'VariableNames',{'y','APOE4','Sex','Age','Hypertension','Race'});
+           tbl = table(vec,apoe4_bin==1,sex,age/10,hypertension==1,race_cat,'VariableNames',{'y','APOE4','Sex','Age','Hypertension','Race'});
+           tbl2 = table(vec,apoe4_bin==1,sex,age/10,hypertension==1,race==1,'VariableNames',{'y','APOE4','Sex','Age','Hypertension','Race'});
            mdl1{trct,metr} = fitlm(tbl,T);
            mdl2{trct,metr} = fitlm(tbl2,T);
            ci1{trct,metr} = coefCI(mdl1{trct,metr});
@@ -825,71 +826,79 @@ dmri_pos = tract_data_name_dsi_select_pos(end-5:end);
 %     [~, ~, ~, select_p_mdl1_apoe4AmongWhiteNonHisp_dmri(:,vr) ] = fdr_bh(p_mdl1_apoe4AmongWhiteNonHisp(:,dmri_pos(1,vr)));
 % end
 
+%% Visualize forest graphs for APOE4
+% clr_wh = [0 0 1];
+% clr_na = [1 0 0];
+% clr_ar = [0 0.8 0];
+% 
+% fig_id = 1;
+% ymax = size(mdl1,1);
+% tract_labels = flip(strrep(tract_keywords,'_',' '),1);
+% 
+% for vr = 1:size(dmri_pos,2)
+%     h(vr).fig = figure(vr);
+%     set(h(vr).fig,'Position',[1400 50 900 800])
+%     plot([0 0],[-100 100],'k','LineWidth',2)
+%     hold on
+%     cii = [];
+%     for trct = 1:size(mdl1,1)
+%         wh_es_apoe4 = cell2mat(table2cell(mdl2{trct,dmri_pos(1,vr)}.Coefficients('APOE4_1','Estimate')));
+%         na_es_apoe4 = cell2mat(table2cell(mdl1{trct,dmri_pos(1,vr)}.Coefficients('APOE4_1','Estimate')));
+%         wh_ci_apoe4 = ci2{trct,dmri_pos(1,vr)}(strcmp(mdl2{trct,dmri_pos(1,vr)}.CoefficientNames,'APOE4_1'),:);
+%         na_ci_apoe4 = ci1{trct,dmri_pos(1,vr)}(strcmp(mdl1{trct,dmri_pos(1,vr)}.CoefficientNames,'APOE4_1'),:);
+% %         es_apoe4Xrace = cell2mat(table2cell(mdl1{trct,dmri_pos(1,vr)}.Coefficients('APOE4_1:Race_White','Estimate')));
+% %         ci_apoe4Xrace = ci1{trct,dmri_pos(1,vr)}(strcmp(mdl1{trct,dmri_pos(1,vr)}.CoefficientNames,'APOE4_1:Race_White'),:);
+%         
+%         cii = [cii; wh_ci_apoe4; na_ci_apoe4];
+% 
+%         y = ymax - trct + 1;
+%         plot(wh_ci_apoe4,[y y],'-','LineWidth',4,'Color',clr_wh)
+% %         if trct == 1
+% %             hold on
+% %         end
+%         plot(na_ci_apoe4,[y-0.3 y-0.3],'-','LineWidth',4,'Color',clr_na)
+% %         plot(ci_apoe4Xrace,[y-0.4 y-0.4],'-','LineWidth',4,'Color',clr_ar)
+%         H1 = plot(wh_es_apoe4,y,'d','MarkerSize',10,'LineWidth',6,'Color',clr_wh,'markerfacecolor',clr_wh);
+%         H2 = plot(na_es_apoe4,[y-0.3 y-0.3],'x','MarkerSize',14,'LineWidth',6,'Color',clr_na,'markerfacecolor',clr_na);
+% %         H3 = plot(es_apoe4Xrace,[y-0.4 y-0.4],'d','MarkerSize',10,'LineWidth',6,'Color',clr_ar,'markerfacecolor',clr_ar);
+% 
+%         
+%         
+%     end
+% %     if contains(tract_data_name{1,dmri_pos(1,vr)},'dispersion')
+% %         legend([H1 H2(1,1)],{'White non-Hispanic','American Indian'},'location','northwest')
+% %     else
+% %         legend([H1 H2(1,1)],{'White non-Hispanic','American Indian'})
+% %     end
+%     hold off
+%     grid on
+%     ylim([0 8.6])
+%     xlim(1.05*[-max(abs(cii(:))) max(abs(cii(:)))])
+%     xlabel({['Differences in ' tract_data_name{1,dmri_pos(1,vr)}];
+%         'between APOE4 carriers vs. non-carriers'})
+% %     ylabel('Region of interest')
+% %     if contains(tract_data_name{1,dmri_pos(1,vr)},' [')
+% %         title(extractBefore(tract_data_name{1,dmri_pos(1,vr)},' ['))
+% %     else
+% %         title(tract_data_name{1,dmri_pos(1,vr)})
+% %     end
+%     set(gca,'Linewidth',2,'FontSize',14,'YTick',1:ymax,'YTickLabel',tract_labels)
+%     ytickangle(45)
+%     
+%     print(fullfile(save_path,['graph' num2str(vr) '-forest-plot']),'-dpng','-r300')
+%     pause(0.15)
+%     close(h(vr).fig)
+%     pause(0.1)
+%     disp(num2str(vr))
+% end
+
 %% Visualize forest graphs
-clr_wh = [0 0 1];
-clr_na = [1 0 0];
-clr_ar = [0 0.8 0];
+draw_forest_plot(mdl1,mdl2,ci1,ci2,'APOE4_1','apoe4',tract_keywords,tract_data_name,dmri_pos,save_path,'between APOE4 carriers vs. non-carriers')
+draw_forest_plot(mdl1,mdl2,ci1,ci2,'Age','age',tract_keywords,tract_data_name,dmri_pos,save_path,'Age')
+draw_forest_plot(mdl1,mdl2,ci1,ci2,'Hypertension_1','hypertension',tract_keywords,tract_data_name,dmri_pos,save_path,'Hypertension')
+draw_forest_plot(mdl1,mdl2,ci1,ci2,'Sex_M','sex',tract_keywords,tract_data_name,dmri_pos,save_path,'Male sex')
 
-fig_id = 1;
-ymax = size(mdl1,1);
-tract_labels = flip(strrep(tract_keywords,'_',' '),1);
 
-for vr = 1:size(dmri_pos,2)
-    h(vr).fig = figure(vr);
-    set(h(vr).fig,'Position',[1400 50 900 800])
-    plot([0 0],[-100 100],'k','LineWidth',2)
-    hold on
-    cii = [];
-    for trct = 1:size(mdl1,1)
-        wh_es_apoe4 = cell2mat(table2cell(mdl2{trct,dmri_pos(1,vr)}.Coefficients('APOE4_1','Estimate')));
-        na_es_apoe4 = cell2mat(table2cell(mdl1{trct,dmri_pos(1,vr)}.Coefficients('APOE4_1','Estimate')));
-        wh_ci_apoe4 = ci2{trct,dmri_pos(1,vr)}(strcmp(mdl2{trct,dmri_pos(1,vr)}.CoefficientNames,'APOE4_1'),:);
-        na_ci_apoe4 = ci1{trct,dmri_pos(1,vr)}(strcmp(mdl1{trct,dmri_pos(1,vr)}.CoefficientNames,'APOE4_1'),:);
-%         es_apoe4Xrace = cell2mat(table2cell(mdl1{trct,dmri_pos(1,vr)}.Coefficients('APOE4_1:Race_White','Estimate')));
-%         ci_apoe4Xrace = ci1{trct,dmri_pos(1,vr)}(strcmp(mdl1{trct,dmri_pos(1,vr)}.CoefficientNames,'APOE4_1:Race_White'),:);
-        
-        cii = [cii; wh_ci_apoe4; na_ci_apoe4];
-
-        y = ymax - trct + 1;
-        plot(wh_ci_apoe4,[y y],'-','LineWidth',4,'Color',clr_wh)
-%         if trct == 1
-%             hold on
-%         end
-        plot(na_ci_apoe4,[y-0.3 y-0.3],'-','LineWidth',4,'Color',clr_na)
-%         plot(ci_apoe4Xrace,[y-0.4 y-0.4],'-','LineWidth',4,'Color',clr_ar)
-        H1 = plot(wh_es_apoe4,y,'d','MarkerSize',10,'LineWidth',6,'Color',clr_wh,'markerfacecolor',clr_wh);
-        H2 = plot(na_es_apoe4,[y-0.3 y-0.3],'x','MarkerSize',14,'LineWidth',6,'Color',clr_na,'markerfacecolor',clr_na);
-%         H3 = plot(es_apoe4Xrace,[y-0.4 y-0.4],'d','MarkerSize',10,'LineWidth',6,'Color',clr_ar,'markerfacecolor',clr_ar);
-
-        
-        
-    end
-%     if contains(tract_data_name{1,dmri_pos(1,vr)},'dispersion')
-%         legend([H1 H2(1,1)],{'White non-Hispanic','American Indian'},'location','northwest')
-%     else
-%         legend([H1 H2(1,1)],{'White non-Hispanic','American Indian'})
-%     end
-    hold off
-    grid on
-    ylim([0 8.6])
-    xlim(1.05*[-max(abs(cii(:))) max(abs(cii(:)))])
-    xlabel({['Differences in ' tract_data_name{1,dmri_pos(1,vr)}];
-        'between APOE4 carriers vs. non-carriers'})
-%     ylabel('Region of interest')
-%     if contains(tract_data_name{1,dmri_pos(1,vr)},' [')
-%         title(extractBefore(tract_data_name{1,dmri_pos(1,vr)},' ['))
-%     else
-%         title(tract_data_name{1,dmri_pos(1,vr)})
-%     end
-    set(gca,'Linewidth',2,'FontSize',14,'YTick',1:ymax,'YTickLabel',tract_labels)
-    ytickangle(45)
-    
-    print(fullfile(save_path,['graph' num2str(vr) '-forest-plot']),'-dpng','-r300')
-    pause(0.15)
-    close(h(vr).fig)
-    pause(0.1)
-    disp(num2str(vr))
-end
 %% ADAI, ADNI variable mean and STD stats
 for vrid = 1:size(select_adai_tract_data,1)
     for trid = 1:size(select_adai_tract_data,2)
@@ -916,6 +925,84 @@ end
 stats_imaging_merge = [stats_adai_imaging; stats_adni_imaging; stats_imaging];
 
 %% Functions
+
+function draw_forest_plot(mdl1,mdl2,ci1,ci2,coefficient_name,basename,tract_keywords,tract_data_name,dmri_pos,save_path,xlbl)
+    clr_wh = [0 0 1];
+    clr_na = [1 0 0];
+    clr_ar = [0 0.8 0];
+    if ~strcmp(basename,'apoe4')
+        clr_wh = [0 0 0];
+    end
+
+    ymax = size(mdl1,1);
+    tract_labels = flip(strrep(tract_keywords,'_',' '),1);
+
+    for vr = 1:size(dmri_pos,2)
+        h(vr).fig = figure(vr);
+        set(h(vr).fig,'Position',[1400 50 900 800])
+        plot([0 0],[-100 100],'k','LineWidth',2)
+        hold on
+        cii = [];
+        for trct = 1:size(mdl1,1)
+            wh_es_apoe4 = cell2mat(table2cell(mdl2{trct,dmri_pos(1,vr)}.Coefficients(coefficient_name,'Estimate')));
+            na_es_apoe4 = cell2mat(table2cell(mdl1{trct,dmri_pos(1,vr)}.Coefficients(coefficient_name,'Estimate')));
+            wh_ci_apoe4 = ci2{trct,dmri_pos(1,vr)}(strcmp(mdl2{trct,dmri_pos(1,vr)}.CoefficientNames,coefficient_name),:);
+            na_ci_apoe4 = ci1{trct,dmri_pos(1,vr)}(strcmp(mdl1{trct,dmri_pos(1,vr)}.CoefficientNames,coefficient_name),:);
+    %         es_apoe4Xrace = cell2mat(table2cell(mdl1{trct,dmri_pos(1,vr)}.Coefficients('APOE4_1:Race_White','Estimate')));
+    %         ci_apoe4Xrace = ci1{trct,dmri_pos(1,vr)}(strcmp(mdl1{trct,dmri_pos(1,vr)}.CoefficientNames,'APOE4_1:Race_White'),:);
+
+            cii = [cii; wh_ci_apoe4; na_ci_apoe4];
+
+            y = ymax - trct + 1;
+            plot(wh_ci_apoe4,[y y],'-','LineWidth',4,'Color',clr_wh)
+    %         if trct == 1
+    %             hold on
+    %         end
+            if strcmp(basename,'apoe4')
+                plot(na_ci_apoe4,[y-0.3 y-0.3],'-','LineWidth',4,'Color',clr_na)
+        %         plot(ci_apoe4Xrace,[y-0.4 y-0.4],'-','LineWidth',4,'Color',clr_ar)
+                H2 = plot(na_es_apoe4,[y-0.3 y-0.3],'x','MarkerSize',14,'LineWidth',6,'Color',clr_na,'markerfacecolor',clr_na);
+            end
+            H1 = plot(wh_es_apoe4,y,'d','MarkerSize',10,'LineWidth',6,'Color',clr_wh,'markerfacecolor',clr_wh);
+    %         H3 = plot(es_apoe4Xrace,[y-0.4 y-0.4],'d','MarkerSize',10,'LineWidth',6,'Color',clr_ar,'markerfacecolor',clr_ar);
+
+
+
+        end
+    %     if contains(tract_data_name{1,dmri_pos(1,vr)},'dispersion')
+    %         legend([H1 H2(1,1)],{'White non-Hispanic','American Indian'},'location','northwest')
+    %     else
+    %         legend([H1 H2(1,1)],{'White non-Hispanic','American Indian'})
+    %     end
+        hold off
+        grid on
+        ylim([0 8.6])
+        xlim(1.05*[-max(abs(cii(:))) max(abs(cii(:)))])
+        if strcmp(basename,'apoe4')
+            xlabel({['Differences in ' tract_data_name{1,dmri_pos(1,vr)}];
+                xlbl})
+        elseif strcmp(basename,'ageXXX')
+            xlabel( { ' ' ; [xlbl ' effects in ' tract_data_name{1,dmri_pos(1,vr)}] } )
+        else
+            xlabel( [xlbl ' effects in ' tract_data_name{1,dmri_pos(1,vr)}] )
+        end
+    %     ylabel('Region of interest')
+    %     if contains(tract_data_name{1,dmri_pos(1,vr)},' [')
+    %         title(extractBefore(tract_data_name{1,dmri_pos(1,vr)},' ['))
+    %     else
+    %         title(tract_data_name{1,dmri_pos(1,vr)})
+    %     end
+        set(gca,'Linewidth',2,'FontSize',14,'YTick',1:ymax,'YTickLabel',tract_labels)
+        ytickangle(45)
+
+        print(fullfile(save_path,[basename num2str(vr) '-forest-plot']),'-dpng','-r300')
+        pause(0.15)
+        close(h(vr).fig)
+        pause(0.1)
+        disp(num2str(vr))
+    end
+end
+
 
 function tract = build_tractography_measurements(table_folder,basename,tract_name,protocol,tract_voxel_ratio)
         tract.name = tract_name;
