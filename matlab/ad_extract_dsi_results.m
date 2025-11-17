@@ -6,7 +6,7 @@ clear all;
 clc;
 close all;
 data_folder='/home/range1-raid1/labounek/data-on-porto';
-extract_data_filename='extract_data_20250422.mat';
+extract_data_filename='extract_data_20251114.mat';
 project_folder=fullfile(data_folder,'ADAI');
 table_folder=fullfile(project_folder,'tables');
 
@@ -14,13 +14,13 @@ project_folder2=fullfile(data_folder,'ADNI','ADNI_ADAI_match');
 table_folder2=fullfile(project_folder2,'tables');
 
 jhu_roi = 'reconstruction_specific';
-save_path = fullfile(project_folder,'pictures','ad_paper_export_20251107');
+save_path = fullfile(project_folder,'pictures','ad_paper_export_20251114');
 % jhu_roi = 'same'; % Use NORDIC JHU mask for JHU-atlas based dMRI value extraction
 % save_folder = fullfile(project_folder,'pictures','bcp_paper_export_same_jhu_roi');
 extract_data_file = fullfile(project_folder,'results',extract_data_filename);
 extract_data_file_meanstd = [extract_data_file(1:end-4) '_meanstd.mat'];
 
-extract_data = 0;
+extract_data = 1;
 estimate_stats = 1;
 
 if estimate_stats ~= 1
@@ -95,6 +95,8 @@ if extract_data == 1
     adai_apoe3 = NaN*ones(size(adai_subsess));
     adai_apoe2 = NaN*ones(size(adai_subsess));
     adai_mmse = NaN*ones(size(adai_subsess));
+%     adai_homeless = NaN*ones(size(adai_subsess));
+    adai_homeless = cell(size(adai_subsess));;
     a_subsess = cellstr(strcat(adai.SUB,'/',adai.SESS));
     pos_dmri = zeros(size(a_subsess));
     for ind = 1:size(adai_subsess,1)
@@ -111,9 +113,21 @@ if extract_data == 1
         adai_apoe3(ind,1) = adai.tr_apoee3(pos,1);
         adai_apoe2(ind,1) = adai.tr_apoee2(pos,1);
         adai_mmse(ind,1) = adai.mmse_totalscore(pos,1);
+        adai_homeless(ind,1) = cellstr(adai.Homeless(pos,:));
         
         pos_dmri = pos_dmri + pos;
     end
+    
+    % Identify excluded samples
+%     pos_excluded = pos_dmri==0 | (pos_dmri==1 & adai.mmse_totalscore<23) | (pos_dmri==1 & adai.tr_apoee4==2) | (pos_dmri==1 & isnan(adai.tr_apoee4)) ;
+    pos_excluded = pos_dmri==0;
+    pos_excluded = pos_excluded & ~(pos_dmri==0 & adai.pidn==45) & ~strcmp(cellstr(adai.Sex0x2DMaster),'');
+    excluded_adai_apoe4 = adai.APOE_e4_mutations(pos_excluded,1);
+    excluded_adai_mmse = adai.MMSE(pos_excluded,1);
+    excluded_adai_age = adai.Age(pos_excluded,1);
+    excluded_adai_sex = cellstr(adai.Sex0x2DMaster(pos_excluded,1));
+    excluded_adai_education = adai.Years_of_formal_schooling(pos_excluded,1);
+    excluded_adai_homeless = cellstr(adai.Homeless(pos_excluded,:));
     
     adni_sex = cell(size(adni_subsess));
     adni_age = NaN*ones(size(adni_subsess));
@@ -457,6 +471,41 @@ if extract_data == 1
     adni_mmse_quantile = quantile(adni_mmse,[0.5 0.25 0.75]);
     pW_mmse_NHWvsAI = ranksum(adai_mmse,adni_mmse);
     
+    %% ADNI genotype stats
+    stats_adni_genotype{1,1} = 'e2/e2';
+    stats_adni_genotype{2,1} = 'e2/e3';
+    stats_adni_genotype{3,1} = 'e3/e3';
+    stats_adni_genotype{4,1} = 'e2/e4';
+    stats_adni_genotype{5,1} = 'e3/e4';
+    stats_adni_genotype{6,1} = 'e4/e4';
+    
+    stats_adni_genotype{1,2} = sum(adni_apoe2==2);
+    stats_adni_genotype{1,3} = sum(~isnan(adni_apoe2));
+    stats_adni_genotype{1,4} = [ num2str(100*stats_adni_genotype{1,2}/stats_adni_genotype{1,3},'%.1f'), '%'];
+    
+    stats_adni_genotype{2,2} = sum(adni_apoe2==1 & adni_apoe3==1);
+    stats_adni_genotype{2,3} = sum(~isnan(adni_apoe2) & ~isnan(adni_apoe3));
+    stats_adni_genotype{2,4} = [ num2str(100*stats_adni_genotype{2,2}/stats_adni_genotype{2,3},'%.1f'), '%'];
+    
+    stats_adni_genotype{3,2} = sum(adni_apoe3==2);
+    stats_adni_genotype{3,3} = sum(~isnan(adni_apoe3));
+    stats_adni_genotype{3,4} = [ num2str(100*stats_adni_genotype{3,2}/stats_adni_genotype{3,3},'%.1f'), '%'];
+    
+    stats_adni_genotype{4,2} = sum(adni_apoe2==1 & adni_apoe4==1);
+    stats_adni_genotype{4,3} = sum(~isnan(adni_apoe2) & ~isnan(adni_apoe4));
+    stats_adni_genotype{4,4} = [ num2str(100*stats_adni_genotype{4,2}/stats_adni_genotype{4,3},'%.1f'), '%'];
+    
+    stats_adni_genotype{5,2} = sum(adni_apoe3==1 & adni_apoe4==1);
+    stats_adni_genotype{5,3} = sum(~isnan(adni_apoe3) & ~isnan(adni_apoe4));
+    stats_adni_genotype{5,4} = [ num2str(100*stats_adni_genotype{5,2}/stats_adni_genotype{5,3},'%.1f'), '%'];
+    
+    stats_adni_genotype{6,2} = sum(adni_apoe4==2);
+    stats_adni_genotype{6,3} = sum(~isnan(adni_apoe4));
+    stats_adni_genotype{6,4} = [ num2str(100*stats_adni_genotype{6,2}/stats_adni_genotype{6,3},'%.1f'), '%'];
+    
+    
+    stats_adni_genotype = [{'Genotype' 'Frequency' 'N' 'Relative frequency'}
+        stats_adni_genotype];
     %% Chi-squared statistics - femnales and hypertension
     x1 = [ ones(size(adai_female)); 2*ones(size(adni_female))];
     x2 = [adai_female; adni_female];
@@ -465,6 +514,81 @@ if extract_data == 1
     x1 = [ ones(size(adai_hypertension)); 2*ones(size(adni_hypertension))];
     x2 = [adai_hypertension; adni_hypertension];
     [chitbl_hypertension,chi2stat_hypertension,chi_p_hypertension] = crosstab(x1,x2);
+    
+    %% Stats included vs excluded AI into MRI analysis
+%     stats_excluded{1,1} = ['Total N=' num2str(size(adai_age,1)+size(excluded_adai_age,1))];
+    stats_excluded{1,2} = ['N=' num2str(size(adai_age,1))];
+    stats_excluded{1,3} = 'Included';
+    stats_excluded{1,4} = ['N=' num2str(size(excluded_adai_age,1))];
+    stats_excluded{1,5} = 'Excluded';
+    stats_excluded{1,6} = 'p';
+    
+    stats_excluded{2,1} = 'Age [y]';
+    stats_excluded{3,1} = 'Female sex';
+    stats_excluded{4,1} = 'Education [y]';
+    stats_excluded{5,1} = 'MMSE';
+    stats_excluded{6,1} = 'APOE4 heterozygotes';
+    stats_excluded{7,1} = 'Homeless';
+    
+    
+    stats_excluded{2,2} = sum(~isnan(adai_age));
+    stats_excluded{2,3} = [ num2str( quantile(adai_age,0.5) , '%.0f') ' (' ...
+         num2str( quantile(adai_age,0.25) , '%.0f') '; ' ...
+         num2str( quantile(adai_age,0.75) , '%.0f') ')' ];
+    stats_excluded{2,4} = sum(~isnan(excluded_adai_age));
+    stats_excluded{2,5} = [ num2str( quantile(excluded_adai_age,0.5) , '%.0f') ' (' ...
+         num2str( quantile(excluded_adai_age,0.25) , '%.0f') '; ' ...
+         num2str( quantile(excluded_adai_age,0.75) , '%.0f') ')' ];
+    stats_excluded{2,6} = ranksum(adai_age,excluded_adai_age);
+    
+    stats_excluded{3,2} = sum(~strcmp(adai_sex,''));
+    stats_excluded{3,3} = [ num2str(sum(strcmp(adai_sex,'F')),'%.0f') ' (' num2str(100*sum(strcmp(adai_sex,'F'))/stats_excluded{3,2},'%.0f') '%)'];
+    stats_excluded{3,4} = sum(~strcmp(excluded_adai_sex,''));
+    stats_excluded{3,5} = [ num2str(sum(strcmp(excluded_adai_sex,'F')),'%.0f') ' (' num2str(100*sum(strcmp(excluded_adai_sex,'F'))/stats_excluded{3,4},'%.0f') '%)'];
+    x1 = [ ones(stats_excluded{3,2},1); 2*ones(stats_excluded{3,4},1)];
+    x2 = [strcmp(adai_sex,'F'); strcmp(excluded_adai_sex,'F')];
+    [~,~,stats_excluded{3,6}] = crosstab(x1,x2);
+    
+    stats_excluded{4,2} = sum(~isnan(adai_education));
+    stats_excluded{4,3} = [ num2str( quantile(adai_education,0.5) , '%.0f') ' (' ...
+         num2str( quantile(adai_education,0.25) , '%.0f') '; ' ...
+         num2str( quantile(adai_education,0.75) , '%.0f') ')' ];
+    stats_excluded{4,4} = sum(~isnan(excluded_adai_education));
+    stats_excluded{4,5} = [ num2str( quantile(excluded_adai_education,0.5) , '%.0f') ' (' ...
+         num2str( quantile(excluded_adai_education,0.25) , '%.0f') '; ' ...
+         num2str( quantile(excluded_adai_education,0.75) , '%.0f') ')' ];
+    stats_excluded{4,6} = ranksum(adai_education,excluded_adai_education);
+    
+    stats_excluded{5,2} = sum(~isnan(adai_mmse));
+    stats_excluded{5,3} = [ num2str( quantile(adai_mmse,0.5) , '%.0f') ' (' ...
+         num2str( quantile(adai_mmse,0.25) , '%.0f') '; ' ...
+         num2str( quantile(adai_mmse,0.75) , '%.0f') ')' ];
+    stats_excluded{5,4} = sum(~isnan(excluded_adai_mmse));
+    stats_excluded{5,5} = [ num2str( quantile(excluded_adai_mmse,0.5) , '%.0f') ' (' ...
+         num2str( quantile(excluded_adai_mmse,0.25) , '%.0f') '; ' ...
+         num2str( quantile(excluded_adai_mmse,0.75) , '%.0f') ')' ];
+    stats_excluded{5,6} = ranksum(adai_mmse,excluded_adai_mmse);
+    
+    stats_excluded{6,2} = sum(~isnan(adai_apoe4));
+    stats_excluded{6,3} = [ num2str(sum(adai_apoe4==1),'%.0f') ' (' num2str(100*sum(sum(adai_apoe4==1))/stats_excluded{6,2},'%.0f') '%)'];
+    stats_excluded{6,4} = sum(~isnan(excluded_adai_apoe4));
+    stats_excluded{6,5} = [ num2str(sum(excluded_adai_apoe4==1),'%.0f') ' (' num2str(100*sum(excluded_adai_apoe4==1)/stats_excluded{6,4},'%.0f') '%)'];
+    x1 = [ ones(stats_excluded{6,2},1); 2*ones(stats_excluded{6,4},1)];
+    tmp = excluded_adai_apoe4;
+    tmp(isnan(tmp)) = [];
+    x2 = [adai_apoe4==1; tmp==1];
+    [~,~,stats_excluded{6,6}] = crosstab(x1,x2);
+    
+    stats_excluded{7,2} = sum(~strcmp(adai_homeless,''));
+    stats_excluded{7,3} = [ num2str(sum(strcmp(adai_homeless,'Yes')),'%.0f') ' (' num2str(100*sum(strcmp(adai_homeless,'Yes'))/stats_excluded{7,2},'%.0f') '%)'];
+    stats_excluded{7,4} = sum(~strcmp(excluded_adai_homeless,''));
+    stats_excluded{7,5} = [ num2str(sum(strcmp(excluded_adai_homeless,'Yes')),'%.0f') ' (' num2str(100*sum(strcmp(excluded_adai_homeless,'Yes'))/stats_excluded{7,4},'%.0f') '%)'];
+    x1 = [ ones(stats_excluded{7,2},1); 2*ones(stats_excluded{7,4},1)];
+    tmp = excluded_adai_homeless;
+    tmp(strcmp(excluded_adai_homeless,'')) = [];
+    x2 = [strcmp(adai_homeless,'Yes'); strcmp(tmp,'Yes')];
+    [~,~,stats_excluded{7,6}] = crosstab(x1,x2);
+    
     %% Define tract database and tracts of interest
     tract_list = {
             'Anterior_Commissure'
