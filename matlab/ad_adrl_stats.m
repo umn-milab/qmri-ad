@@ -241,7 +241,7 @@ adni_allstroke( cell2mat(table2cell(tbl_adni(:,'HMSTROKE')))==0 ) = {'No'};
 adni_allstroke( cell2mat(table2cell(tbl_adni(:,'HMSTROKE')))==2 ) = {'Yes'};
 
 data_names = {'pTau217', 'Age', 'Sex', 'APOE4', 'Abeta42', 'Abeta40',...
-    'Height', 'Weight', 'BMI', 'HbA1C', 'LDL', 'HTN', 'IHD', 'Stroke', 'CKD', 'GFR', 'pTau181', 'GFAP', 'NfL', 'MMSE', 'Ancestry' 'Homeless'};
+    'Height', 'Weight', 'BMI', 'HbA1C', 'LDL', 'HTN', 'IHD', 'Stroke', 'CKD', 'GFR', 'pTau181', 'GFAP', 'NfL', 'MMSE', 'Ancestry' 'Homeless' 'Education'};
 
 adai = [
     raw(pos_gfr,strcmp(raw(1,:),'pTau 217')), ...
@@ -265,7 +265,8 @@ adai = [
     raw(pos_gfr,strcmp(raw(1,:),'NF-light')), ...
     raw(pos_gfr,strcmp(raw(1,:),'MMSE')), ...
     adai_ancestry(pos_gfr,1), ...
-    adai_homeless(pos_gfr,1) ...
+    adai_homeless(pos_gfr,1), ...
+    raw(pos_gfr,strcmp(raw(1,:),'Years of formal schooling')), ...
     ];
 
 adai_all = [
@@ -290,7 +291,8 @@ adai_all = [
     raw(pos_allgfr,strcmp(raw(1,:),'NF-light')), ...
     raw(pos_allgfr,strcmp(raw(1,:),'MMSE')), ...
     adai_ancestry(pos_allgfr,1), ...
-    adai_homeless(pos_allgfr,1) ...
+    adai_homeless(pos_allgfr,1), ...
+    raw(pos_allgfr,strcmp(raw(1,:),'Years of formal schooling')), ...
     ];
 
 adai_excluded = [
@@ -315,7 +317,8 @@ adai_excluded = [
     raw(pos_alladaiexcluded,strcmp(raw(1,:),'NF-light')), ...
     raw(pos_alladaiexcluded,strcmp(raw(1,:),'MMSE')), ...
     adai_ancestry(pos_alladaiexcluded,1), ...
-    adai_homeless(pos_alladaiexcluded,1) ...
+    adai_homeless(pos_alladaiexcluded,1), ...
+    raw(pos_alladaiexcluded,strcmp(raw(1,:),'Years of formal schooling')), ...
     ];
 
 adni_all = [
@@ -340,7 +343,8 @@ adni_all = [
     table2cell(tbl_adni(:,'NfL_Q')), ...
     table2cell(tbl_adni(:,'MMSE')), ...
     num2cell(ones(size(tbl_adni,1),1)*NaN), ... % AI ancestry
-    num2cell(ones(size(tbl_adni,1),1)*NaN) ... % Homeless
+    num2cell(ones(size(tbl_adni,1),1)*NaN), ... % Homeless
+    table2cell(tbl_adni(:,'PTEDUCAT')), ...
     ];
 
 adni_all= adni_all ( cell2mat(table2cell(tbl_adni(:,'MMSE')))>=24 & ~isnan(cell2mat(adni_all(:,strcmp(data_names,'APOE4')))) , : ); % ~isnan(cell2mat(table2cell(tbl_adni(:,'eGFR'))))
@@ -472,6 +476,7 @@ stats_demography{19,1} = 'Stroke';
 stats_demography{20,1} = 'MMSE';
 stats_demography{21,1} = 'Ancestry';
 stats_demography{22,1} = 'Homeless';
+stats_demography{23,1} = 'Education [y]';
 
 % SEX stats
 
@@ -1344,6 +1349,55 @@ x2 = [strcmp(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')
 [~,~,stats_demography{22,8}] = crosstab(x1,x2);
 
 
+% Education stats
+stats_demography{23,2} = sum(~isnan(cell2mat(adai_all_apoe4(:,strcmp(data_names,'Education')))));
+stats_demography{23,4} = sum(~isnan(cell2mat(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))==0,strcmp(data_names,'Education')))));
+stats_demography{23,6} = sum(~isnan(cell2mat(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))>=1,strcmp(data_names,'Education')))));
+
+stats_demography{23,3} = [ num2str(quantile(cell2mat(adai_all_apoe4(:,strcmp(data_names,'Education'))),0.5),'%.0f') ' (' ...
+    num2str(quantile(cell2mat(adai_all_apoe4(:,strcmp(data_names,'Education'))),0.25),'%.0f') '; ' ...
+    num2str(quantile(cell2mat(adai_all_apoe4(:,strcmp(data_names,'Education'))),0.75),'%.0f') ')' ];
+
+stats_demography{23,5} = [ num2str(quantile(cell2mat(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))==0,strcmp(data_names,'Education'))),0.5),'%.0f') ' (' ...
+    num2str(quantile(cell2mat(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))==0,strcmp(data_names,'Education'))),0.25),'%.0f') '; ' ...
+    num2str(quantile(cell2mat(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))==0,strcmp(data_names,'Education'))),0.75),'%.0f') ')' ];
+
+stats_demography{23,7} = [ num2str(quantile(cell2mat(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))>=1,strcmp(data_names,'Education'))),0.5),'%.0f') ' (' ...
+    num2str(quantile(cell2mat(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))>=1,strcmp(data_names,'Education'))),0.25),'%.0f') '; ' ...
+    num2str(quantile(cell2mat(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))>=1,strcmp(data_names,'Education'))),0.75),'%.0f') ')' ];
+
+stats_demography{23,8} = ranksum( ...
+    cell2mat(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))==0,strcmp(data_names,'Education'))),...
+    cell2mat(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))>=1,strcmp(data_names,'Education'))) ...
+    );
+
+stats_demography{23,9} = sum(~isnan(cell2mat(adni_all_apoe4(:,strcmp(data_names,'Education')))));
+stats_demography{23,11} = sum(~isnan(cell2mat(adni_all_apoe4(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE4')))==0,strcmp(data_names,'Education')))));
+stats_demography{23,13} = sum(~isnan(cell2mat(adni_all_apoe4(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE4')))>=1,strcmp(data_names,'Education')))));
+
+stats_demography{23,10} = [ num2str(quantile(cell2mat(adni_all_apoe4(:,strcmp(data_names,'Education'))),0.5),'%.0f') ' (' ...
+    num2str(quantile(cell2mat(adni_all_apoe4(:,strcmp(data_names,'Education'))),0.25),'%.0f') '; ' ...
+    num2str(quantile(cell2mat(adni_all_apoe4(:,strcmp(data_names,'Education'))),0.75),'%.0f') ')' ];
+
+stats_demography{23,12} = [ num2str(quantile(cell2mat(adni_all_apoe4(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE4')))==0,strcmp(data_names,'Education'))),0.5),'%.0f') ' (' ...
+    num2str(quantile(cell2mat(adni_all_apoe4(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE4')))==0,strcmp(data_names,'Education'))),0.25),'%.0f') '; ' ...
+    num2str(quantile(cell2mat(adni_all_apoe4(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE4')))==0,strcmp(data_names,'Education'))),0.75),'%.0f') ')' ];
+
+stats_demography{23,14} = [ num2str(quantile(cell2mat(adni_all_apoe4(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE4')))>=1,strcmp(data_names,'Education'))),0.5),'%.0f') ' (' ...
+    num2str(quantile(cell2mat(adni_all_apoe4(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE4')))>=1,strcmp(data_names,'Education'))),0.25),'%.0f') '; ' ...
+    num2str(quantile(cell2mat(adni_all_apoe4(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE4')))>=1,strcmp(data_names,'Education'))),0.75),'%.0f') ')' ];
+
+stats_demography{23,15} = ranksum( ...
+    cell2mat(adni_all_apoe4(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE4')))==0,strcmp(data_names,'Education'))),...
+    cell2mat(adni_all_apoe4(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE4')))>=1,strcmp(data_names,'Education'))) ...
+    );
+
+stats_demography{23,16} = ranksum( ...
+    cell2mat(adai_all_apoe4(:,strcmp(data_names,'Education'))),...
+    cell2mat(adni_all_apoe4(:,strcmp(data_names,'Education'))) ...
+    );
+
+
 tmp = cell(1,size(stats_demography,2));
 stats_demography = [tmp; stats_demography];
 stats_demography{1,2} = 'ADAI';
@@ -1394,6 +1448,7 @@ stats_demography_gfronly{19,1} = 'Stroke';
 stats_demography_gfronly{20,1} = 'MMSE';
 stats_demography_gfronly{21,1} = 'Ancestry';
 stats_demography_gfronly{22,1} = 'Homeless';
+stats_demography_gfronly{23,1} = 'Education [y]';
 
 % SEX stats
 
@@ -2609,7 +2664,75 @@ x2_excluded = [strcmp(adai_all_apoe4(pos_x2_included,strcmp(data_names,'Homeless
 [~,~,stats_demography_gfronly{22,22}] = crosstab(x1_excluded,x2_excluded);
 
 
-stats_demography_adni_excluded  = stats_demography_gfronly([1:12 15:17 19:20],[1 9:10 17:19]);
+
+% Education stats
+stats_demography_gfronly{23,2} = sum(~isnan(cell2mat(adai_all_apoe4(:,strcmp(data_names,'Education')))));
+stats_demography_gfronly{23,4} = sum(~isnan(cell2mat(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))==0,strcmp(data_names,'Education')))));
+stats_demography_gfronly{23,6} = sum(~isnan(cell2mat(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))>=1,strcmp(data_names,'Education')))));
+
+stats_demography_gfronly{23,3} = [ num2str(quantile(cell2mat(adai_all_apoe4(:,strcmp(data_names,'Education'))),0.5),'%.0f') ' (' ...
+    num2str(quantile(cell2mat(adai_all_apoe4(:,strcmp(data_names,'Education'))),0.25),'%.0f') '; ' ...
+    num2str(quantile(cell2mat(adai_all_apoe4(:,strcmp(data_names,'Education'))),0.75),'%.0f') ')' ];
+
+stats_demography_gfronly{23,5} = [ num2str(quantile(cell2mat(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))==0,strcmp(data_names,'Education'))),0.5),'%.0f') ' (' ...
+    num2str(quantile(cell2mat(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))==0,strcmp(data_names,'Education'))),0.25),'%.0f') '; ' ...
+    num2str(quantile(cell2mat(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))==0,strcmp(data_names,'Education'))),0.75),'%.0f') ')' ];
+
+stats_demography_gfronly{23,7} = [ num2str(quantile(cell2mat(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))>=1,strcmp(data_names,'Education'))),0.5),'%.0f') ' (' ...
+    num2str(quantile(cell2mat(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))>=1,strcmp(data_names,'Education'))),0.25),'%.0f') '; ' ...
+    num2str(quantile(cell2mat(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))>=1,strcmp(data_names,'Education'))),0.75),'%.0f') ')' ];
+
+stats_demography_gfronly{23,8} = ranksum( ...
+    cell2mat(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))==0,strcmp(data_names,'Education'))),...
+    cell2mat(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))>=1,strcmp(data_names,'Education'))) ...
+    );
+
+stats_demography_gfronly{23,9} = sum(~isnan(cell2mat(adni_all_apoe4(~isnan(adni_all_apoe4_gfr),strcmp(data_names,'Education')))));
+stats_demography_gfronly{23,11} = sum(~isnan(cell2mat(adni_all_apoe4(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE4')))==0 & ~isnan(adni_all_apoe4_gfr),strcmp(data_names,'Education')))));
+stats_demography_gfronly{23,13} = sum(~isnan(cell2mat(adni_all_apoe4(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE4')))>=1 & ~isnan(adni_all_apoe4_gfr),strcmp(data_names,'Education')))));
+
+stats_demography_gfronly{23,10} = [ num2str(quantile(cell2mat(adni_all_apoe4(~isnan(adni_all_apoe4_gfr),strcmp(data_names,'Education'))),0.5),'%.0f') ' (' ...
+    num2str(quantile(cell2mat(adni_all_apoe4(~isnan(adni_all_apoe4_gfr),strcmp(data_names,'Education'))),0.25),'%.0f') '; ' ...
+    num2str(quantile(cell2mat(adni_all_apoe4(~isnan(adni_all_apoe4_gfr),strcmp(data_names,'Education'))),0.75),'%.0f') ')' ];
+
+stats_demography_gfronly{23,12} = [ num2str(quantile(cell2mat(adni_all_apoe4(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE4')))==0 & ~isnan(adni_all_apoe4_gfr),strcmp(data_names,'Education'))),0.5),'%.0f') ' (' ...
+    num2str(quantile(cell2mat(adni_all_apoe4(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE4')))==0 & ~isnan(adni_all_apoe4_gfr),strcmp(data_names,'Education'))),0.25),'%.0f') '; ' ...
+    num2str(quantile(cell2mat(adni_all_apoe4(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE4')))==0 & ~isnan(adni_all_apoe4_gfr),strcmp(data_names,'Education'))),0.75),'%.0f') ')' ];
+
+stats_demography_gfronly{23,14} = [ num2str(quantile(cell2mat(adni_all_apoe4(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE4')))>=1 & ~isnan(adni_all_apoe4_gfr),strcmp(data_names,'Education'))),0.5),'%.0f') ' (' ...
+    num2str(quantile(cell2mat(adni_all_apoe4(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE4')))>=1 & ~isnan(adni_all_apoe4_gfr),strcmp(data_names,'Education'))),0.25),'%.0f') '; ' ...
+    num2str(quantile(cell2mat(adni_all_apoe4(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE4')))>=1 & ~isnan(adni_all_apoe4_gfr),strcmp(data_names,'Education'))),0.75),'%.0f') ')' ];
+
+stats_demography_gfronly{23,15} = ranksum( ...
+    cell2mat(adni_all_apoe4(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE4')))==0 & ~isnan(adni_all_apoe4_gfr),strcmp(data_names,'Education'))),...
+    cell2mat(adni_all_apoe4(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE4')))>=1 & ~isnan(adni_all_apoe4_gfr),strcmp(data_names,'Education'))) ...
+    );
+
+stats_demography_gfronly{23,16} = ranksum( ...
+    cell2mat(adai_all_apoe4(:,strcmp(data_names,'Education'))),...
+    cell2mat(adni_all_apoe4(~isnan(adni_all_apoe4_gfr),strcmp(data_names,'Education'))) ...
+    );
+
+stats_demography_gfronly{23,17} = sum(~isnan(cell2mat(adni_all_apoe4(isnan(adni_all_apoe4_gfr),strcmp(data_names,'Education')))));
+stats_demography_gfronly{23,18} = [ num2str(quantile(cell2mat(adni_all_apoe4(isnan(adni_all_apoe4_gfr),strcmp(data_names,'Education'))),0.5),'%.0f') ' (' ...
+    num2str(quantile(cell2mat(adni_all_apoe4(isnan(adni_all_apoe4_gfr),strcmp(data_names,'Education'))),0.25),'%.0f') '; ' ...
+    num2str(quantile(cell2mat(adni_all_apoe4(isnan(adni_all_apoe4_gfr),strcmp(data_names,'Education'))),0.75),'%.0f') ')' ];
+stats_demography_gfronly{23,19} = ranksum( ...
+    cell2mat(adni_all_apoe4(~isnan(adni_all_apoe4_gfr),strcmp(data_names,'Education'))),...
+    cell2mat(adni_all_apoe4(isnan(adni_all_apoe4_gfr),strcmp(data_names,'Education'))) ...
+    );
+
+stats_demography_gfronly{23,20} = sum(~isnan(cell2mat(adai_excluded(:,strcmp(data_names,'Education')))));
+stats_demography_gfronly{23,21} = [ num2str(quantile(cell2mat(adai_excluded(:,strcmp(data_names,'Education'))),0.5),'%.0f') ' (' ...
+    num2str(quantile(cell2mat(adai_excluded(:,strcmp(data_names,'Education'))),0.25),'%.0f') '; ' ...
+    num2str(quantile(cell2mat(adai_excluded(:,strcmp(data_names,'Education'))),0.75),'%.0f') ')' ];
+stats_demography_gfronly{23,22} = ranksum( ...
+    cell2mat(adai_all_apoe4(:,strcmp(data_names,'Education'))),...
+    cell2mat(adai_excluded(:,strcmp(data_names,'Education'))) ...
+    );
+
+
+stats_demography_adni_excluded  = stats_demography_gfronly([1:12 15:17 19:20 23],[1 9:10 17:19]);
 stats_demography_adni_excluded{1,3} = 'Included';
 stats_demography_adni_excluded{1,5} = 'Excluded';
 
@@ -2628,36 +2751,39 @@ stats_demography_gfronly{1,9} = 'ADNI';
 stats_demography_reorder = [
     stats_demography(1:13,:)
     stats_demography(21,:)
+    stats_demography(24,:)
     stats_demography(16:18,:)
     stats_demography(20,:)
     stats_demography(14:15,:)
     stats_demography(19,:)
-    stats_demography(22:end,:)
+    stats_demography(22:23,:)
     ];
 
 stats_demography_gfronly_reorder = [
     stats_demography_gfronly(1:13,:)
     stats_demography_gfronly(21,:)
+    stats_demography_gfronly(24,:)
     stats_demography_gfronly(16:18,:)
     stats_demography_gfronly(20,:)
     stats_demography_gfronly(14:15,:)
     stats_demography_gfronly(19,:)
-    stats_demography_gfronly(22:end,:)
+    stats_demography_gfronly(22:23,:)
     ];
 
 stats_demography_adai_excluded_reorder = [
     stats_demography_adai_excluded(1:12,:)
     stats_demography_adai_excluded(20,:)
+    stats_demography_adai_excluded(23,:)
     stats_demography_adai_excluded(15:17,:)
     stats_demography_adai_excluded(19,:)
     stats_demography_adai_excluded(13:14,:)
     stats_demography_adai_excluded(18,:)
-    stats_demography_adai_excluded(21:end,:)
+    stats_demography_adai_excluded(21:22,:)
     ];
 
 stats_demography_adni_excluded_reorder = [
     stats_demography_adni_excluded(1:12,:)
-    stats_demography_adni_excluded(17,:)
+    stats_demography_adni_excluded(17:18,:)
     stats_demography_adni_excluded(13:16,:)
     ];
 
@@ -8387,13 +8513,30 @@ set(gca,'Linewidth',2,'FontSize',14,'xscale','log','YTick',2:2:10,'YTickLabel','
 %% Figure APOE4*Ancestry interaction
 
 h(3).fig = figure(3);
-set(h(3).fig,'Position',[50 50 1800 500])
+set(h(3).fig,'Position',[50 50 1000 400])
 
 plot([1 1],[1 10.5],'k','LineWidth',3)
 hold on
 plot(ci_ai_model1_all_carrier_ancestry(strcmp(mdl_ai_model1_all_carrier_ancestry.CoefficientNames,'Age'),:),[y-0 y-0],'-','LineWidth',4,'Color',clr_ai)
 plot(ci_ai_model1_all_carrier_ancestry(strcmp(mdl_ai_model1_all_carrier_ancestry.CoefficientNames,'Sex_Male'),:),[y-2 y-2],'-','LineWidth',4,'Color',clr_ai)
 plot(ci_ai_model1_all_carrier_ancestry(strcmp(mdl_ai_model1_all_carrier_ancestry.CoefficientNames,'APOE4_1'),:),[y-4 y-4],'-','LineWidth',4,'Color',clr_ai)
+plot(ci_ai_model1_all_carrier_ancestry(strcmp(mdl_ai_model1_all_carrier_ancestry.CoefficientNames,'Ancestry'),:),[y-6 y-6],'-','LineWidth',4,'Color',clr_ai)
+plot(ci_ai_model1_all_carrier_ancestry(strcmp(mdl_ai_model1_all_carrier_ancestry.CoefficientNames,'APOE4_1:Ancestry'),:),[y-8 y-8],'-','LineWidth',4,'Color',clr_ai)
+
+plot(exp(cell2mat(table2cell(mdl_ai_model1_all_carrier_ancestry.Coefficients('Age','Estimate')))),y-0,'x','MarkerSize',15,'LineWidth',4,'Color',clr_ai,'markerfacecolor',clr_ai);
+plot(exp(cell2mat(table2cell(mdl_ai_model1_all_carrier_ancestry.Coefficients('Sex_Male','Estimate')))),y-2,'x','MarkerSize',15,'LineWidth',4,'Color',clr_ai,'markerfacecolor',clr_ai);
+plot(exp(cell2mat(table2cell(mdl_ai_model1_all_carrier_ancestry.Coefficients('APOE4_1','Estimate')))),y-4,'x','MarkerSize',15,'LineWidth',4,'Color',clr_ai,'markerfacecolor',clr_ai);
+plot(exp(cell2mat(table2cell(mdl_ai_model1_all_carrier_ancestry.Coefficients('Ancestry','Estimate')))),y-6,'x','MarkerSize',15,'LineWidth',4,'Color',clr_ai,'markerfacecolor',clr_ai);
+plot(exp(cell2mat(table2cell(mdl_ai_model1_all_carrier_ancestry.Coefficients('APOE4_1:Ancestry','Estimate')))),y-8,'x','MarkerSize',15,'LineWidth',4,'Color',clr_ai,'markerfacecolor',clr_ai);
+
+grid on
+hold off
+title('ln(p\tau_{217}) ∝ Age + Sex + APOE4*Ancestry')
+xlabel('Geometric mean ratio')
+xlim([0.4 2.4])
+ylim([1 10.5])
+set(gca,'Linewidth',2,'FontSize',14,'xscale','log','YTick',2:2:10,'YTickLabel',{'APOE4*Ancestry' 'Ancestry' 'APOE4' 'Sex_{Male}' 'Age'})
+ytickangle(30)
 %% Cross-correlation analysis
 
 

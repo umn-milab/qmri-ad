@@ -6,7 +6,7 @@ clear all;
 clc;
 close all;
 data_folder='/home/range1-raid1/labounek/data-on-porto';
-extract_data_filename='extract_data_20250422.mat';
+extract_data_filename='extract_data_20251114.mat';
 project_folder=fullfile(data_folder,'ADAI');
 table_folder=fullfile(project_folder,'tables');
 
@@ -14,7 +14,7 @@ project_folder2=fullfile(data_folder,'ADNI','ADNI_ADAI_match');
 table_folder2=fullfile(project_folder2,'tables');
 
 jhu_roi = 'reconstruction_specific';
-save_path = fullfile(project_folder,'pictures','ad_paper_export_20250422');
+save_path = fullfile(project_folder,'pictures','ad_paper_export_20251114');
 % jhu_roi = 'same'; % Use NORDIC JHU mask for JHU-atlas based dMRI value extraction
 % save_folder = fullfile(project_folder,'pictures','bcp_paper_export_same_jhu_roi');
 extract_data_file = fullfile(project_folder,'results',extract_data_filename);
@@ -34,6 +34,7 @@ if extract_data ~= 1
         end
         load(extract_data_file)
         extract_data = 0;
+        save_path = fullfile(project_folder,'pictures','ad_paper_export_20251107');
         if modst == 1
             estimate_stats = 0;
         end
@@ -94,6 +95,8 @@ if extract_data == 1
     adai_apoe3 = NaN*ones(size(adai_subsess));
     adai_apoe2 = NaN*ones(size(adai_subsess));
     adai_mmse = NaN*ones(size(adai_subsess));
+%     adai_homeless = NaN*ones(size(adai_subsess));
+    adai_homeless = cell(size(adai_subsess));;
     a_subsess = cellstr(strcat(adai.SUB,'/',adai.SESS));
     pos_dmri = zeros(size(a_subsess));
     for ind = 1:size(adai_subsess,1)
@@ -110,9 +113,21 @@ if extract_data == 1
         adai_apoe3(ind,1) = adai.tr_apoee3(pos,1);
         adai_apoe2(ind,1) = adai.tr_apoee2(pos,1);
         adai_mmse(ind,1) = adai.mmse_totalscore(pos,1);
+        adai_homeless(ind,1) = cellstr(adai.Homeless(pos,:));
         
         pos_dmri = pos_dmri + pos;
     end
+    
+    % Identify excluded samples
+%     pos_excluded = pos_dmri==0 | (pos_dmri==1 & adai.mmse_totalscore<23) | (pos_dmri==1 & adai.tr_apoee4==2) | (pos_dmri==1 & isnan(adai.tr_apoee4)) ;
+    pos_excluded = pos_dmri==0;
+    pos_excluded = pos_excluded & ~(pos_dmri==0 & adai.pidn==45) & ~strcmp(cellstr(adai.Sex0x2DMaster),'');
+    excluded_adai_apoe4 = adai.APOE_e4_mutations(pos_excluded,1);
+    excluded_adai_mmse = adai.MMSE(pos_excluded,1);
+    excluded_adai_age = adai.Age(pos_excluded,1);
+    excluded_adai_sex = cellstr(adai.Sex0x2DMaster(pos_excluded,1));
+    excluded_adai_education = adai.Years_of_formal_schooling(pos_excluded,1);
+    excluded_adai_homeless = cellstr(adai.Homeless(pos_excluded,:));
     
     adni_sex = cell(size(adni_subsess));
     adni_age = NaN*ones(size(adni_subsess));
@@ -456,6 +471,41 @@ if extract_data == 1
     adni_mmse_quantile = quantile(adni_mmse,[0.5 0.25 0.75]);
     pW_mmse_NHWvsAI = ranksum(adai_mmse,adni_mmse);
     
+    %% ADNI genotype stats
+    stats_adni_genotype{1,1} = 'e2/e2';
+    stats_adni_genotype{2,1} = 'e2/e3';
+    stats_adni_genotype{3,1} = 'e3/e3';
+    stats_adni_genotype{4,1} = 'e2/e4';
+    stats_adni_genotype{5,1} = 'e3/e4';
+    stats_adni_genotype{6,1} = 'e4/e4';
+    
+    stats_adni_genotype{1,2} = sum(adni_apoe2==2);
+    stats_adni_genotype{1,3} = sum(~isnan(adni_apoe2));
+    stats_adni_genotype{1,4} = [ num2str(100*stats_adni_genotype{1,2}/stats_adni_genotype{1,3},'%.1f'), '%'];
+    
+    stats_adni_genotype{2,2} = sum(adni_apoe2==1 & adni_apoe3==1);
+    stats_adni_genotype{2,3} = sum(~isnan(adni_apoe2) & ~isnan(adni_apoe3));
+    stats_adni_genotype{2,4} = [ num2str(100*stats_adni_genotype{2,2}/stats_adni_genotype{2,3},'%.1f'), '%'];
+    
+    stats_adni_genotype{3,2} = sum(adni_apoe3==2);
+    stats_adni_genotype{3,3} = sum(~isnan(adni_apoe3));
+    stats_adni_genotype{3,4} = [ num2str(100*stats_adni_genotype{3,2}/stats_adni_genotype{3,3},'%.1f'), '%'];
+    
+    stats_adni_genotype{4,2} = sum(adni_apoe2==1 & adni_apoe4==1);
+    stats_adni_genotype{4,3} = sum(~isnan(adni_apoe2) & ~isnan(adni_apoe4));
+    stats_adni_genotype{4,4} = [ num2str(100*stats_adni_genotype{4,2}/stats_adni_genotype{4,3},'%.1f'), '%'];
+    
+    stats_adni_genotype{5,2} = sum(adni_apoe3==1 & adni_apoe4==1);
+    stats_adni_genotype{5,3} = sum(~isnan(adni_apoe3) & ~isnan(adni_apoe4));
+    stats_adni_genotype{5,4} = [ num2str(100*stats_adni_genotype{5,2}/stats_adni_genotype{5,3},'%.1f'), '%'];
+    
+    stats_adni_genotype{6,2} = sum(adni_apoe4==2);
+    stats_adni_genotype{6,3} = sum(~isnan(adni_apoe4));
+    stats_adni_genotype{6,4} = [ num2str(100*stats_adni_genotype{6,2}/stats_adni_genotype{6,3},'%.1f'), '%'];
+    
+    
+    stats_adni_genotype = [{'Genotype' 'Frequency' 'N' 'Relative frequency'}
+        stats_adni_genotype];
     %% Chi-squared statistics - femnales and hypertension
     x1 = [ ones(size(adai_female)); 2*ones(size(adni_female))];
     x2 = [adai_female; adni_female];
@@ -464,6 +514,81 @@ if extract_data == 1
     x1 = [ ones(size(adai_hypertension)); 2*ones(size(adni_hypertension))];
     x2 = [adai_hypertension; adni_hypertension];
     [chitbl_hypertension,chi2stat_hypertension,chi_p_hypertension] = crosstab(x1,x2);
+    
+    %% Stats included vs excluded AI into MRI analysis
+%     stats_excluded{1,1} = ['Total N=' num2str(size(adai_age,1)+size(excluded_adai_age,1))];
+    stats_excluded{1,2} = ['N=' num2str(size(adai_age,1))];
+    stats_excluded{1,3} = 'Included';
+    stats_excluded{1,4} = ['N=' num2str(size(excluded_adai_age,1))];
+    stats_excluded{1,5} = 'Excluded';
+    stats_excluded{1,6} = 'p';
+    
+    stats_excluded{2,1} = 'Age [y]';
+    stats_excluded{3,1} = 'Female sex';
+    stats_excluded{4,1} = 'Education [y]';
+    stats_excluded{5,1} = 'MMSE';
+    stats_excluded{6,1} = 'APOE4 heterozygotes';
+    stats_excluded{7,1} = 'Homeless';
+    
+    
+    stats_excluded{2,2} = sum(~isnan(adai_age));
+    stats_excluded{2,3} = [ num2str( quantile(adai_age,0.5) , '%.0f') ' (' ...
+         num2str( quantile(adai_age,0.25) , '%.0f') '; ' ...
+         num2str( quantile(adai_age,0.75) , '%.0f') ')' ];
+    stats_excluded{2,4} = sum(~isnan(excluded_adai_age));
+    stats_excluded{2,5} = [ num2str( quantile(excluded_adai_age,0.5) , '%.0f') ' (' ...
+         num2str( quantile(excluded_adai_age,0.25) , '%.0f') '; ' ...
+         num2str( quantile(excluded_adai_age,0.75) , '%.0f') ')' ];
+    stats_excluded{2,6} = ranksum(adai_age,excluded_adai_age);
+    
+    stats_excluded{3,2} = sum(~strcmp(adai_sex,''));
+    stats_excluded{3,3} = [ num2str(sum(strcmp(adai_sex,'F')),'%.0f') ' (' num2str(100*sum(strcmp(adai_sex,'F'))/stats_excluded{3,2},'%.0f') '%)'];
+    stats_excluded{3,4} = sum(~strcmp(excluded_adai_sex,''));
+    stats_excluded{3,5} = [ num2str(sum(strcmp(excluded_adai_sex,'F')),'%.0f') ' (' num2str(100*sum(strcmp(excluded_adai_sex,'F'))/stats_excluded{3,4},'%.0f') '%)'];
+    x1 = [ ones(stats_excluded{3,2},1); 2*ones(stats_excluded{3,4},1)];
+    x2 = [strcmp(adai_sex,'F'); strcmp(excluded_adai_sex,'F')];
+    [~,~,stats_excluded{3,6}] = crosstab(x1,x2);
+    
+    stats_excluded{4,2} = sum(~isnan(adai_education));
+    stats_excluded{4,3} = [ num2str( quantile(adai_education,0.5) , '%.0f') ' (' ...
+         num2str( quantile(adai_education,0.25) , '%.0f') '; ' ...
+         num2str( quantile(adai_education,0.75) , '%.0f') ')' ];
+    stats_excluded{4,4} = sum(~isnan(excluded_adai_education));
+    stats_excluded{4,5} = [ num2str( quantile(excluded_adai_education,0.5) , '%.0f') ' (' ...
+         num2str( quantile(excluded_adai_education,0.25) , '%.0f') '; ' ...
+         num2str( quantile(excluded_adai_education,0.75) , '%.0f') ')' ];
+    stats_excluded{4,6} = ranksum(adai_education,excluded_adai_education);
+    
+    stats_excluded{5,2} = sum(~isnan(adai_mmse));
+    stats_excluded{5,3} = [ num2str( quantile(adai_mmse,0.5) , '%.0f') ' (' ...
+         num2str( quantile(adai_mmse,0.25) , '%.0f') '; ' ...
+         num2str( quantile(adai_mmse,0.75) , '%.0f') ')' ];
+    stats_excluded{5,4} = sum(~isnan(excluded_adai_mmse));
+    stats_excluded{5,5} = [ num2str( quantile(excluded_adai_mmse,0.5) , '%.0f') ' (' ...
+         num2str( quantile(excluded_adai_mmse,0.25) , '%.0f') '; ' ...
+         num2str( quantile(excluded_adai_mmse,0.75) , '%.0f') ')' ];
+    stats_excluded{5,6} = ranksum(adai_mmse,excluded_adai_mmse);
+    
+    stats_excluded{6,2} = sum(~isnan(adai_apoe4));
+    stats_excluded{6,3} = [ num2str(sum(adai_apoe4==1),'%.0f') ' (' num2str(100*sum(sum(adai_apoe4==1))/stats_excluded{6,2},'%.0f') '%)'];
+    stats_excluded{6,4} = sum(~isnan(excluded_adai_apoe4));
+    stats_excluded{6,5} = [ num2str(sum(excluded_adai_apoe4==1),'%.0f') ' (' num2str(100*sum(excluded_adai_apoe4==1)/stats_excluded{6,4},'%.0f') '%)'];
+    x1 = [ ones(stats_excluded{6,2},1); 2*ones(stats_excluded{6,4},1)];
+    tmp = excluded_adai_apoe4;
+    tmp(isnan(tmp)) = [];
+    x2 = [adai_apoe4==1; tmp==1];
+    [~,~,stats_excluded{6,6}] = crosstab(x1,x2);
+    
+    stats_excluded{7,2} = sum(~strcmp(adai_homeless,''));
+    stats_excluded{7,3} = [ num2str(sum(strcmp(adai_homeless,'Yes')),'%.0f') ' (' num2str(100*sum(strcmp(adai_homeless,'Yes'))/stats_excluded{7,2},'%.0f') '%)'];
+    stats_excluded{7,4} = sum(~strcmp(excluded_adai_homeless,''));
+    stats_excluded{7,5} = [ num2str(sum(strcmp(excluded_adai_homeless,'Yes')),'%.0f') ' (' num2str(100*sum(strcmp(excluded_adai_homeless,'Yes'))/stats_excluded{7,4},'%.0f') '%)'];
+    x1 = [ ones(stats_excluded{7,2},1); 2*ones(stats_excluded{7,4},1)];
+    tmp = excluded_adai_homeless;
+    tmp(strcmp(excluded_adai_homeless,'')) = [];
+    x2 = [strcmp(adai_homeless,'Yes'); strcmp(tmp,'Yes')];
+    [~,~,stats_excluded{7,6}] = crosstab(x1,x2);
+    
     %% Define tract database and tracts of interest
     tract_list = {
             'Anterior_Commissure'
@@ -690,8 +815,8 @@ if estimate_stats == 1
        for metr = 1:size(tract_data,1)
            vec = squeeze(tract_data(metr,trct,selection2==1));
            
-           tbl = table(vec,apoe4_bin==1,sex,age,hypertension==1,race_cat,'VariableNames',{'y','APOE4','Sex','Age','Hypertension','Race'});
-           tbl2 = table(vec,apoe4_bin==1,sex,age,hypertension==1,race==1,'VariableNames',{'y','APOE4','Sex','Age','Hypertension','Race'});
+           tbl = table(vec,apoe4_bin==1,sex,age/10,hypertension==1,race_cat,'VariableNames',{'y','APOE4','Sex','Age','Hypertension','Race'});
+           tbl2 = table(vec,apoe4_bin==1,sex,age/10,hypertension==1,race==1,'VariableNames',{'y','APOE4','Sex','Age','Hypertension','Race'});
            mdl1{trct,metr} = fitlm(tbl,T);
            mdl2{trct,metr} = fitlm(tbl2,T);
            ci1{trct,metr} = coefCI(mdl1{trct,metr});
@@ -825,71 +950,79 @@ dmri_pos = tract_data_name_dsi_select_pos(end-5:end);
 %     [~, ~, ~, select_p_mdl1_apoe4AmongWhiteNonHisp_dmri(:,vr) ] = fdr_bh(p_mdl1_apoe4AmongWhiteNonHisp(:,dmri_pos(1,vr)));
 % end
 
+%% Visualize forest graphs for APOE4
+% clr_wh = [0 0 1];
+% clr_na = [1 0 0];
+% clr_ar = [0 0.8 0];
+% 
+% fig_id = 1;
+% ymax = size(mdl1,1);
+% tract_labels = flip(strrep(tract_keywords,'_',' '),1);
+% 
+% for vr = 1:size(dmri_pos,2)
+%     h(vr).fig = figure(vr);
+%     set(h(vr).fig,'Position',[1400 50 900 800])
+%     plot([0 0],[-100 100],'k','LineWidth',2)
+%     hold on
+%     cii = [];
+%     for trct = 1:size(mdl1,1)
+%         wh_es_apoe4 = cell2mat(table2cell(mdl2{trct,dmri_pos(1,vr)}.Coefficients('APOE4_1','Estimate')));
+%         na_es_apoe4 = cell2mat(table2cell(mdl1{trct,dmri_pos(1,vr)}.Coefficients('APOE4_1','Estimate')));
+%         wh_ci_apoe4 = ci2{trct,dmri_pos(1,vr)}(strcmp(mdl2{trct,dmri_pos(1,vr)}.CoefficientNames,'APOE4_1'),:);
+%         na_ci_apoe4 = ci1{trct,dmri_pos(1,vr)}(strcmp(mdl1{trct,dmri_pos(1,vr)}.CoefficientNames,'APOE4_1'),:);
+% %         es_apoe4Xrace = cell2mat(table2cell(mdl1{trct,dmri_pos(1,vr)}.Coefficients('APOE4_1:Race_White','Estimate')));
+% %         ci_apoe4Xrace = ci1{trct,dmri_pos(1,vr)}(strcmp(mdl1{trct,dmri_pos(1,vr)}.CoefficientNames,'APOE4_1:Race_White'),:);
+%         
+%         cii = [cii; wh_ci_apoe4; na_ci_apoe4];
+% 
+%         y = ymax - trct + 1;
+%         plot(wh_ci_apoe4,[y y],'-','LineWidth',4,'Color',clr_wh)
+% %         if trct == 1
+% %             hold on
+% %         end
+%         plot(na_ci_apoe4,[y-0.3 y-0.3],'-','LineWidth',4,'Color',clr_na)
+% %         plot(ci_apoe4Xrace,[y-0.4 y-0.4],'-','LineWidth',4,'Color',clr_ar)
+%         H1 = plot(wh_es_apoe4,y,'d','MarkerSize',10,'LineWidth',6,'Color',clr_wh,'markerfacecolor',clr_wh);
+%         H2 = plot(na_es_apoe4,[y-0.3 y-0.3],'x','MarkerSize',14,'LineWidth',6,'Color',clr_na,'markerfacecolor',clr_na);
+% %         H3 = plot(es_apoe4Xrace,[y-0.4 y-0.4],'d','MarkerSize',10,'LineWidth',6,'Color',clr_ar,'markerfacecolor',clr_ar);
+% 
+%         
+%         
+%     end
+% %     if contains(tract_data_name{1,dmri_pos(1,vr)},'dispersion')
+% %         legend([H1 H2(1,1)],{'White non-Hispanic','American Indian'},'location','northwest')
+% %     else
+% %         legend([H1 H2(1,1)],{'White non-Hispanic','American Indian'})
+% %     end
+%     hold off
+%     grid on
+%     ylim([0 8.6])
+%     xlim(1.05*[-max(abs(cii(:))) max(abs(cii(:)))])
+%     xlabel({['Differences in ' tract_data_name{1,dmri_pos(1,vr)}];
+%         'between APOE4 carriers vs. non-carriers'})
+% %     ylabel('Region of interest')
+% %     if contains(tract_data_name{1,dmri_pos(1,vr)},' [')
+% %         title(extractBefore(tract_data_name{1,dmri_pos(1,vr)},' ['))
+% %     else
+% %         title(tract_data_name{1,dmri_pos(1,vr)})
+% %     end
+%     set(gca,'Linewidth',2,'FontSize',14,'YTick',1:ymax,'YTickLabel',tract_labels)
+%     ytickangle(45)
+%     
+%     print(fullfile(save_path,['graph' num2str(vr) '-forest-plot']),'-dpng','-r300')
+%     pause(0.15)
+%     close(h(vr).fig)
+%     pause(0.1)
+%     disp(num2str(vr))
+% end
+
 %% Visualize forest graphs
-clr_wh = [0 0 1];
-clr_na = [1 0 0];
-clr_ar = [0 0.8 0];
+draw_forest_plot(mdl1,mdl2,ci1,ci2,'APOE4_1','apoe4',tract_keywords,tract_data_name,dmri_pos,save_path,'between APOE4 carriers vs. non-carriers')
+draw_forest_plot(mdl1,mdl2,ci1,ci2,'Age','age',tract_keywords,tract_data_name,dmri_pos,save_path,'Age')
+draw_forest_plot(mdl1,mdl2,ci1,ci2,'Hypertension_1','hypertension',tract_keywords,tract_data_name,dmri_pos,save_path,'Hypertension')
+draw_forest_plot(mdl1,mdl2,ci1,ci2,'Sex_M','sex',tract_keywords,tract_data_name,dmri_pos,save_path,'Male sex')
 
-fig_id = 1;
-ymax = size(mdl1,1);
-tract_labels = flip(strrep(tract_keywords,'_',' '),1);
 
-for vr = 1:size(dmri_pos,2)
-    h(vr).fig = figure(vr);
-    set(h(vr).fig,'Position',[1400 50 900 800])
-    plot([0 0],[-100 100],'k','LineWidth',2)
-    hold on
-    cii = [];
-    for trct = 1:size(mdl1,1)
-        wh_es_apoe4 = cell2mat(table2cell(mdl2{trct,dmri_pos(1,vr)}.Coefficients('APOE4_1','Estimate')));
-        na_es_apoe4 = cell2mat(table2cell(mdl1{trct,dmri_pos(1,vr)}.Coefficients('APOE4_1','Estimate')));
-        wh_ci_apoe4 = ci2{trct,dmri_pos(1,vr)}(strcmp(mdl2{trct,dmri_pos(1,vr)}.CoefficientNames,'APOE4_1'),:);
-        na_ci_apoe4 = ci1{trct,dmri_pos(1,vr)}(strcmp(mdl1{trct,dmri_pos(1,vr)}.CoefficientNames,'APOE4_1'),:);
-%         es_apoe4Xrace = cell2mat(table2cell(mdl1{trct,dmri_pos(1,vr)}.Coefficients('APOE4_1:Race_White','Estimate')));
-%         ci_apoe4Xrace = ci1{trct,dmri_pos(1,vr)}(strcmp(mdl1{trct,dmri_pos(1,vr)}.CoefficientNames,'APOE4_1:Race_White'),:);
-        
-        cii = [cii; wh_ci_apoe4; na_ci_apoe4];
-
-        y = ymax - trct + 1;
-        plot(wh_ci_apoe4,[y y],'-','LineWidth',4,'Color',clr_wh)
-%         if trct == 1
-%             hold on
-%         end
-        plot(na_ci_apoe4,[y-0.3 y-0.3],'-','LineWidth',4,'Color',clr_na)
-%         plot(ci_apoe4Xrace,[y-0.4 y-0.4],'-','LineWidth',4,'Color',clr_ar)
-        H1 = plot(wh_es_apoe4,y,'d','MarkerSize',10,'LineWidth',6,'Color',clr_wh,'markerfacecolor',clr_wh);
-        H2 = plot(na_es_apoe4,[y-0.3 y-0.3],'x','MarkerSize',14,'LineWidth',6,'Color',clr_na,'markerfacecolor',clr_na);
-%         H3 = plot(es_apoe4Xrace,[y-0.4 y-0.4],'d','MarkerSize',10,'LineWidth',6,'Color',clr_ar,'markerfacecolor',clr_ar);
-
-        
-        
-    end
-%     if contains(tract_data_name{1,dmri_pos(1,vr)},'dispersion')
-%         legend([H1 H2(1,1)],{'White non-Hispanic','American Indian'},'location','northwest')
-%     else
-%         legend([H1 H2(1,1)],{'White non-Hispanic','American Indian'})
-%     end
-    hold off
-    grid on
-    ylim([0 8.6])
-    xlim(1.05*[-max(abs(cii(:))) max(abs(cii(:)))])
-    xlabel({['Differences in ' tract_data_name{1,dmri_pos(1,vr)}];
-        'between APOE4 carriers vs. non-carriers'})
-%     ylabel('Region of interest')
-%     if contains(tract_data_name{1,dmri_pos(1,vr)},' [')
-%         title(extractBefore(tract_data_name{1,dmri_pos(1,vr)},' ['))
-%     else
-%         title(tract_data_name{1,dmri_pos(1,vr)})
-%     end
-    set(gca,'Linewidth',2,'FontSize',14,'YTick',1:ymax,'YTickLabel',tract_labels)
-    ytickangle(45)
-    
-    print(fullfile(save_path,['graph' num2str(vr) '-forest-plot']),'-dpng','-r300')
-    pause(0.15)
-    close(h(vr).fig)
-    pause(0.1)
-    disp(num2str(vr))
-end
 %% ADAI, ADNI variable mean and STD stats
 for vrid = 1:size(select_adai_tract_data,1)
     for trid = 1:size(select_adai_tract_data,2)
@@ -916,6 +1049,84 @@ end
 stats_imaging_merge = [stats_adai_imaging; stats_adni_imaging; stats_imaging];
 
 %% Functions
+
+function draw_forest_plot(mdl1,mdl2,ci1,ci2,coefficient_name,basename,tract_keywords,tract_data_name,dmri_pos,save_path,xlbl)
+    clr_wh = [0 0 1];
+    clr_na = [1 0 0];
+    clr_ar = [0 0.8 0];
+    if ~strcmp(basename,'apoe4')
+        clr_wh = [0 0 0];
+    end
+
+    ymax = size(mdl1,1);
+    tract_labels = flip(strrep(tract_keywords,'_',' '),1);
+
+    for vr = 1:size(dmri_pos,2)
+        h(vr).fig = figure(vr);
+        set(h(vr).fig,'Position',[1400 50 900 800])
+        plot([0 0],[-100 100],'k','LineWidth',2)
+        hold on
+        cii = [];
+        for trct = 1:size(mdl1,1)
+            wh_es_apoe4 = cell2mat(table2cell(mdl2{trct,dmri_pos(1,vr)}.Coefficients(coefficient_name,'Estimate')));
+            na_es_apoe4 = cell2mat(table2cell(mdl1{trct,dmri_pos(1,vr)}.Coefficients(coefficient_name,'Estimate')));
+            wh_ci_apoe4 = ci2{trct,dmri_pos(1,vr)}(strcmp(mdl2{trct,dmri_pos(1,vr)}.CoefficientNames,coefficient_name),:);
+            na_ci_apoe4 = ci1{trct,dmri_pos(1,vr)}(strcmp(mdl1{trct,dmri_pos(1,vr)}.CoefficientNames,coefficient_name),:);
+    %         es_apoe4Xrace = cell2mat(table2cell(mdl1{trct,dmri_pos(1,vr)}.Coefficients('APOE4_1:Race_White','Estimate')));
+    %         ci_apoe4Xrace = ci1{trct,dmri_pos(1,vr)}(strcmp(mdl1{trct,dmri_pos(1,vr)}.CoefficientNames,'APOE4_1:Race_White'),:);
+
+            cii = [cii; wh_ci_apoe4; na_ci_apoe4];
+
+            y = ymax - trct + 1;
+            plot(wh_ci_apoe4,[y y],'-','LineWidth',4,'Color',clr_wh)
+    %         if trct == 1
+    %             hold on
+    %         end
+            if strcmp(basename,'apoe4')
+                plot(na_ci_apoe4,[y-0.3 y-0.3],'-','LineWidth',4,'Color',clr_na)
+        %         plot(ci_apoe4Xrace,[y-0.4 y-0.4],'-','LineWidth',4,'Color',clr_ar)
+                H2 = plot(na_es_apoe4,[y-0.3 y-0.3],'x','MarkerSize',14,'LineWidth',6,'Color',clr_na,'markerfacecolor',clr_na);
+            end
+            H1 = plot(wh_es_apoe4,y,'d','MarkerSize',10,'LineWidth',6,'Color',clr_wh,'markerfacecolor',clr_wh);
+    %         H3 = plot(es_apoe4Xrace,[y-0.4 y-0.4],'d','MarkerSize',10,'LineWidth',6,'Color',clr_ar,'markerfacecolor',clr_ar);
+
+
+
+        end
+    %     if contains(tract_data_name{1,dmri_pos(1,vr)},'dispersion')
+    %         legend([H1 H2(1,1)],{'White non-Hispanic','American Indian'},'location','northwest')
+    %     else
+    %         legend([H1 H2(1,1)],{'White non-Hispanic','American Indian'})
+    %     end
+        hold off
+        grid on
+        ylim([0 8.6])
+        xlim(1.05*[-max(abs(cii(:))) max(abs(cii(:)))])
+        if strcmp(basename,'apoe4')
+            xlabel({['Differences in ' tract_data_name{1,dmri_pos(1,vr)}];
+                xlbl})
+        elseif strcmp(basename,'ageXXX')
+            xlabel( { ' ' ; [xlbl ' effects in ' tract_data_name{1,dmri_pos(1,vr)}] } )
+        else
+            xlabel( [xlbl ' effects in ' tract_data_name{1,dmri_pos(1,vr)}] )
+        end
+    %     ylabel('Region of interest')
+    %     if contains(tract_data_name{1,dmri_pos(1,vr)},' [')
+    %         title(extractBefore(tract_data_name{1,dmri_pos(1,vr)},' ['))
+    %     else
+    %         title(tract_data_name{1,dmri_pos(1,vr)})
+    %     end
+        set(gca,'Linewidth',2,'FontSize',14,'YTick',1:ymax,'YTickLabel',tract_labels)
+        ytickangle(45)
+
+        print(fullfile(save_path,[basename num2str(vr) '-forest-plot']),'-dpng','-r300')
+        pause(0.15)
+        close(h(vr).fig)
+        pause(0.1)
+        disp(num2str(vr))
+    end
+end
+
 
 function tract = build_tractography_measurements(table_folder,basename,tract_name,protocol,tract_voxel_ratio)
         tract.name = tract_name;
