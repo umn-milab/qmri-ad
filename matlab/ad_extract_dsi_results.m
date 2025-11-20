@@ -6,7 +6,7 @@ clear all;
 clc;
 close all;
 data_folder='/home/range1-raid1/labounek/data-on-porto';
-extract_data_filename='extract_data_20251114.mat';
+extract_data_filename='extract_data_20251119.mat';
 project_folder=fullfile(data_folder,'ADAI');
 table_folder=fullfile(project_folder,'tables');
 
@@ -14,7 +14,7 @@ project_folder2=fullfile(data_folder,'ADNI','ADNI_ADAI_match');
 table_folder2=fullfile(project_folder2,'tables');
 
 jhu_roi = 'reconstruction_specific';
-save_path = fullfile(project_folder,'pictures','ad_paper_export_20251114');
+save_path = fullfile(project_folder,'pictures','ad_paper_export_20251119');
 % jhu_roi = 'same'; % Use NORDIC JHU mask for JHU-atlas based dMRI value extraction
 % save_folder = fullfile(project_folder,'pictures','bcp_paper_export_same_jhu_roi');
 extract_data_file = fullfile(project_folder,'results',extract_data_filename);
@@ -96,7 +96,7 @@ if extract_data == 1
     adai_apoe2 = NaN*ones(size(adai_subsess));
     adai_mmse = NaN*ones(size(adai_subsess));
 %     adai_homeless = NaN*ones(size(adai_subsess));
-    adai_homeless = cell(size(adai_subsess));;
+    adai_homeless = cell(size(adai_subsess));
     a_subsess = cellstr(strcat(adai.SUB,'/',adai.SESS));
     pos_dmri = zeros(size(a_subsess));
     for ind = 1:size(adai_subsess,1)
@@ -334,6 +334,7 @@ if extract_data == 1
     adai_preprocessing = adai_preprocessing(adai_selection~=0);
     adai_dmriAPvols = adai_dmriAPvols(adai_selection~=0);
     adai_dmriPAvols = adai_dmriPAvols(adai_selection~=0);
+    adai_homeless = adai_homeless(adai_selection~=0);
 %     
 %     adai_selection = adai_selection(adai_selection~=0);
     
@@ -357,6 +358,7 @@ if extract_data == 1
     adni_preprocessing = adni_preprocessing(adni_selection~=0);
     adni_dmriAPvols = adni_dmriAPvols(adni_selection~=0);
     adni_dmriPAvols = adni_dmriPAvols(adni_selection~=0);
+    
     
     adni_ptid = adni_ptid(adni_selection~=0);
     adni_viscode = adni_viscode(adni_selection~=0);
@@ -589,6 +591,10 @@ if extract_data == 1
     x2 = [strcmp(adai_homeless,'Yes'); strcmp(tmp,'Yes')];
     [~,~,stats_excluded{7,6}] = crosstab(x1,x2);
     
+    %% Number of samples above age 65
+    NsubAbouve64 = sum(adai_age>=65);
+    NApoe4Above64 = sum(adai_apoe4(adai_age>=65)==1);
+      
     %% Define tract database and tracts of interest
     tract_list = {
             'Anterior_Commissure'
@@ -805,10 +811,49 @@ if estimate_stats == 1
        0 0 0 0 0 1
        0 1 0 0 0 1
        ]; 
+   Thypertension = [
+       0 0 0 0 0 0
+       0 1 0 0 0 0
+       0 0 1 0 0 0
+       0 0 0 1 0 0
+       0 0 0 0 1 0
+       0 0 0 0 0 1
+       0 0 0 0 1 1
+       ]; 
+   Tage = [
+       0 0 0 0 0 0
+       0 1 0 0 0 0
+       0 0 1 0 0 0
+       0 0 0 1 0 0
+       0 0 0 0 1 0
+       0 0 0 0 0 1
+       0 0 0 1 0 1
+       ];
+   Tsex = [
+       0 0 0 0 0 0
+       0 1 0 0 0 0
+       0 0 1 0 0 0
+       0 0 0 1 0 0
+       0 0 0 0 1 0
+       0 0 0 0 0 1
+       0 0 1 0 0 1
+       ]; 
    mdl1 = cell(0,0);
    mdl2 = cell(0,0);
+   mdl_hypertension1 = cell(0,0);
+   mdl_hypertension2 = cell(0,0);
+   mdl_age1 = cell(0,0);
+   mdl_age2 = cell(0,0);
+   mdl_sex1 = cell(0,0);
+   mdl_sex2 = cell(0,0);
    ci1 = cell(0,0);
    ci2 = cell(0,0);
+   ci_hypertension1 = cell(0,0);
+   ci_hypertension2 = cell(0,0);
+   ci_age1 = cell(0,0);
+   ci_age2 = cell(0,0);
+   ci_sex1 = cell(0,0);
+   ci_sex2 = cell(0,0);
    data = struct([]);
    fig_id = 1;
    for trct = 1:size(tract_data,2)
@@ -819,11 +864,35 @@ if estimate_stats == 1
            tbl2 = table(vec,apoe4_bin==1,sex,age/10,hypertension==1,race==1,'VariableNames',{'y','APOE4','Sex','Age','Hypertension','Race'});
            mdl1{trct,metr} = fitlm(tbl,T);
            mdl2{trct,metr} = fitlm(tbl2,T);
+           mdl_hypertension1{trct,metr} = fitlm(tbl,Thypertension);
+           mdl_hypertension2{trct,metr} = fitlm(tbl2,Thypertension);
+           mdl_age1{trct,metr} = fitlm(tbl,Tage);
+           mdl_age2{trct,metr} = fitlm(tbl2,Tage);
+           mdl_sex1{trct,metr} = fitlm(tbl,Tsex);
+           mdl_sex2{trct,metr} = fitlm(tbl2,Tsex);
            ci1{trct,metr} = coefCI(mdl1{trct,metr});
            ci2{trct,metr} = coefCI(mdl2{trct,metr});
+           ci_hypertension1{trct,metr} = coefCI(mdl_hypertension1{trct,metr});
+           ci_hypertension2{trct,metr} = coefCI(mdl_hypertension2{trct,metr});
+           ci_age1{trct,metr} = coefCI(mdl_age1{trct,metr});
+           ci_age2{trct,metr} = coefCI(mdl_age2{trct,metr});
+           ci_sex1{trct,metr} = coefCI(mdl_sex1{trct,metr});
+           ci_sex2{trct,metr} = coefCI(mdl_sex2{trct,metr});
            p_mdl1_apoe4Xrace(trct,metr) = cell2mat(table2cell(mdl1{trct,metr}.Coefficients('APOE4_1:Race_White','pValue')));
            p_mdl1_apoe4AmongNatAm(trct,metr) = cell2mat(table2cell(mdl1{trct,metr}.Coefficients('APOE4_1','pValue')));
            p_mdl1_apoe4AmongWhiteNonHisp(trct,metr) = cell2mat(table2cell(mdl2{trct,metr}.Coefficients('APOE4_1','pValue')));
+           
+           p_mdl_hypertensionXrace(trct,metr) = cell2mat(table2cell(mdl_hypertension1{trct,metr}.Coefficients('Hypertension_1:Race_White','pValue')));
+           p_mdl_hypertensionAmongNatAm(trct,metr) = cell2mat(table2cell(mdl_hypertension1{trct,metr}.Coefficients('Hypertension_1','pValue')));
+           p_mdl_hypertensionAmongWhiteNonHisp(trct,metr) = cell2mat(table2cell(mdl_hypertension2{trct,metr}.Coefficients('Hypertension_1','pValue')));
+           
+           p_mdl_ageXrace(trct,metr) = cell2mat(table2cell(mdl_age1{trct,metr}.Coefficients('Age:Race_White','pValue')));
+           p_mdl_ageAmongNatAm(trct,metr) = cell2mat(table2cell(mdl_age1{trct,metr}.Coefficients('Age','pValue')));
+           p_mdl_ageAmongWhiteNonHisp(trct,metr) = cell2mat(table2cell(mdl_age2{trct,metr}.Coefficients('Age','pValue')));
+           
+           p_mdl_sexXrace(trct,metr) = cell2mat(table2cell(mdl_sex1{trct,metr}.Coefficients('Sex_M:Race_White','pValue')));
+           p_mdl_sexAmongNatAm(trct,metr) = cell2mat(table2cell(mdl_sex1{trct,metr}.Coefficients('Sex_M','pValue')));
+           p_mdl_sexAmongWhiteNonHisp(trct,metr) = cell2mat(table2cell(mdl_sex2{trct,metr}.Coefficients('Sex_M','pValue')));
            
            adai_vec = squeeze(adai_tract_data(metr,trct,adai_selection==1));
            adni_vec = squeeze(adni_tract_data(metr,trct,adni_selection==1));
@@ -939,6 +1008,18 @@ select_p_mdl1_apoe4Xrace = p_mdl1_apoe4Xrace(:,tract_data_name_dsi_select_pos);
 select_p_mdl1_apoe4AmongNatAm = p_mdl1_apoe4AmongNatAm(:,tract_data_name_dsi_select_pos);
 select_p_mdl1_apoe4AmongWhiteNonHisp = p_mdl1_apoe4AmongWhiteNonHisp(:,tract_data_name_dsi_select_pos);
 
+select_p_mdl_hypertensionXrace = p_mdl_hypertensionXrace(:,tract_data_name_dsi_select_pos);
+select_p_mdl_hypertensionAmongNatAm = p_mdl_hypertensionAmongNatAm(:,tract_data_name_dsi_select_pos);
+select_p_mdl_hypertensionAmongWhiteNonHisp = p_mdl_hypertensionAmongWhiteNonHisp(:,tract_data_name_dsi_select_pos);
+
+select_p_mdl_ageXrace = p_mdl_ageXrace(:,tract_data_name_dsi_select_pos);
+select_p_mdl_ageAmongNatAm = p_mdl_ageAmongNatAm(:,tract_data_name_dsi_select_pos);
+select_p_mdl_ageAmongWhiteNonHisp = p_mdl_ageAmongWhiteNonHisp(:,tract_data_name_dsi_select_pos);
+
+select_p_mdl_sexXrace = p_mdl_sexXrace(:,tract_data_name_dsi_select_pos);
+select_p_mdl_sexAmongNatAm = p_mdl_sexAmongNatAm(:,tract_data_name_dsi_select_pos);
+select_p_mdl_sexAmongWhiteNonHisp = p_mdl_sexAmongWhiteNonHisp(:,tract_data_name_dsi_select_pos);
+
 %% Extract dMRI results and correct for multiple comparisons errors
 dmri_pos = tract_data_name_dsi_select_pos(end-5:end);
 [~, ~, ~, select_pBH_mdl1_apoe4Xrace_dmri ] = fdr_bh(p_mdl1_apoe4Xrace(:,dmri_pos));
@@ -949,6 +1030,18 @@ dmri_pos = tract_data_name_dsi_select_pos(end-5:end);
 %     [~, ~, ~, select_p_mdl1_apoe4AmongNatAm_dmri(:,vr) ] = fdr_bh(p_mdl1_apoe4AmongNatAm(:,dmri_pos(1,vr)));
 %     [~, ~, ~, select_p_mdl1_apoe4AmongWhiteNonHisp_dmri(:,vr) ] = fdr_bh(p_mdl1_apoe4AmongWhiteNonHisp(:,dmri_pos(1,vr)));
 % end
+
+[~, ~, ~, select_pBH_mdl_hypertensionXrace_dmri ] = fdr_bh(p_mdl_hypertensionXrace(:,dmri_pos));
+[~, ~, ~, select_pBH_mdl_hypertensionAmongNatAm_dmri ] = fdr_bh(p_mdl_hypertensionAmongNatAm(:,dmri_pos));
+[~, ~, ~, select_pBH_mdl_hypertensionAmongWhiteNonHisp_dmri ] = fdr_bh(p_mdl_hypertensionAmongWhiteNonHisp(:,dmri_pos));
+
+[~, ~, ~, select_pBH_mdl_ageXrace_dmri ] = fdr_bh(p_mdl_ageXrace(:,dmri_pos));
+[~, ~, ~, select_pBH_mdl_ageAmongNatAm_dmri ] = fdr_bh(p_mdl_ageAmongNatAm(:,dmri_pos));
+[~, ~, ~, select_pBH_mdl_ageAmongWhiteNonHisp_dmri ] = fdr_bh(p_mdl_ageAmongWhiteNonHisp(:,dmri_pos));
+
+[~, ~, ~, select_pBH_mdl_sexXrace_dmri ] = fdr_bh(p_mdl_sexXrace(:,dmri_pos));
+[~, ~, ~, select_pBH_mdl_sexAmongNatAm_dmri ] = fdr_bh(p_mdl_sexAmongNatAm(:,dmri_pos));
+[~, ~, ~, select_pBH_mdl_sexAmongWhiteNonHisp_dmri ] = fdr_bh(p_mdl_sexAmongWhiteNonHisp(:,dmri_pos));
 
 %% Visualize forest graphs for APOE4
 % clr_wh = [0 0 1];
@@ -1018,9 +1111,11 @@ dmri_pos = tract_data_name_dsi_select_pos(end-5:end);
 
 %% Visualize forest graphs
 draw_forest_plot(mdl1,mdl2,ci1,ci2,'APOE4_1','apoe4',tract_keywords,tract_data_name,dmri_pos,save_path,'between APOE4 carriers vs. non-carriers')
-draw_forest_plot(mdl1,mdl2,ci1,ci2,'Age','age',tract_keywords,tract_data_name,dmri_pos,save_path,'Age')
-draw_forest_plot(mdl1,mdl2,ci1,ci2,'Hypertension_1','hypertension',tract_keywords,tract_data_name,dmri_pos,save_path,'Hypertension')
-draw_forest_plot(mdl1,mdl2,ci1,ci2,'Sex_M','sex',tract_keywords,tract_data_name,dmri_pos,save_path,'Male sex')
+draw_forest_plot(mdl_age1,mdl_age2,ci_age1,ci_age2,'Age','age',tract_keywords,tract_data_name,dmri_pos,save_path,'for Age effects')
+draw_forest_plot(mdl_hypertension1,mdl_hypertension2,ci_hypertension1,ci_hypertension2,'Hypertension_1','hypertension',tract_keywords,tract_data_name,dmri_pos,save_path,'for Hypertension effects')
+draw_forest_plot(mdl_sex1,mdl_sex2,ci_sex1,ci_sex2,'Sex_M','sex',tract_keywords,tract_data_name,dmri_pos,save_path,'for Male sex effects')
+% draw_forest_plot(mdl_hypertension,mdl_hypertension,ci_hypertension,ci_hypertension,'Hypertension_1:Race_1','hypertension*race',tract_keywords,tract_data_name,dmri_pos,save_path,'Hypertension*Race')
+% draw_forest_plot(mdl_age,mdl_age,ci_age,ci_age,'Age:Race_1','age*race',tract_keywords,tract_data_name,dmri_pos,save_path,'Age*Race')
 
 
 %% ADAI, ADNI variable mean and STD stats
@@ -1048,13 +1143,27 @@ end
 
 stats_imaging_merge = [stats_adai_imaging; stats_adni_imaging; stats_imaging];
 
+%% Figure of age histogram
+h(1).fig = figure(1);
+set(h(1).fig,'Position',[50 50 700 500])
+
+histogram(adni_age,12,'Normalization','probability')
+hold on
+histogram(adai_age,12,'Normalization','probability')
+hold off
+grid on
+legend('130 non-Hispanic whites','62 American Indians')
+xlabel('Age [years]')
+ylabel('Probability')
+set(gca,'Fontsize',14,'Linewidth',2)
+
 %% Functions
 
 function draw_forest_plot(mdl1,mdl2,ci1,ci2,coefficient_name,basename,tract_keywords,tract_data_name,dmri_pos,save_path,xlbl)
     clr_wh = [0 0 1];
     clr_na = [1 0 0];
     clr_ar = [0 0.8 0];
-    if ~strcmp(basename,'apoe4')
+    if contains(basename,'*')
         clr_wh = [0 0 0];
     end
 
@@ -1069,12 +1178,20 @@ function draw_forest_plot(mdl1,mdl2,ci1,ci2,coefficient_name,basename,tract_keyw
         cii = [];
         for trct = 1:size(mdl1,1)
             wh_es_apoe4 = cell2mat(table2cell(mdl2{trct,dmri_pos(1,vr)}.Coefficients(coefficient_name,'Estimate')));
-            na_es_apoe4 = cell2mat(table2cell(mdl1{trct,dmri_pos(1,vr)}.Coefficients(coefficient_name,'Estimate')));
             wh_ci_apoe4 = ci2{trct,dmri_pos(1,vr)}(strcmp(mdl2{trct,dmri_pos(1,vr)}.CoefficientNames,coefficient_name),:);
+            na_es_apoe4 = cell2mat(table2cell(mdl1{trct,dmri_pos(1,vr)}.Coefficients(coefficient_name,'Estimate')));
             na_ci_apoe4 = ci1{trct,dmri_pos(1,vr)}(strcmp(mdl1{trct,dmri_pos(1,vr)}.CoefficientNames,coefficient_name),:);
     %         es_apoe4Xrace = cell2mat(table2cell(mdl1{trct,dmri_pos(1,vr)}.Coefficients('APOE4_1:Race_White','Estimate')));
     %         ci_apoe4Xrace = ci1{trct,dmri_pos(1,vr)}(strcmp(mdl1{trct,dmri_pos(1,vr)}.CoefficientNames,'APOE4_1:Race_White'),:);
 
+    
+            if contains(basename,'*')
+                if cell2mat(table2cell(mdl2{trct,dmri_pos(1,vr)}.Coefficients(coefficient_name,'pValue'))) < 0.05
+                    clr_wh = [0 0 0];
+                else
+                    clr_wh = [0.6 0.6 0.6];
+                end 
+            end
             cii = [cii; wh_ci_apoe4; na_ci_apoe4];
 
             y = ymax - trct + 1;
@@ -1082,7 +1199,7 @@ function draw_forest_plot(mdl1,mdl2,ci1,ci2,coefficient_name,basename,tract_keyw
     %         if trct == 1
     %             hold on
     %         end
-            if strcmp(basename,'apoe4')
+            if ~contains(basename,'*')
                 plot(na_ci_apoe4,[y-0.3 y-0.3],'-','LineWidth',4,'Color',clr_na)
         %         plot(ci_apoe4Xrace,[y-0.4 y-0.4],'-','LineWidth',4,'Color',clr_ar)
                 H2 = plot(na_es_apoe4,[y-0.3 y-0.3],'x','MarkerSize',14,'LineWidth',6,'Color',clr_na,'markerfacecolor',clr_na);
@@ -1102,7 +1219,7 @@ function draw_forest_plot(mdl1,mdl2,ci1,ci2,coefficient_name,basename,tract_keyw
         grid on
         ylim([0 8.6])
         xlim(1.05*[-max(abs(cii(:))) max(abs(cii(:)))])
-        if strcmp(basename,'apoe4')
+        if ~contains(basename,'*')
             xlabel({['Differences in ' tract_data_name{1,dmri_pos(1,vr)}];
                 xlbl})
         elseif strcmp(basename,'ageXXX')
