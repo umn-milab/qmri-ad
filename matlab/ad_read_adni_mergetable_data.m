@@ -170,6 +170,25 @@ end
 adni = [adni mtdt mdhst modhach];
 adni_names = [adni_names mtdt.Properties.VariableNames mdhst.Properties.VariableNames modhach.Properties.VariableNames];
 
+%% Stats of adni scans with ADNIMERGE records
+stats_mri_in_adnimerge = [ mean(cell2mat(table2cell(adni(:,'Age')))) std(cell2mat(table2cell(adni(:,'Age')))) ];
+stats_mri_in_adnimerge(2,:) = [ sum(strcmp(table2cell(adni(:,'Sex')),'F')) 100*sum(strcmp(table2cell(adni(:,'Sex')),'F'))/size(adni,1) ];
+stats_mri_in_adnimerge(3,:) = [ sum( strcmp(table2cell(adni(:,'PTRACCAT')),'White') & strcmp(table2cell(adni(:,'PTETHCAT')),'Not Hisp/Latino') ) ...
+    100*sum( strcmp(table2cell(adni(:,'PTRACCAT')),'White') & strcmp(table2cell(adni(:,'PTETHCAT')),'Not Hisp/Latino') )/size(adni,1) ];
+stats_mri_in_adnimerge(4,:) = [ sum( strcmp(table2cell(adni(:,'PTRACCAT')),'White') & strcmp(table2cell(adni(:,'PTETHCAT')),'Hisp/Latino') ) ...
+    100*sum( strcmp(table2cell(adni(:,'PTRACCAT')),'White') & strcmp(table2cell(adni(:,'PTETHCAT')),'Hisp/Latino') )/size(adni,1) ];
+stats_mri_in_adnimerge(5,:) = [ sum( strcmp(table2cell(adni(:,'PTRACCAT')),'Black') & strcmp(table2cell(adni(:,'PTETHCAT')),'Not Hisp/Latino') ) ...
+    100*sum( strcmp(table2cell(adni(:,'PTRACCAT')),'Black') & strcmp(table2cell(adni(:,'PTETHCAT')),'Not Hisp/Latino') )/size(adni,1) ];
+stats_mri_in_adnimerge(6,:) = [ sum( strcmp(table2cell(adni(:,'PTRACCAT')),'Black') & strcmp(table2cell(adni(:,'PTETHCAT')),'Hisp/Latino') ) ...
+    100*sum( strcmp(table2cell(adni(:,'PTRACCAT')),'Black') & strcmp(table2cell(adni(:,'PTETHCAT')),'Hisp/Latino') )/size(adni,1) ];
+stats_mri_in_adnimerge(7,:) = [ sum( strcmp(table2cell(adni(:,'PTRACCAT')),'Asian') ) ...
+    100*sum( strcmp(table2cell(adni(:,'PTRACCAT')),'Asian') )/size(adni,1) ];
+stats_mri_in_adnimerge(8,:) = [ sum( strcmp(table2cell(adni(:,'PTRACCAT')),'More than one') ) ...
+    100*sum( strcmp(table2cell(adni(:,'PTRACCAT')),'More than one') )/size(adni,1) ];
+stats_mri_in_adnimerge(9,:) = [ sum( strcmp(table2cell(adni(:,'PTRACCAT')),'Black') & strcmp(table2cell(adni(:,'PTETHCAT')),'Unknown') ) ...
+    100*sum( strcmp(table2cell(adni(:,'PTRACCAT')),'Black') & strcmp(table2cell(adni(:,'PTETHCAT')),'Unknown') )/size(adni,1) ];
+
+%%
 
 
 age_min=45;

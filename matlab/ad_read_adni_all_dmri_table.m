@@ -7,7 +7,8 @@ csv_path = '~/data-on-porto/ADNI/StudyData';
 brightfocus_path = '~/data-on-porto/ADNI/BrightFocus';
 dmri_filename = 'idaSearch_9_17_2025.csv';
 
-csv_filename = 'ADNIMERGE_18Sep2025.csv';
+% csv_filename = 'ADNIMERGE_18Sep2025.csv';
+csv_filename = 'ADNIMERGE_29Jan2026.csv';
 plasma_filename = 'UPENN_PLASMA_FUJIREBIO_QUANTERIX_30Jun2025.csv';
 adni_metadata_filename = 'ADSP_PHC_ADNI_T1_1.0_MetaData_05Aug2024.csv';
 adni_medhist_filename = 'MEDHIST_07Jul2025.csv';
@@ -89,7 +90,11 @@ for ind = 1:size(sub,1)
     tbl0(ind,2) = table2cell(dmri(ps,'Project'));
     tbl0(ind,3) = table2cell(dmri(ps,'Phase'));
     tbl0(ind,4) = table2cell(dmri(ps,'Sex'));
-    tbl0(ind,5) = table2cell(dmri(ps,'Weight'));
+    if cell2mat(table2cell(dmri(ps,'Weight'))) == 0
+        tbl0{ind,5} = NaN; 
+    else
+        tbl0(ind,5) = table2cell(dmri(ps,'Weight'));
+    end
     tbl0(ind,6) = table2cell(dmri(ps,'Research Group'));
     tbl0(ind,7) = table2cell(dmri(ps,'Visit'));
     tbl0(ind,8) = table2cell(dmri(ps,'Study Date'));
@@ -99,6 +104,9 @@ for ind = 1:size(sub,1)
     tbl0(ind,12) = table2cell(dmri(ps,'Description'));
     tbl0(ind,13) = table2cell(dmri(ps,'Imaging Protocol'));
     tbl0(ind,14) = table2cell(dmri(ps,'Image ID'));
+    if size(sub_grp,1) > 1 && min(sub_age) ~= max(sub_age)
+        tbl0(ind,15) = sub_grp(find(sub_age==max(sub_age),1));
+    end
 end
 
 tbl0_females = strcmp(tbl0(:,4),'F');
@@ -108,6 +116,10 @@ tbl0_grp = tbl0(:,6);
 tbl0_visit = tbl0(:,7);
 tbl0_imaging_protocol = tbl0(:,13);
 tbl0_phase = tbl0(:,3);
+
+% cellfun(@isempty,tbl0(:,15))
+tbl0_grp_change_pos = cellfun(@isempty,tbl0(:,15)) & cellfun(@strcmp,tbl0(:,6),tbl0(:,15));
+
 
 stats0_age = [mean(tbl0_age) std(tbl0_age)];
 stats0_grp = {'CN' 'SMC' 'MCI' 'AD'};
@@ -121,10 +133,10 @@ for sbid = 1:size(dmri,1)
 %         disp('yes')
 %     end
     
-    sub = table2cell(dmri(sbid,'Subject ID'));
+    subj = table2cell(dmri(sbid,'Subject ID'));
     dmri_date = table2cell(dmri(sbid,'Study Date'));
     
-    subpos = strcmp(table2cell(tbl(:,'PTID')),sub);
+    subpos = strcmp(table2cell(tbl(:,'PTID')),subj);
     tbl_date = table2cell(tbl(subpos,'EXAMDATE'));
     
     if ~isempty(tbl_date)
@@ -506,6 +518,34 @@ for ind = 1:size(tbl0,1)
     end
 end
 
+%% IDENTIFY TRANSITION IN DIAGNOSIS
+% dx0 = adni0(:,{'DX_bl','DX'});
+dx = adni(:,{'DX_bl','DX'});
+
+diagnosis = cell(size(sub,1),3);
+for ind = 1:size(sub,1)
+    if ind == 46 || ind == 66
+        disp(ind)
+    end
+    subpos = strcmp(table2cell(adni(:,'Subject ID')),sub{ind,1});
+    
+    dxx = dx(subpos,:);
+    ag = cell2mat(table2cell(adni(subpos,'Age')));
+    
+    ag = ag(~cellfun(@isempty,table2cell(dxx(:,'DX'))),1);
+    dxx(cellfun(@isempty,table2cell(dxx(:,'DX')))==1,:) = [];
+    
+    if ~isempty(ag)
+        if min(ag) ~= max(ag) && size(ag,1)>1
+            diagnosis(ind,1) = table2cell(dxx(find(ag==min(ag),1),'DX'));
+            diagnosis(ind,2) = table2cell(dxx(find(ag==max(ag),1),'DX'));
+            diagnosis{ind,3} = ~strcmp(diagnosis{ind,1},diagnosis{ind,2});
+        elseif size(ag,1) == 1
+            diagnosis(ind,1) = table2cell(dxx(1,'DX'));
+        end
+    end
+    
+end
 %% MAKE BASELILNE STATS
 tbl0_race = adni0.PTRACCAT;
 for ind = 1:size(tbl0_race,1)
@@ -550,6 +590,8 @@ stats0_ethnicity_counts(2,:) = stats0_ethnicity_counts(1,:).*100./sum(stats0_eth
 
 stats0_race_counts(1,:) = [ sum(strcmp(tbl0_race,'White')) sum(strcmp(tbl0_race,'Black')) sum(strcmp(tbl0_race,'Asian')) sum(strcmp(tbl0_race,'Am Indian/Alaskan')) sum(strcmp(tbl0_race,'More than one')) sum(strcmp(tbl0_race,'Unknown')) sum(strcmp(tbl0_race,'Not available')) ];
 stats0_race_counts(2,:) = stats0_race_counts(1,:).*100./sum(stats0_race_counts(1,1:6));
+
+
 %% Data visualization
 h(1).fig = figure(1);
 set(h(1).fig,'Position',[50 50 650 1250])
