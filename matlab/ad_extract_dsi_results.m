@@ -6,15 +6,16 @@ clear all;
 clc;
 close all;
 data_folder='/home/range1-raid1/labounek/data-on-porto';
-extract_data_filename='extract_data_20251119.mat';
+extract_data_filename='extract_data_20251121.mat';
 project_folder=fullfile(data_folder,'ADAI');
 table_folder=fullfile(project_folder,'tables');
 
 project_folder2=fullfile(data_folder,'ADNI','ADNI_ADAI_match');
 table_folder2=fullfile(project_folder2,'tables');
+adnistudydata_folder = fullfile(data_folder,'ADNI','StudyData');
 
 jhu_roi = 'reconstruction_specific';
-save_path = fullfile(project_folder,'pictures','ad_paper_export_20251119');
+save_path = fullfile(project_folder,'pictures','ad_paper_export_20251121');
 % jhu_roi = 'same'; % Use NORDIC JHU mask for JHU-atlas based dMRI value extraction
 % save_folder = fullfile(project_folder,'pictures','bcp_paper_export_same_jhu_roi');
 extract_data_file = fullfile(project_folder,'results',extract_data_filename);
@@ -51,10 +52,75 @@ FAx_vec = 0:0.01:1;
 % Set figure sizes
 fig_size_age_dependence = [50 50 1800 1280];
 fig_scatterplot_size=[50 50 1600 1200];
+dmri_plasma_time_gap_thr = 5;
+% dmri_plasma_time_gap_thr = 2;
 
 addpath('/home/range1-raid1/labounek/toolbox/matlab/spm12');
 addpath('/home/range1-raid1/labounek/toolbox/matlab/path_functions');
 
+xls_file = fullfile(project_folder,'HeartDataset','MasterDataset_01-13.xlsx');
+[~, ~, raw] = xlsread(xls_file);
+
+adni_file = fullfile(project_folder,'HeartDataset','adni_plasma_table_longitudinal_20260129.csv');
+tbl_adni = readtable(adni_file,'PreserveVariableNames',1);
+
+adniplasma2_file = fullfile(adnistudydata_folder,'C2N_PRECIVITYAD2_PLASMA_03Mar2026.csv');
+tbl_adni_plasma2 = readtable(adniplasma2_file,'PreserveVariableNames',1);
+
+adai_master_subnum = raw(:,strcmp(raw(1,:),'PIDN'));
+adai_master_subnum{1,1} = NaN;
+adai_master_subnum = cell2mat(adai_master_subnum);
+
+% adai_master_names = {'pTau217', 'Age', 'Sex', 'APOE4', 'Abeta42', 'Abeta40',...
+%     'Height', 'Weight', 'BMI', 'HbA1C', 'HDL' };
+% 
+% adai_master = [
+%     raw(2:end,strcmp(raw(1,:),'pTau 217')), ...
+%     raw(2:end,strcmp(raw(1,:),'Age ')), ...
+%     raw(2:end,strcmp(raw(1,:),'Sex')), ...
+%     raw(2:end,strcmp(raw(1,:),'APOE e4 mutations')), ...
+%     raw(2:end,strcmp(raw(1,:),'Abeta 42')), ...
+%     raw(2:end,strcmp(raw(1,:),'Abeta 40')), ...
+%     raw(2:end,strcmp(raw(1,:),'Participant height (cm)')), ...
+%     raw(2:end,strcmp(raw(1,:),'Participant weight (kg) ')), ...
+%     raw(2:end,strcmp(raw(1,:),'BMI')), ...
+%     raw(2:end,strcmp(raw(1,:),'HbA1C')), ...
+%     raw(2:end,strcmp(raw(1,:),'HDL')) ...
+%     ];
+
+adni_master_age = NaN*ones(size(tbl_adni,1),1);
+for ind = 1:size(tbl_adni,1)
+    visit_id = table2cell(tbl_adni(ind,'VISCODE'));
+    if strcmp(visit_id,'bl') || strcmp(visit_id,'sc')
+        adni_master_age(ind,1) = cell2mat(table2cell(tbl_adni(ind,'AGE')));
+    elseif strcmp(visit_id{1,1}(1,1),'m')
+        adni_master_age(ind,1) = cell2mat(table2cell(tbl_adni(ind,'AGE'))) + str2double(visit_id{1,1}(1,2:end))/12;
+    end
+end
+
+% adni_master_abeta40 = cell2mat(table2cell(tbl_adni(:,'AB40_F')));
+% adni_master_abeta40(adni_master_abeta40==-4) = NaN;
+% 
+% adni_master_abeta42 = cell2mat(table2cell(tbl_adni(:,'AB42_F')));
+% adni_master_abeta42(adni_master_abeta42==-4) = NaN;
+% 
+% adni_master_names = {'pTau217', 'Age', 'Sex', 'APOE4', 'Abeta42', 'Abeta40',...
+%     'Height', 'Weight', 'BMI', 'HbA1C', 'HDL' };
+% 
+% adni_master = [
+%     table2cell(tbl_adni(:,'pT217_F')),...
+%     num2cell(adni_master_age),...
+%     table2cell(tbl_adni(:,'PTGENDER')), ...
+%     table2cell(tbl_adni(:,'APOE4')), ...
+%     num2cell(adni_master_abeta42), ...
+%     num2cell(adni_master_abeta40), ...
+%     num2cell(NaN*ones(size(tbl_adni,1),1)), ...
+%     num2cell(NaN*ones(size(tbl_adni,1),1)), ...
+%     num2cell(NaN*ones(size(tbl_adni,1),1)), ...
+%     num2cell(NaN*ones(size(tbl_adni,1),1)), ...
+%     num2cell(NaN*ones(size(tbl_adni,1),1))
+%     ];
+    
 %% Extract data
 if extract_data == 1      
     %% Read subject and session data
@@ -75,8 +141,8 @@ if extract_data == 1
     adai_preprocessing = cellstr(t_adai.preprocessing);
     adni_preprocessing = cellstr(t_adni.preprocessing);
     
-    adni_ptid = cellstr(adni.PTID);
-    adni_viscode = cellstr(adni.VISCODE);
+%     adni_ptid = cellstr(adni.PTID);
+%     adni_viscode = cellstr(adni.VISCODE);
     
     adai_dmriAPvols = t_adai.dmri_ap_vols;
     adni_dmriAPvols = t_adni.dmri_ap_vols;
@@ -84,24 +150,45 @@ if extract_data == 1
     adai_dmriPAvols = t_adai.dmri_pa_vols;
     adni_dmriPAvols = t_adni.dmri_pa_vols;
     
+    pos_adai_ptau217_included = zeros(size(adai_master_subnum,1),1);
     adai_sex = cell(size(adai_subsess));
+    adai_impairment = cell(size(adai_subsess));
     adai_age = NaN*ones(size(adai_subsess));
     adai_height = NaN*ones(size(adai_subsess));
     adai_weight = NaN*ones(size(adai_subsess));
     adai_bmi = NaN*ones(size(adai_subsess));
     adai_education = NaN*ones(size(adai_subsess));
     adai_hypertension = NaN*ones(size(adai_subsess));
+    adai_hypertension2 = cell(size(adai_subsess));
+    adai_hyperlipidemia = cell(size(adai_subsess));
+    adai_stroke = cell(size(adai_subsess));
+    adai_ihd = cell(size(adai_subsess));
     adai_apoe4 = NaN*ones(size(adai_subsess));
     adai_apoe3 = NaN*ones(size(adai_subsess));
     adai_apoe2 = NaN*ones(size(adai_subsess));
     adai_mmse = NaN*ones(size(adai_subsess));
 %     adai_homeless = NaN*ones(size(adai_subsess));
     adai_homeless = cell(size(adai_subsess));
+    adai_ptau217 = NaN*ones(size(adai_subsess));
+    adai_abeta40 = NaN*ones(size(adai_subsess));
+    adai_abeta42 = NaN*ones(size(adai_subsess));
+    adai_nfl = NaN*ones(size(adai_subsess));
     a_subsess = cellstr(strcat(adai.SUB,'/',adai.SESS));
+    a_subsess_subnum = str2double(extractAfter(extractBefore(a_subsess,'/'),'sub-'));
     pos_dmri = zeros(size(a_subsess));
     for ind = 1:size(adai_subsess,1)
         pos = strcmp(a_subsess,adai_subsess{ind,1});
         adai_sex{ind,1} =  adai.Sex(pos,1);
+        adai_impairment{ind,1} =  adai.Level_of_impairment(pos,:);
+        if contains(adai_impairment{ind,1},'No impairment')
+            adai_impairment{ind,1} = 'CN';
+        elseif contains(adai_impairment{ind,1},'Mild Cognitive Impairment')
+            adai_impairment{ind,1} = 'MCI';
+        elseif contains(adai_impairment{ind,1},'Subjective Cognitive Impairment')
+            adai_impairment{ind,1} = 'SCI';
+        elseif contains(adai_impairment{ind,1},'Dementia')
+            adai_impairment{ind,1} = 'Dementia';
+        end      
         adai_age(ind,1) =  adai.Age0x5By0x5D(pos,1);
         adai_height(ind,1) = adai.Height0x5Bcm0x5D(pos,1);
         adai_weight(ind,1) = adai.Weight0x5Bkg0x5D(pos,1);
@@ -109,11 +196,30 @@ if extract_data == 1
         adai_bmi(ind,1) =  adai_weight(ind,1) ./ (adai_height(ind,1)/100)^2;
         adai_education(ind,1) = adai.hp_schoolyears(pos,1);
         adai_hypertension(ind,1) = adai.Hypertension(pos,1);
+        adai_hypertension2(ind,1) = cellstr(adai.HTN(pos,:));
+        adai_hyperlipidemia(ind,1) = cellstr(adai.HLD(pos,:));
+        adai_stroke(ind,1) = cellstr(adai.Stroke_Hx(pos,:));
+        if strcmp(cellstr(adai.Heart_Issues(pos,:)),'Yes') || strcmp(cellstr(adai.Heart_Issues(pos,:)),'No')
+            if strcmp(cellstr(adai.Ischemic_vs_non0x2Dischemic_heart_disease(pos,:)),'Ischemic')
+                adai_ihd{ind,1} = 'Yes';
+            else
+                adai_ihd{ind,1} = 'No';
+            end
+        end
         adai_apoe4(ind,1) = adai.tr_apoee4(pos,1);
         adai_apoe3(ind,1) = adai.tr_apoee3(pos,1);
         adai_apoe2(ind,1) = adai.tr_apoee2(pos,1);
         adai_mmse(ind,1) = adai.mmse_totalscore(pos,1);
         adai_homeless(ind,1) = cellstr(adai.Homeless(pos,:));
+        adai_nfl(ind,1) = adai.NF0x2Dlight(pos,1);
+        
+        pos_adai_master = adai_master_subnum == a_subsess_subnum(ind,1);
+        if sum(pos_adai_master) > 0
+            pos_adai_ptau217_included = pos_adai_ptau217_included + pos_adai_master;
+            adai_ptau217(ind,1) = cell2mat(raw(pos_adai_master,strcmp(raw(1,:),'pTau 217')));
+            adai_abeta40(ind,1) = cell2mat(raw(pos_adai_master,strcmp(raw(1,:),'Abeta 40')));
+            adai_abeta42(ind,1) = cell2mat(raw(pos_adai_master,strcmp(raw(1,:),'Abeta 42')));
+        end
         
         pos_dmri = pos_dmri + pos;
     end
@@ -128,8 +234,34 @@ if extract_data == 1
     excluded_adai_sex = cellstr(adai.Sex0x2DMaster(pos_excluded,1));
     excluded_adai_education = adai.Years_of_formal_schooling(pos_excluded,1);
     excluded_adai_homeless = cellstr(adai.Homeless(pos_excluded,:));
+    excluded_adai_hypertension = cellstr(adai.HTN(pos_excluded,:));
+    excluded_adai_hyperlipidemia = cellstr(adai.HLD(pos_excluded,:));
+%     excluded_adai_height = adai.Height0x5Bcm0x5D(pos_excluded,1);
+    excluded_adai_height = adai.Participant_height_0x28cm0x29(pos_excluded,1);
+    excluded_adai_weight = adai.Participant_weight_0x28kg0x29(pos_excluded,1);
+    excluded_adai_bmi = adai.BMI1(pos_excluded,1);
+    excluded_adai_stroke = cellstr(adai.Stroke_Hx(pos_excluded,:));
+    excluded_adai_nfl = adai.NF0x2Dlight(pos_excluded,1);
+    
+    excluded_adai_ptau217 = raw(pos_adai_ptau217_included==0,strcmp(raw(1,:),'pTau 217'));
+    excluded_adai_ptau217 = excluded_adai_ptau217(2:end,1);
+    excluded_adai_ptau217{strcmp(excluded_adai_ptau217,'NA'),1} = NaN;
+    excluded_adai_ptau217 = cell2mat(excluded_adai_ptau217);
+    
+    excluded_adai_ihd = cell(size(pos_excluded,1),1);
+    for ind = 1:size(pos_excluded,1)
+        if ( strcmp(cellstr(adai.Heart_Issues(ind,:)),'Yes') || strcmp(cellstr(adai.Heart_Issues(ind,:)),'No') ) && ~strcmp(cellstr(adai.Ischemic_vs_non0x2Dischemic_heart_disease(ind,:)),'Ischemic')
+            excluded_adai_ihd{ind,1} = 'No';
+        elseif strcmp(cellstr(adai.Ischemic_vs_non0x2Dischemic_heart_disease(ind,:)),'Ischemic')
+            excluded_adai_ihd{ind,1} = 'Yes';
+        end       
+    end
+    excluded_adai_ihd = excluded_adai_ihd(pos_excluded,1);  
     
     adni_sex = cell(size(adni_subsess));
+    adni_impairment = cell(size(adni_subsess));
+    adni_ptid = cell(size(adni_subsess));
+    adni_viscode = cell(size(adni_subsess));
     adni_age = NaN*ones(size(adni_subsess));
     adni_height = NaN*ones(size(adni_subsess));
     adni_weight = NaN*ones(size(adni_subsess));
@@ -140,11 +272,30 @@ if extract_data == 1
     adni_apoe3 = NaN*ones(size(adni_subsess));
     adni_apoe2 = NaN*ones(size(adni_subsess));
     adni_mmse = NaN*ones(size(adni_subsess));
+    adni_ptau217 = NaN*ones(size(adni_subsess));
+    adni_abeta40 = NaN*ones(size(adni_subsess));
+    adni_abeta42 = NaN*ones(size(adni_subsess));
+    adni_agedist = NaN*ones(size(adni_subsess));
+    adni_ptau217nptau217 = NaN*ones(size(adni_subsess));
+    adni_ptau217nptau217_viscode = cell(size(adni_subsess));
+    adni_ptau217nptau217_visdist = NaN*ones(size(adni_subsess));
     b_subsess = cellstr(strcat('sub-',adni.Subject_ID,'/ses-',adni.VISCODE));
     b_subsess = regexprep(b_subsess,'[_]','');
     for ind = 1:size(adni_subsess,1)
         pos = strcmp(b_subsess,adni_subsess{ind,1});
         adni_sex{ind,1} =  adni.Sex(pos,1);
+        adni_impairment{ind,1} =  adni.DX(pos,:);
+        if contains(adni_impairment{ind,1},'CN')
+            adni_impairment{ind,1} = 'CN';
+        elseif contains(adni_impairment{ind,1},'MCI')
+            adni_impairment{ind,1} = 'MCI';
+        elseif contains(adni_impairment{ind,1},'SCI')
+            adni_impairment{ind,1} = 'SCI';
+        elseif contains(adni_impairment{ind,1},'Dementia')
+            adni_impairment{ind,1} = 'Dementia';
+        elseif strcmp(adni_impairment{ind,1},'        ')
+            adni_impairment{ind,1} = '';
+        end   
         adni_age(ind,1) =  adni.Age(pos,1);
         adni_weight(ind,1) =  adni.Weight(pos,1);
         adni_education(ind,1) =  adni.PTEDUCAT(pos,1);
@@ -153,7 +304,71 @@ if extract_data == 1
         adni_apoe3(ind,1) =  adni.APOE3COUNT(pos,1);
         adni_apoe2(ind,1) =  adni.APOE2COUNT(pos,1);
         adni_mmse(ind,1) =  adni.MMSE(pos,1);
+        adni_ptid(ind,1) = cellstr(adni.PTID(pos,:));
+        adni_viscode(ind,1) = cellstr(adni.VISCODE(pos,:));
     end
+    b_subsess = cellstr(strcat( 'sub-',table2cell(tbl_adni(:,'PTID')) ));
+    b_subsess = regexprep(b_subsess,'[_]','');
+    for ind = 1:size(adni_subsess,1)
+        pos = contains(b_subsess,extractBefore(adni_subsess{ind,1},'/'));
+        tmp_dmri_viscode = extractAfter(adni_subsess{ind,1},'/ses-');
+        if sum(pos) > 0    
+            tmp_tbl = tbl_adni(pos,:);
+            tmp_age = adni_master_age(pos,1);
+            if sum(pos)==1 && isnan(tmp_age) && strcmp(table2cell(tmp_tbl(:,'VISCODE')),tmp_dmri_viscode)
+                tmp_age = adni_age(ind,1);
+            end
+            tmp_agedist = tmp_age - adni_age(ind,1);
+            tmp_agedist_min_pos = find(abs(tmp_agedist)==min(abs(tmp_agedist)));
+            
+            if abs(tmp_agedist(tmp_agedist_min_pos,1)) <= dmri_plasma_time_gap_thr
+                adni_ptau217(ind,1) = cell2mat(table2cell(tmp_tbl(tmp_agedist_min_pos,'pT217_F')));
+                if adni_ptau217(ind,1) == -4
+                    adni_ptau217(ind,1) = NaN;
+                end
+                adni_abeta40(ind,1) = cell2mat(table2cell(tmp_tbl(tmp_agedist_min_pos,'AB40_F')));
+                if adni_abeta40(ind,1) == -4
+                    adni_abeta40(ind,1) = NaN;
+                end
+                adni_abeta42(ind,1) = cell2mat(table2cell(tmp_tbl(tmp_agedist_min_pos,'AB42_F')));
+                if adni_abeta42(ind,1) == -4
+                    adni_abeta42(ind,1) = NaN;
+                end
+                adni_agedist(ind,1) = tmp_agedist(tmp_agedist_min_pos,1);
+            end
+        end
+    end
+    b_subsess = cellstr(strcat( 'sub-',table2cell(tbl_adni_plasma2(:,'PTID')) ));
+    b_subsess = regexprep(b_subsess,'[_]','');
+    for ind = 1:size(adni_subsess,1)
+        pos = contains(b_subsess,extractBefore(adni_subsess{ind,1},'/'));
+        tmp_dmri_viscode = extractAfter(adni_subsess{ind,1},'/ses-');
+        if sum(pos) > 0
+            tmp_tbl = tbl_adni_plasma2(pos,:);
+            tmp_viscode = table2cell(tmp_tbl(:,'VISCODE2'));
+            for ps = 1:size(tmp_tbl,1)
+                if strcmp(tmp_viscode{ps,1},'bl') || strcmp(tmp_viscode{ps,1},'sc')
+                    tmp_viscode_time(ps,1) = 0;
+                else
+                    tmp_viscode_time(ps,1) = str2double(tmp_viscode{ps,1}(2:end));
+                end
+            end
+            if strcmp(adni_viscode{ind,1},'bl') || strcmp(adni_viscode{ind,1},'sc')
+                tmp_dmri_time = 0;
+            else
+                tmp_dmri_time = str2double(adni_viscode{ind,1}(2:end));
+            end
+            tmp_viscode_dist = (tmp_viscode_time - tmp_dmri_time)/12;
+            tmp_viscode_dist_min_pos = find(abs(tmp_viscode_dist)==min(abs(tmp_viscode_dist)));
+            
+            adni_ptau217nptau217(ind,1) = cell2mat(table2cell(tmp_tbl(tmp_viscode_dist_min_pos,'pT217_npT217_C2N')));
+            adni_ptau217nptau217_viscode{ind,1} = tmp_viscode{tmp_viscode_dist_min_pos,1};
+            adni_ptau217nptau217_visdist(ind,1) = tmp_viscode_dist(tmp_viscode_dist_min_pos,1);
+            
+            clear tmp_viscode_time
+        end
+    end
+    
     
     subsess = [adai_subsess; adni_subsess];
     race = [ ones(size(adai_subsess,1),1); zeros(size(adni_subsess,1),1) ];
@@ -166,6 +381,17 @@ if extract_data == 1
     apoe3 = [adai_apoe3; adni_apoe3];
     apoe2 = [adai_apoe2; adni_apoe2];
     mmse = [adai_mmse; adni_mmse];
+    ptau217 = [adai_ptau217; adni_ptau217];
+    abeta40 = [adai_abeta40; adni_abeta40];
+    abeta42 = [adai_abeta42; adni_abeta42];
+    plasma_time_gap = [zeros(size(adai_ptau217)); adni_agedist];
+    ptau217nptau217 = [NaN*ones(size(adai_ptau217)); adni_ptau217nptau217];
+    ptau217nptau217_time_gap = [NaN*ones(size(adai_ptau217)); adni_ptau217nptau217_visdist];
+    impairment = [adai_impairment; adni_impairment];
+    hyperlipidemia = [adai_hyperlipidemia; cell(size(adni_subsess))];
+    ihd = [adai_ihd; cell(size(adni_subsess))];
+    stroke = [adai_stroke; cell(size(adni_subsess))];
+    nfl = [adai_nfl; NaN*ones(size(adni_subsess))];
     
     preprocessing = [adai_preprocessing; adni_preprocessing];
     dmriAPvols = [adai_dmriAPvols; adni_dmriAPvols];
@@ -205,6 +431,17 @@ if extract_data == 1
     dmriAPvols = dmriAPvols(selection~=0);
     dmriPAvols = dmriPAvols(selection~=0);
     subsess = subsess(selection~=0);
+    ptau217 = ptau217(selection~=0);
+    abeta40 = abeta40(selection~=0);
+    abeta42 = abeta42(selection~=0);
+    plasma_time_gap = plasma_time_gap(selection~=0);
+    ptau217nptau217 = ptau217nptau217(selection~=0);
+    ptau217nptau217_time_gap = ptau217nptau217_time_gap(selection~=0);
+    impairment = impairment(selection~=0);
+    hyperlipidemia = hyperlipidemia(selection~=0);
+    ihd = ihd(selection~=0);
+    stroke = stroke(selection~=0);
+    nfl = nfl(selection~=0);
     
 %     selection = selection(selection~=0);
     selection2 = selection(selection~=0);
@@ -324,9 +561,12 @@ if extract_data == 1
     %% ADAI selection applied
     adai_sex = adai_sex(adai_selection~=0);
     adai_age = adai_age(adai_selection~=0);
+    adai_height = adai_height(adai_selection~=0);
     adai_weight = adai_weight(adai_selection~=0);
+    adai_bmi = adai_bmi(adai_selection~=0);
     adai_education = adai_education(adai_selection~=0);
     adai_hypertension = adai_hypertension(adai_selection~=0);
+    adai_hypertension2 = adai_hypertension2(adai_selection~=0);
     adai_apoe4 = adai_apoe4(adai_selection~=0);
     adai_apoe3 = adai_apoe3(adai_selection~=0);
     adai_apoe2 = adai_apoe2(adai_selection~=0);
@@ -335,6 +575,12 @@ if extract_data == 1
     adai_dmriAPvols = adai_dmriAPvols(adai_selection~=0);
     adai_dmriPAvols = adai_dmriPAvols(adai_selection~=0);
     adai_homeless = adai_homeless(adai_selection~=0);
+    adai_hyperlipidemia = adai_hyperlipidemia(adai_selection~=0);
+    adai_ihd = adai_ihd(adai_selection~=0);
+    adai_stroke = adai_stroke(adai_selection~=0);
+    adai_ptau217 = adai_ptau217(adai_selection~=0);
+    adai_nfl = adai_nfl(adai_selection~=0);
+    
 %     
 %     adai_selection = adai_selection(adai_selection~=0);
     
@@ -348,7 +594,9 @@ if extract_data == 1
     %% ADNI selection
     adni_sex = adni_sex(adni_selection~=0);
     adni_age = adni_age(adni_selection~=0);
+    adni_height = adni_height(adni_selection~=0);
     adni_weight = adni_weight(adni_selection~=0);
+    adni_bmi = adni_bmi(adni_selection~=0);
     adni_education = adni_education(adni_selection~=0);
     adni_hypertension = adni_hypertension(adni_selection~=0);
     adni_apoe4 = adni_apoe4(adni_selection~=0);
@@ -371,7 +619,7 @@ if extract_data == 1
     
     adni_list = table(adni_ptid,adni_viscode,'VariableNames',{'PTID','VISCODE'});
     
-    %% Chi-squared statistics - femnales and hypertension for ADAI and ADNI separately
+    %% Chi-squared statistics - females and hypertension for ADAI and ADNI separately
     [chitbl_adai_female,chi2stat_adai_female,chi_p_adai_female] = crosstab(adai_apoe4_bin,adai_female);
     [chitbl_adai_hypertension,chi2stat_adai_hypertension,chi_p_adai_hypertension] = crosstab(adai_apoe4_bin,adai_hypertension);
     
@@ -531,6 +779,16 @@ if extract_data == 1
     stats_excluded{5,1} = 'MMSE';
     stats_excluded{6,1} = 'APOE4 heterozygotes';
     stats_excluded{7,1} = 'Homeless';
+    stats_excluded{8,1} = 'Hyperlipidemia';
+    stats_excluded{9,1} = 'Ischemic Heart Disease';
+    stats_excluded{10,1} = 'Stroke';
+    stats_excluded{11,1} = 'p-tau217';
+    stats_excluded{12,1} = 'NfL';
+    stats_excluded{13,1} = 'Height [cm]';
+    stats_excluded{14,1} = 'Weight [kg]';
+    stats_excluded{15,1} = 'BMI [kg/m^2]';
+    stats_excluded{16,1} = 'Hypertension';
+    
     
     
     stats_excluded{2,2} = sum(~isnan(adai_age));
@@ -591,10 +849,198 @@ if extract_data == 1
     x2 = [strcmp(adai_homeless,'Yes'); strcmp(tmp,'Yes')];
     [~,~,stats_excluded{7,6}] = crosstab(x1,x2);
     
+    stats_excluded{8,2} = sum(~strcmp(adai_hyperlipidemia,''));
+    stats_excluded{8,3} = [ num2str(sum(strcmp(adai_hyperlipidemia,'Yes')),'%.0f') ' (' num2str(100*sum(strcmp(adai_hyperlipidemia,'Yes'))/stats_excluded{8,2},'%.0f') '%)'];
+    stats_excluded{8,4} = sum(~strcmp(excluded_adai_hyperlipidemia,''));
+    stats_excluded{8,5} = [ num2str(sum(strcmp(excluded_adai_hyperlipidemia,'Yes')),'%.0f') ' (' num2str(100*sum(strcmp(excluded_adai_hyperlipidemia,'Yes'))/stats_excluded{8,4},'%.0f') '%)'];
+    x1 = [ ones(stats_excluded{8,2},1); 2*ones(stats_excluded{8,4},1)];
+    tmp = excluded_adai_hyperlipidemia;
+    tmp(strcmp(excluded_adai_hyperlipidemia,'')) = [];
+    x2 = [strcmp(adai_hyperlipidemia,'Yes'); strcmp(tmp,'Yes')];
+    [~,~,stats_excluded{8,6}] = crosstab(x1,x2);
+    
+    stats_excluded{9,2} = sum(~strcmp(adai_ihd,''));
+    stats_excluded{9,3} = [ num2str(sum(strcmp(adai_ihd,'Yes')),'%.0f') ' (' num2str(100*sum(strcmp(adai_ihd,'Yes'))/stats_excluded{9,2},'%.0f') '%)'];
+    stats_excluded{9,4} = sum(~strcmp(excluded_adai_ihd,''));
+    stats_excluded{9,5} = [ num2str(sum(strcmp(excluded_adai_ihd,'Yes')),'%.0f') ' (' num2str(100*sum(strcmp(excluded_adai_ihd,'Yes'))/stats_excluded{9,4},'%.0f') '%)'];
+    x1 = [ ones(stats_excluded{9,2},1); 2*ones(stats_excluded{9,4},1)];
+    tmp = excluded_adai_ihd;
+    tmp(strcmp(excluded_adai_ihd,'')) = [];
+    x2 = [strcmp(adai_ihd,'Yes'); strcmp(tmp,'Yes')];
+    [~,~,stats_excluded{9,6}] = crosstab(x1,x2);
+    
+    stats_excluded{10,2} = sum(~strcmp(adai_stroke,''));
+    stats_excluded{10,3} = [ num2str(sum(strcmp(adai_stroke,'Yes')),'%.0f') ' (' num2str(100*sum(strcmp(adai_stroke,'Yes'))/stats_excluded{10,2},'%.0f') '%)'];
+    stats_excluded{10,4} = sum(~strcmp(excluded_adai_stroke,''));
+    stats_excluded{10,5} = [ num2str(sum(strcmp(excluded_adai_stroke,'Yes')),'%.0f') ' (' num2str(100*sum(strcmp(excluded_adai_stroke,'Yes'))/stats_excluded{10,4},'%.0f') '%)'];
+    x1 = [ ones(stats_excluded{10,2},1); 2*ones(stats_excluded{10,4},1)];
+    tmp = excluded_adai_stroke;
+    tmp(strcmp(excluded_adai_stroke,'')) = [];
+    x2 = [strcmp(adai_stroke,'Yes'); strcmp(tmp,'Yes')];
+    [~,~,stats_excluded{10,6}] = crosstab(x1,x2);
+    
+    stats_excluded{11,2} = sum(~isnan(adai_ptau217));
+    stats_excluded{11,3} = [ num2str( quantile(adai_ptau217,0.5) , '%.2f') ' (' ...
+         num2str( quantile(adai_ptau217,0.25) , '%.2f') '; ' ...
+         num2str( quantile(adai_ptau217,0.75) , '%.2f') ')' ];
+    stats_excluded{11,4} = sum(~isnan(excluded_adai_ptau217));
+    stats_excluded{11,5} = [ num2str( quantile(excluded_adai_ptau217,0.5) , '%.2f') ' (' ...
+         num2str( quantile(excluded_adai_ptau217,0.25) , '%.2f') '; ' ...
+         num2str( quantile(excluded_adai_ptau217,0.75) , '%.2f') ')' ];
+    stats_excluded{11,6} = ranksum(adai_ptau217,excluded_adai_ptau217);
+    
+    stats_excluded{12,2} = sum(~isnan(adai_nfl));
+    stats_excluded{12,3} = [ num2str( quantile(adai_nfl,0.5) , '%.0f') ' (' ...
+         num2str( quantile(adai_nfl,0.25) , '%.0f') '; ' ...
+         num2str( quantile(adai_nfl,0.75) , '%.0f') ')' ];
+    stats_excluded{12,4} = sum(~isnan(excluded_adai_nfl));
+    stats_excluded{12,5} = [ num2str( quantile(excluded_adai_nfl,0.5) , '%.0f') ' (' ...
+         num2str( quantile(excluded_adai_nfl,0.25) , '%.0f') '; ' ...
+         num2str( quantile(excluded_adai_nfl,0.75) , '%.0f') ')' ];
+    stats_excluded{12,6} = ranksum(adai_nfl,excluded_adai_nfl);
+    
+    stats_excluded{13,2} = sum(~isnan(adai_height));
+    stats_excluded{13,3} = [ num2str( quantile(adai_height,0.5) , '%.0f') ' (' ...
+         num2str( quantile(adai_height,0.25) , '%.0f') '; ' ...
+         num2str( quantile(adai_height,0.75) , '%.0f') ')' ];
+    stats_excluded{13,4} = sum(~isnan(excluded_adai_height));
+    stats_excluded{13,5} = [ num2str( quantile(excluded_adai_height,0.5) , '%.0f') ' (' ...
+         num2str( quantile(excluded_adai_height,0.25) , '%.0f') '; ' ...
+         num2str( quantile(excluded_adai_height,0.75) , '%.0f') ')' ];
+    stats_excluded{13,6} = ranksum(adai_height,excluded_adai_height);
+    
+    stats_excluded{14,2} = sum(~isnan(adai_weight));
+    stats_excluded{14,3} = [ num2str( quantile(adai_weight,0.5) , '%.0f') ' (' ...
+         num2str( quantile(adai_weight,0.25) , '%.0f') '; ' ...
+         num2str( quantile(adai_weight,0.75) , '%.0f') ')' ];
+    stats_excluded{14,4} = sum(~isnan(excluded_adai_weight));
+    stats_excluded{14,5} = [ num2str( quantile(excluded_adai_weight,0.5) , '%.0f') ' (' ...
+         num2str( quantile(excluded_adai_weight,0.25) , '%.0f') '; ' ...
+         num2str( quantile(excluded_adai_weight,0.75) , '%.0f') ')' ];
+    stats_excluded{14,6} = ranksum(adai_weight,excluded_adai_weight);
+    
+    stats_excluded{15,2} = sum(~isnan(adai_bmi));
+    stats_excluded{15,3} = [ num2str( quantile(adai_bmi,0.5) , '%.0f') ' (' ...
+         num2str( quantile(adai_bmi,0.25) , '%.0f') '; ' ...
+         num2str( quantile(adai_bmi,0.75) , '%.0f') ')' ];
+    stats_excluded{15,4} = sum(~isnan(excluded_adai_bmi));
+    stats_excluded{15,5} = [ num2str( quantile(excluded_adai_bmi,0.5) , '%.0f') ' (' ...
+         num2str( quantile(excluded_adai_bmi,0.25) , '%.0f') '; ' ...
+         num2str( quantile(excluded_adai_bmi,0.75) , '%.0f') ')' ];
+    stats_excluded{15,6} = ranksum(adai_bmi,excluded_adai_bmi);
+    
+    stats_excluded{16,2} = sum(~strcmp(adai_hypertension2,''));
+    stats_excluded{16,3} = [ num2str(sum(strcmp(adai_hypertension2,'Yes')),'%.0f') ' (' num2str(100*sum(strcmp(adai_hypertension2,'Yes'))/stats_excluded{16,2},'%.0f') '%)'];
+    stats_excluded{16,4} = sum(~strcmp(excluded_adai_hypertension,''));
+    stats_excluded{16,5} = [ num2str(sum(strcmp(excluded_adai_hypertension,'Yes')),'%.0f') ' (' num2str(100*sum(strcmp(excluded_adai_hypertension,'Yes'))/stats_excluded{16,4},'%.0f') '%)'];
+    x1 = [ ones(stats_excluded{16,2},1); 2*ones(stats_excluded{16,4},1)];
+    tmp = excluded_adai_hypertension;
+    tmp(strcmp(excluded_adai_hypertension,'')) = [];
+    x2 = [strcmp(adai_hypertension2,'Yes'); strcmp(tmp,'Yes')];
+    [~,~,stats_excluded{16,6}] = crosstab(x1,x2);
+    
+    stats_excluded = stats_excluded([1:3 13:15 4:5 11:12 6:7 16 8:10],:);
     %% Number of samples above age 65
     NsubAbouve64 = sum(adai_age>=65);
     NApoe4Above64 = sum(adai_apoe4(adai_age>=65)==1);
-      
+    
+    %% clinical status stats
+    impairment_nsub_adai = sum( ~cellfun(@isempty,impairment) & race==1 );
+    impairment_nsub_adni = sum( ~cellfun(@isempty,impairment) & race==0 );
+    
+    x1 = [ zeros(impairment_nsub_adai,1); ones(impairment_nsub_adni,1) ];
+    
+    stats_impairment{1,2} = ['AI (N=' num2str(impairment_nsub_adai) ')'];
+    stats_impairment{1,3} = ['NHW (N=' num2str(impairment_nsub_adni)  ')'];
+    stats_impairment{1,4} = 'p';
+    
+    stats_impairment{2,1} = 'No Impairment';
+    stats_impairment{3,1} = 'Cognitively Impaired';
+    stats_impairment{4,1} = 'Dementia';
+    
+    impairment_adai_cn = strcmp(impairment,'CN') & race==1;
+    impairment_adai_mci = ( strcmp(impairment,'MCI') | strcmp(impairment,'SCI') ) & race==1;
+    impairment_adai_ad = strcmp(impairment,'Dementia') & race==1;
+    
+    impairment_adni_cn = strcmp(impairment,'CN') & race==0;
+    impairment_adni_mci = strcmp(impairment,'MCI') & race==0;
+    impairment_adni_ad = strcmp(impairment,'Dementia') & race==0;
+    
+    stats_impairment{2,2} = [ num2str(sum(impairment_adai_cn))  ' (' num2str(100*sum(impairment_adai_cn)/impairment_nsub_adai, '%.0f' ) '%)' ];
+    stats_impairment{3,2} = [ num2str(sum(impairment_adai_mci))  ' (' num2str(100*sum(impairment_adai_mci)/impairment_nsub_adai, '%.0f' ) '%)' ];
+    stats_impairment{4,2} = [ num2str(sum(impairment_adai_ad))  ' (' num2str(100*sum(impairment_adai_ad)/impairment_nsub_adai, '%.1f' ) '%)' ];
+    
+    stats_impairment{2,3} = [ num2str(sum(impairment_adni_cn))  ' (' num2str(100*sum(impairment_adni_cn)/impairment_nsub_adni, '%.0f' ) '%)' ];
+    stats_impairment{3,3} = [ num2str(sum(impairment_adni_mci))  ' (' num2str(100*sum(impairment_adni_mci)/impairment_nsub_adni, '%.0f' ) '%)' ];
+    stats_impairment{4,3} = [ num2str(sum(impairment_adni_ad))  ' (' num2str(100*sum(impairment_adni_ad)/impairment_nsub_adni, '%.1f' ) '%)' ];
+    
+    [~,~,stats_impairment{2,4}] = crosstab(x1, [impairment_adai_cn(race==1); impairment_adni_cn(race==0 & ~cellfun(@isempty,impairment))] );
+    [~,~,stats_impairment{3,4}] = crosstab(x1, [impairment_adai_mci(race==1); impairment_adni_mci(race==0 & ~cellfun(@isempty,impairment))] );
+    [~,~,stats_impairment{4,4}] = crosstab(x1, [impairment_adai_ad(race==1); impairment_adni_ad(race==0 & ~cellfun(@isempty,impairment))] );
+    
+%     mmse(strcmp(impairment,'Dementia'))
+    %% ptaunptau217 stats
+%     sum(~isnan(ptau217nptau217) & race==0)
+%     sum(~isnan(ptau217) & race==0)
+%     sum( ~isnan(ptau217nptau217) & isnan(ptau217) & race==0 )
+%     
+%     figure(1);
+%     histogram(ptau217nptau217_time_gap(race==0))
+%     grid on
+%     xlabel('Time [years]')
+%     ylabel('Count')
+%     title('ptau217 / nptau217')
+%     set(gca,'Fontsize',14,'LineWidth',2)
+    %% pTau217 stats
+    nsub_adai = sum(race==1);
+    nsub_adni = sum(race==0);
+    
+    nsub_adai_ptau217 = sum(~isnan(ptau217) & race==1);
+    nsub_adni_ptau217 = sum(~isnan(ptau217) & race==0);
+    
+    adai_ptau217_negative = ptau217(~isnan(ptau217) & race==1) < 0.4;
+    adai_ptau217_intermediate = ptau217(~isnan(ptau217) & race==1) >= 0.4 & ptau217(~isnan(ptau217) & race==1) <= 0.62;
+    adai_ptau217_positive = ptau217(~isnan(ptau217) & race==1) > 0.62;
+    
+    adni_ptau217_negative = ptau217(~isnan(ptau217) & race==0) < 0.22;
+    adni_ptau217_intermediate = ptau217(~isnan(ptau217) & race==0) >= 0.22 & ptau217(~isnan(ptau217) & race==0) <= 0.34;
+    adni_ptau217_positive = ptau217(~isnan(ptau217) & race==0) > 0.34;
+    
+    stats_ptau217_time_gap(1,1) = mean(plasma_time_gap(~isnan(ptau217) & race==0));
+    stats_ptau217_time_gap(1,2) = std(plasma_time_gap(~isnan(ptau217) & race==0));
+    
+    x1 = [zeros(size(adai_ptau217_negative)); ones(size(adni_ptau217_negative))];
+    
+    stat_adai_ptau217(1,:) = [ mean(ptau217(~isnan(ptau217) & race==1 & ptau217<0.4)) std(ptau217(~isnan(ptau217) & race==1 & ptau217<0.4)) ];
+    stat_adai_ptau217(2,:) = [ mean(ptau217(~isnan(ptau217) & race==1 & ptau217>=0.4 & ptau217<=0.62)) std(ptau217(~isnan(ptau217) & race==1 & ptau217>=0.4 & ptau217<=0.62)) ];
+    stat_adai_ptau217(3,:) = [ mean(ptau217(~isnan(ptau217) & race==1 & ptau217>0.62)) std(ptau217(~isnan(ptau217) & race==1 & ptau217>0.62)) ];
+    
+    stat_adni_ptau217(1,:) = [ mean(ptau217(~isnan(ptau217) & race==0 & ptau217<0.22)) std(ptau217(~isnan(ptau217) & race==0 & ptau217<0.22)) ];
+    stat_adni_ptau217(2,:) = [ mean(ptau217(~isnan(ptau217) & race==0 & ptau217>=0.22 & ptau217<=0.34)) std(ptau217(~isnan(ptau217) & race==0 & ptau217>=0.22 & ptau217<=0.34)) ];
+    stat_adni_ptau217(3,:) = [ mean(ptau217(~isnan(ptau217) & race==0 & ptau217>0.34)) std(ptau217(~isnan(ptau217) & race==0 & ptau217>0.34)) ];
+    
+    stats_ptau217{1,1} = 'pTau217';
+    stats_ptau217{1,2} = ['AI (N=' num2str(nsub_adai_ptau217) ')'];
+    stats_ptau217{1,3} = ['NHW (N=' num2str(nsub_adni_ptau217) ')'];
+    stats_ptau217{1,4} = 'p';
+    
+    stats_ptau217{2,1} = 'Negative';
+    stats_ptau217{3,1} = 'Intermediate';
+    stats_ptau217{4,1} = 'Positive';
+    
+    stats_ptau217{2,2} = [ num2str(sum(adai_ptau217_negative)) ' (' num2str(100*sum(adai_ptau217_negative)/nsub_adai_ptau217,'%.0f') '%; ' num2str(stat_adai_ptau217(1,1),'%.2f') '±' num2str(stat_adai_ptau217(1,2),'%.2f') ')'];
+    stats_ptau217{3,2} = [ num2str(sum(adai_ptau217_intermediate)) ' (' num2str(100*sum(adai_ptau217_intermediate)/nsub_adai_ptau217,'%.0f') '%; ' num2str(stat_adai_ptau217(2,1),'%.2f') '±' num2str(stat_adai_ptau217(2,2),'%.2f') ')'];
+    stats_ptau217{4,2} = [ num2str(sum(adai_ptau217_positive)) ' (' num2str(100*sum(adai_ptau217_positive)/nsub_adai_ptau217,'%.0f') '%; ' num2str(stat_adai_ptau217(3,1),'%.2f') '±' num2str(stat_adai_ptau217(3,2),'%.2f') ')'];
+    
+    stats_ptau217{2,3} = [ num2str(sum(adni_ptau217_negative)) ' (' num2str(100*sum(adni_ptau217_negative)/nsub_adni_ptau217,'%.0f') '%; ' num2str(stat_adni_ptau217(1,1),'%.2f') '±' num2str(stat_adni_ptau217(1,2),'%.2f') ')'];
+    stats_ptau217{3,3} = [ num2str(sum(adni_ptau217_intermediate)) ' (' num2str(100*sum(adni_ptau217_intermediate)/nsub_adni_ptau217,'%.0f') '%; ' num2str(stat_adni_ptau217(2,1),'%.2f') '±' num2str(stat_adni_ptau217(2,2),'%.2f') ')'];
+    stats_ptau217{4,3} = [ num2str(sum(adni_ptau217_positive)) ' (' num2str(100*sum(adni_ptau217_positive)/nsub_adni_ptau217,'%.0f') '%; ' num2str(stat_adni_ptau217(3,1),'%.2f') '±' num2str(stat_adni_ptau217(3,2),'%.2f') ')'];
+    
+    [~, ~, stats_ptau217{2,4}] = crosstab(x1,[adai_ptau217_negative; adni_ptau217_negative]);
+    [~, ~, stats_ptau217{3,4}] = crosstab(x1,[adai_ptau217_intermediate; adni_ptau217_intermediate]);
+    [~, ~, stats_ptau217{4,4}] = crosstab(x1,[adai_ptau217_positive; adni_ptau217_positive]);
+    
+    
     %% Define tract database and tracts of interest
     tract_list = {
             'Anterior_Commissure'
@@ -818,6 +1264,7 @@ if estimate_stats == 1
        0 0 0 1 0 0
        0 0 0 0 1 0
        0 0 0 0 0 1
+       0 1 0 0 0 1
        0 0 0 0 1 1
        ]; 
    Tage = [
@@ -827,6 +1274,7 @@ if estimate_stats == 1
        0 0 0 1 0 0
        0 0 0 0 1 0
        0 0 0 0 0 1
+       0 1 0 0 0 1
        0 0 0 1 0 1
        ];
    Tsex = [
@@ -836,6 +1284,7 @@ if estimate_stats == 1
        0 0 0 1 0 0
        0 0 0 0 1 0
        0 0 0 0 0 1
+       0 1 0 0 0 1
        0 0 1 0 0 1
        ]; 
    mdl1 = cell(0,0);

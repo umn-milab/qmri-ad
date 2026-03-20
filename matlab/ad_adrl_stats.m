@@ -347,6 +347,10 @@ adni_all = [
     table2cell(tbl_adni(:,'PTEDUCAT')), ...
     ];
 
+tblexport_adni_all = array2table(adni_all,...
+    'VariableNames',data_names);
+writetable(tblexport_adni_all,fullfile(project_folder,'HeartDataset','adni_plasma_table_organized.csv'))
+
 adni_all= adni_all ( cell2mat(table2cell(tbl_adni(:,'MMSE')))>=24 & ~isnan(cell2mat(adni_all(:,strcmp(data_names,'APOE4')))) , : ); % ~isnan(cell2mat(table2cell(tbl_adni(:,'eGFR'))))
 
 %% Threshold outliers from ADNI data
