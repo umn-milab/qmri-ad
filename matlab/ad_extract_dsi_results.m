@@ -14,8 +14,11 @@ project_folder2=fullfile(data_folder,'ADNI','ADNI_ADAI_match');
 table_folder2=fullfile(project_folder2,'tables');
 adnistudydata_folder = fullfile(data_folder,'ADNI','StudyData');
 
+adai_connectivity_folder = fullfile(project_folder,'results','dmri-hamza','adai_pass_10M_connectivity');
+adni_connectivity_folder = fullfile(project_folder2,'results','dmri-hamza','adni_adai_match_pass_10M_connectivity');
+
 jhu_roi = 'reconstruction_specific';
-save_path = fullfile(project_folder,'pictures','ad_paper_export_20251121');
+save_path = fullfile(project_folder,'pictures','ad_paper_export_20260402');
 % jhu_roi = 'same'; % Use NORDIC JHU mask for JHU-atlas based dMRI value extraction
 % save_folder = fullfile(project_folder,'pictures','bcp_paper_export_same_jhu_roi');
 extract_data_file = fullfile(project_folder,'results',extract_data_filename);
@@ -1218,6 +1221,8 @@ if extract_data == 1
     tmp = zeros(size(tract_data,1), size(tract_data,2), size(subsess,1));
     for ind = 1:size(subsess,1)
         tmp(:,:,ind) = tract_data(:,:,strcmp(tractometry(1,1).SUBID,subsess{ind,1}));
+%         t = fopen(fullfile(adai_connectivity_folder,'dsi_studio_output',extractBefore(subsess{ind,1},'/'),[ 'track_' extractBefore(subsess{ind,1},'/') '.tt.gz.HCP-MMP.count.pass.network_measures.txt']));
+        
     end
     tract_data = tmp;
     clear tmp
