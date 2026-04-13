@@ -69,7 +69,8 @@ include_bmi = 1; % values: 0 1 2
 % xls_file = fullfile(project_folder,'HeartDataset','MasterDataset_June14.xlsx');
 % xls_file = fullfile(project_folder,'HeartDataset','MasterDataset_September11.xlsx');
 % xls_file = fullfile(project_folder,'HeartDataset','MasterDataset_Oct21.xlsx');
-xls_file = fullfile(project_folder,'HeartDataset','MasterDataset_Oct23.xlsx');
+% xls_file = fullfile(project_folder,'HeartDataset','MasterDataset_Oct23.xlsx'); % Used in original Alzheimer's & Dementia submission
+xls_file = fullfile(project_folder,'HeartDataset','MasterDataset_03-30.xlsx');
 
 [~, ~, raw] = xlsread(xls_file);
 raw(strcmp(raw,'Male ')) = {'Male'};
@@ -207,6 +208,40 @@ for ind = 1:size(adai_excludedihd,1)
     end
 end
 
+adai_impairment = cell(0,0);
+for ind = 1:size(raw,1)
+    if ~isnan(raw{ind,strcmp(raw(1,:),'Level of impairment')})
+        adai_impairment{ind,1} = raw{ind,strcmp(raw(1,:),'Level of impairment')};
+    else
+        adai_impairment{ind,1} = '';
+    end
+end
+% adai_impairment = adai_impairment(2:end,1);
+
+adai_noimpairment = cell(size(adai_impairment));
+adai_smci = cell(size(adai_impairment));
+adai_ad = cell(size(adai_impairment));
+adai_smciad = cell(size(adai_impairment));
+
+for ind = 1:size(adai_impairment,1)
+    if strcmp(adai_impairment{ind,1},'No impairment')
+        adai_noimpairment{ind,1} = 'Yes';
+        adai_smci{ind,1} = 'No';
+        adai_ad{ind,1} = 'No';
+        adai_smciad{ind,1} = 'No';
+    elseif strcmp(adai_impairment{ind,1},'Mild Cognitive Impairment') || strcmp(adai_impairment{ind,1},'Subjective Cognitive Impairment')
+        adai_noimpairment{ind,1} = 'No';
+        adai_smci{ind,1} = 'Yes';
+        adai_ad{ind,1} = 'No';
+        adai_smciad{ind,1} = 'Yes';
+    elseif strcmp(adai_impairment{ind,1},'Dementia')
+        adai_noimpairment{ind,1} = 'No';
+        adai_smci{ind,1} = 'No';
+        adai_ad{ind,1} = 'Yes';
+        adai_smciad{ind,1} = 'Yes';
+    end
+end
+
 
 adni_allapoe4 = table2cell(tbl_adni(:,'APOE4'));
 tmp = table2cell(tbl_adni(:,'APOE4COUNT'));
@@ -229,9 +264,6 @@ for ind = 1:size(tbl_adni,1)
     end
 end
 
-
-
-
 adni_allhtn = cell(size(tbl_adni,1),1);
 adni_allhtn( cell2mat(table2cell(tbl_adni(:,'HMHYPERT')))==0 ) = {'No'};
 adni_allhtn( cell2mat(table2cell(tbl_adni(:,'HMHYPERT')))==1 ) = {'Yes'};
@@ -240,8 +272,49 @@ adni_allstroke = cell(size(tbl_adni,1),1);
 adni_allstroke( cell2mat(table2cell(tbl_adni(:,'HMSTROKE')))==0 ) = {'No'};
 adni_allstroke( cell2mat(table2cell(tbl_adni(:,'HMSTROKE')))==2 ) = {'Yes'};
 
+adni_impairment = cell(size(tbl_adni,1),1);
+adni_noimpairment = cell(size(tbl_adni,1),1);
+adni_smci = cell(size(tbl_adni,1),1);
+adni_ad = cell(size(tbl_adni,1),1);
+adni_smciad = cell(size(tbl_adni,1),1);
+for ind = 1:size(tbl_adni,1)
+    adni_impairment{ind,1} =  tbl_adni.DX(ind,:);
+    if contains(adni_impairment{ind,1},'CN')
+        adni_impairment{ind,1} = 'No impairment';
+        adni_noimpairment{ind,1} = 'Yes';
+        adni_smci{ind,1} = 'No';
+        adni_ad{ind,1} = 'No';
+        adni_smciad{ind,1} = 'No';
+    elseif contains(adni_impairment{ind,1},'MCI')
+        adni_impairment{ind,1} = 'Mild Cognitive Impairment';
+        adni_noimpairment{ind,1} = 'No';
+        adni_smci{ind,1} = 'Yes';
+        adni_ad{ind,1} = 'No';
+        adni_smciad{ind,1} = 'Yes';
+    elseif contains(adni_impairment{ind,1},'SCI')
+        adni_impairment{ind,1} = 'Subjective Cognitive Impairment';
+        adni_noimpairment{ind,1} = 'No';
+        adni_smci{ind,1} = 'Yes';
+        adni_ad{ind,1} = 'No';
+        adni_smciad{ind,1} = 'Yes';
+    elseif contains(adni_impairment{ind,1},'Dementia')
+        adni_impairment{ind,1} = 'Dementia';
+        adni_noimpairment{ind,1} = 'No';
+        adni_smci{ind,1} = 'No';
+        adni_ad{ind,1} = 'Yes';
+        adni_smciad{ind,1} = 'Yes';
+    elseif strcmp(adni_impairment{ind,1},'        ')
+        adni_impairment{ind,1} = '';
+        adni_noimpairment{ind,1} = '';
+        adni_smci{ind,1} = '';
+        adni_ad{ind,1} = '';
+        adni_smciad{ind,1} = '';
+    end   
+end
+
 data_names = {'pTau217', 'Age', 'Sex', 'APOE4', 'Abeta42', 'Abeta40',...
-    'Height', 'Weight', 'BMI', 'HbA1C', 'LDL', 'HTN', 'IHD', 'Stroke', 'CKD', 'GFR', 'pTau181', 'GFAP', 'NfL', 'MMSE', 'Ancestry' 'Homeless' 'Education'};
+    'Height', 'Weight', 'BMI', 'HbA1C', 'LDL', 'HTN', 'IHD', 'Stroke', 'CKD', 'GFR', 'pTau181', 'GFAP', 'NfL', 'MMSE', 'Ancestry', 'Homeless', 'Education', ...
+    'NoImpairment', 'Impaired', 'Dementia', 'SMCIAD'};
 
 adai = [
     raw(pos_gfr,strcmp(raw(1,:),'pTau 217')), ...
@@ -267,6 +340,10 @@ adai = [
     adai_ancestry(pos_gfr,1), ...
     adai_homeless(pos_gfr,1), ...
     raw(pos_gfr,strcmp(raw(1,:),'Years of formal schooling')), ...
+    adai_noimpairment(pos_gfr,1), ...
+    adai_smci(pos_gfr,1), ...
+    adai_ad(pos_gfr,1), ...
+    adai_smciad(pos_gfr,1), ...
     ];
 
 adai_all = [
@@ -293,6 +370,10 @@ adai_all = [
     adai_ancestry(pos_allgfr,1), ...
     adai_homeless(pos_allgfr,1), ...
     raw(pos_allgfr,strcmp(raw(1,:),'Years of formal schooling')), ...
+    adai_noimpairment(pos_allgfr,1), ...
+    adai_smci(pos_allgfr,1), ...
+    adai_ad(pos_allgfr,1), ...
+    adai_smciad(pos_allgfr,1), ...
     ];
 
 adai_excluded = [
@@ -319,6 +400,10 @@ adai_excluded = [
     adai_ancestry(pos_alladaiexcluded,1), ...
     adai_homeless(pos_alladaiexcluded,1), ...
     raw(pos_alladaiexcluded,strcmp(raw(1,:),'Years of formal schooling')), ...
+    adai_noimpairment(pos_alladaiexcluded,1), ...
+    adai_smci(pos_alladaiexcluded,1), ...
+    adai_ad(pos_alladaiexcluded,1), ...
+    adai_smciad(pos_alladaiexcluded,1), ...
     ];
 
 adni_all = [
@@ -345,6 +430,10 @@ adni_all = [
     num2cell(ones(size(tbl_adni,1),1)*NaN), ... % AI ancestry
     num2cell(ones(size(tbl_adni,1),1)*NaN), ... % Homeless
     table2cell(tbl_adni(:,'PTEDUCAT')), ...
+    adni_noimpairment, ...
+    adni_smci, ...
+    adni_ad, ...
+    adni_smciad, ...
     ];
 
 tblexport_adni_all = array2table(adni_all,...
@@ -481,6 +570,10 @@ stats_demography{20,1} = 'MMSE';
 stats_demography{21,1} = 'Ancestry';
 stats_demography{22,1} = 'Homeless';
 stats_demography{23,1} = 'Education [y]';
+stats_demography{24,1} = 'No impairment';
+stats_demography{25,1} = 'SMCI';
+stats_demography{26,1} = 'Dementia';
+stats_demography{27,1} = 'Cognitively impaired';
 
 % SEX stats
 
@@ -1218,17 +1311,17 @@ x2 = [strcmp(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')
 stats_demography{19,2} = sum(strcmp(adai_all_apoe4(:,strcmp(data_names,'Stroke')),'No') | ...
     strcmp(adai_all_apoe4(:,strcmp(data_names,'Stroke')),'Yes')) ;
 stats_demography{19,3} = [ num2str(sum(strcmp(adai_all_apoe4(:,strcmp(data_names,'Stroke')),'Yes'))) ' (' ...
-    num2str(100*sum(strcmp(adai_all_apoe4(:,strcmp(data_names,'Stroke')),'Yes'))/stats_demography{19,2},'%.0f') '%)' ];
+    num2str(100*sum(strcmp(adai_all_apoe4(:,strcmp(data_names,'Stroke')),'Yes'))/stats_demography{19,2},'%.1f') '%)' ];
 
 stats_demography{19,4} = sum(strcmp(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))==0,strcmp(data_names,'Stroke')),'No') | ...
     strcmp(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))==0,strcmp(data_names,'Stroke')),'Yes')) ;
 stats_demography{19,5} = [ num2str(sum(strcmp(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))==0,strcmp(data_names,'Stroke')),'Yes'))) ' (' ...
-    num2str(100*sum(strcmp(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))==0,strcmp(data_names,'Stroke')),'Yes'))/stats_demography{19,4},'%.0f') '%)' ];
+    num2str(100*sum(strcmp(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))==0,strcmp(data_names,'Stroke')),'Yes'))/stats_demography{19,4},'%.1f') '%)' ];
 
 stats_demography{19,6} = sum(strcmp(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))>=1,strcmp(data_names,'Stroke')),'No') | ...
     strcmp(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))>=1,strcmp(data_names,'Stroke')),'Yes')) ;
 stats_demography{19,7} = [ num2str(sum(strcmp(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))>=1,strcmp(data_names,'Stroke')),'Yes'))) ' (' ...
-    num2str(100*sum(strcmp(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))>=1,strcmp(data_names,'Stroke')),'Yes'))/stats_demography{19,6},'%.0f') '%)' ];
+    num2str(100*sum(strcmp(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))>=1,strcmp(data_names,'Stroke')),'Yes'))/stats_demography{19,6},'%.1f') '%)' ];
 
 x1 = [ ones(stats_demography{19,4},1); 2*ones(stats_demography{19,6},1) ];
 x2 = [strcmp(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))==0,strcmp(data_names,'Stroke')),'Yes'); ...
@@ -1239,17 +1332,17 @@ x2_adai=x2;
 stats_demography{19,9} = sum(strcmp(adni_all_apoe4(:,strcmp(data_names,'Stroke')),'No') | ...
     strcmp(adni_all_apoe4(:,strcmp(data_names,'Stroke')),'Yes')) ;
 stats_demography{19,10} = [ num2str(sum(strcmp(adni_all_apoe4(:,strcmp(data_names,'Stroke')),'Yes'))) ' (' ...
-    num2str(100*sum(strcmp(adni_all_apoe4(:,strcmp(data_names,'Stroke')),'Yes'))/stats_demography{19,9},'%.0f') '%)' ];
+    num2str(100*sum(strcmp(adni_all_apoe4(:,strcmp(data_names,'Stroke')),'Yes'))/stats_demography{19,9},'%.1f') '%)' ];
 
 stats_demography{19,11} = sum(strcmp(adni_all_apoe4(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE4')))==0,strcmp(data_names,'Stroke')),'No') | ...
     strcmp(adni_all_apoe4(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE4')))==0,strcmp(data_names,'Stroke')),'Yes')) ;
 stats_demography{19,12} = [ num2str(sum(strcmp(adni_all_apoe4(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE4')))==0,strcmp(data_names,'Stroke')),'Yes'))) ' (' ...
-    num2str(100*sum(strcmp(adni_all_apoe4(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE4')))==0,strcmp(data_names,'Stroke')),'Yes'))/stats_demography{19,11},'%.0f') '%)' ];
+    num2str(100*sum(strcmp(adni_all_apoe4(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE4')))==0,strcmp(data_names,'Stroke')),'Yes'))/stats_demography{19,11},'%.1f') '%)' ];
 
 stats_demography{19,13} = sum(strcmp(adni_all_apoe4(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE4')))>=1,strcmp(data_names,'Stroke')),'No') | ...
     strcmp(adni_all_apoe4(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE4')))>=1,strcmp(data_names,'Stroke')),'Yes')) ;
 stats_demography{19,14} = [ num2str(sum(strcmp(adni_all_apoe4(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE4')))>=1,strcmp(data_names,'Stroke')),'Yes'))) ' (' ...
-    num2str(100*sum(strcmp(adni_all_apoe4(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE4')))>=1,strcmp(data_names,'Stroke')),'Yes'))/stats_demography{19,13},'%.0f') '%)' ];
+    num2str(100*sum(strcmp(adni_all_apoe4(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE4')))>=1,strcmp(data_names,'Stroke')),'Yes'))/stats_demography{19,13},'%.1f') '%)' ];
 
 x1 = [ ones(stats_demography{19,11},1); 2*ones(stats_demography{19,13},1) ];
 x2 = [strcmp(adni_all_apoe4(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE4')))==0,strcmp(data_names,'Stroke')),'Yes'); ...
@@ -1334,17 +1427,17 @@ stats_demography{21,8} = ranksum( ...
 stats_demography{22,2} = sum(strcmp(adai_all_apoe4(:,strcmp(data_names,'Homeless')),'No') | ...
     strcmp(adai_all_apoe4(:,strcmp(data_names,'Homeless')),'Yes')) ;
 stats_demography{22,3} = [ num2str(sum(strcmp(adai_all_apoe4(:,strcmp(data_names,'Homeless')),'Yes'))) ' (' ...
-    num2str(100*sum(strcmp(adai_all_apoe4(:,strcmp(data_names,'Homeless')),'Yes'))/stats_demography{22,2},'%.0f') '%)' ];
+    num2str(100*sum(strcmp(adai_all_apoe4(:,strcmp(data_names,'Homeless')),'Yes'))/stats_demography{22,2},'%.1f') '%)' ];
 
 stats_demography{22,4} = sum(strcmp(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))==0,strcmp(data_names,'Homeless')),'No') | ...
     strcmp(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))==0,strcmp(data_names,'Homeless')),'Yes')) ;
 stats_demography{22,5} = [ num2str(sum(strcmp(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))==0,strcmp(data_names,'Homeless')),'Yes'))) ' (' ...
-    num2str(100*sum(strcmp(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))==0,strcmp(data_names,'Homeless')),'Yes'))/stats_demography{22,4},'%.0f') '%)' ];
+    num2str(100*sum(strcmp(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))==0,strcmp(data_names,'Homeless')),'Yes'))/stats_demography{22,4},'%.1f') '%)' ];
 
 stats_demography{22,6} = sum(strcmp(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))>=1,strcmp(data_names,'Homeless')),'No') | ...
     strcmp(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))>=1,strcmp(data_names,'Homeless')),'Yes')) ;
 stats_demography{22,7} = [ num2str(sum(strcmp(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))>=1,strcmp(data_names,'Homeless')),'Yes'))) ' (' ...
-    num2str(100*sum(strcmp(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))>=1,strcmp(data_names,'Homeless')),'Yes'))/stats_demography{22,6},'%.0f') '%)' ];
+    num2str(100*sum(strcmp(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))>=1,strcmp(data_names,'Homeless')),'Yes'))/stats_demography{22,6},'%.1f') '%)' ];
 
 x1 = [ ones(stats_demography{22,4},1); 2*ones(stats_demography{22,6},1) ];
 pos_x2 = strcmp(adai_all_apoe4(:,strcmp(data_names,'Homeless')),'Yes') | strcmp(adai_all_apoe4(:,strcmp(data_names,'Homeless')),'No');
@@ -1401,6 +1494,189 @@ stats_demography{23,16} = ranksum( ...
     cell2mat(adni_all_apoe4(:,strcmp(data_names,'Education'))) ...
     );
 
+% NoImpairment stats
+stats_demography{24,2} = sum(strcmp(adai_all_apoe4(:,strcmp(data_names,'NoImpairment')),'No') | ...
+    strcmp(adai_all_apoe4(:,strcmp(data_names,'NoImpairment')),'Yes')) ;
+stats_demography{24,3} = [ num2str(sum(strcmp(adai_all_apoe4(:,strcmp(data_names,'NoImpairment')),'Yes'))) ' (' ...
+    num2str(100*sum(strcmp(adai_all_apoe4(:,strcmp(data_names,'NoImpairment')),'Yes'))/stats_demography{24,2},'%.0f') '%)' ];
+
+stats_demography{24,4} = sum(strcmp(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))==0,strcmp(data_names,'NoImpairment')),'No') | ...
+    strcmp(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))==0,strcmp(data_names,'NoImpairment')),'Yes')) ;
+stats_demography{24,5} = [ num2str(sum(strcmp(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))==0,strcmp(data_names,'NoImpairment')),'Yes'))) ' (' ...
+    num2str(100*sum(strcmp(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))==0,strcmp(data_names,'NoImpairment')),'Yes'))/stats_demography{24,4},'%.0f') '%)' ];
+
+stats_demography{24,6} = sum(strcmp(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))>=1,strcmp(data_names,'NoImpairment')),'No') | ...
+    strcmp(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))>=1,strcmp(data_names,'NoImpairment')),'Yes')) ;
+stats_demography{24,7} = [ num2str(sum(strcmp(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))>=1,strcmp(data_names,'NoImpairment')),'Yes'))) ' (' ...
+    num2str(100*sum(strcmp(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))>=1,strcmp(data_names,'NoImpairment')),'Yes'))/stats_demography{24,6},'%.0f') '%)' ];
+
+x1 = [ ones(stats_demography{24,4},1); 2*ones(stats_demography{24,6},1) ];
+x2 = [strcmp(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))==0,strcmp(data_names,'NoImpairment')),'Yes'); ...
+    strcmp(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))>=1,strcmp(data_names,'NoImpairment')),'Yes') ];
+[~,~,stats_demography{24,8}] = crosstab(x1,x2);
+x2_adai=x2;
+
+stats_demography{24,9} = sum(strcmp(adni_all_apoe4(:,strcmp(data_names,'NoImpairment')),'No') | ...
+    strcmp(adni_all_apoe4(:,strcmp(data_names,'NoImpairment')),'Yes')) ;
+stats_demography{24,10} = [ num2str(sum(strcmp(adni_all_apoe4(:,strcmp(data_names,'NoImpairment')),'Yes'))) ' (' ...
+    num2str(100*sum(strcmp(adni_all_apoe4(:,strcmp(data_names,'NoImpairment')),'Yes'))/stats_demography{24,9},'%.0f') '%)' ];
+
+stats_demography{24,11} = sum(strcmp(adni_all_apoe4(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE4')))==0,strcmp(data_names,'NoImpairment')),'No') | ...
+    strcmp(adni_all_apoe4(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE4')))==0,strcmp(data_names,'NoImpairment')),'Yes')) ;
+stats_demography{24,12} = [ num2str(sum(strcmp(adni_all_apoe4(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE4')))==0,strcmp(data_names,'NoImpairment')),'Yes'))) ' (' ...
+    num2str(100*sum(strcmp(adni_all_apoe4(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE4')))==0,strcmp(data_names,'NoImpairment')),'Yes'))/stats_demography{24,11},'%.0f') '%)' ];
+
+stats_demography{24,13} = sum(strcmp(adni_all_apoe4(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE4')))>=1,strcmp(data_names,'NoImpairment')),'No') | ...
+    strcmp(adni_all_apoe4(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE4')))>=1,strcmp(data_names,'NoImpairment')),'Yes')) ;
+stats_demography{24,14} = [ num2str(sum(strcmp(adni_all_apoe4(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE4')))>=1,strcmp(data_names,'NoImpairment')),'Yes'))) ' (' ...
+    num2str(100*sum(strcmp(adni_all_apoe4(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE4')))>=1,strcmp(data_names,'NoImpairment')),'Yes'))/stats_demography{24,13},'%.0f') '%)' ];
+
+x1 = [ ones(stats_demography{24,11},1); 2*ones(stats_demography{24,13},1) ];
+x2 = [strcmp(adni_all_apoe4(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE4')))==0 & ~cellfun(@isempty,adni_all_apoe4(:,strcmp(data_names,'NoImpairment'))),strcmp(data_names,'NoImpairment')),'Yes'); ...
+    strcmp(adni_all_apoe4(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE4')))>=1 & ~cellfun(@isempty,adni_all_apoe4(:,strcmp(data_names,'NoImpairment'))),strcmp(data_names,'NoImpairment')),'Yes') ];
+[~,~,stats_demography{24,15}] = crosstab(x1,x2);
+
+x1 = [ ones(size(x2_adai,1),1); 2*ones(size(x2,1),1) ];
+[~,~,stats_demography{24,16}] = crosstab(x1,[x2_adai; x2]);
+
+% Impaired stats
+stats_demography{25,2} = sum(strcmp(adai_all_apoe4(:,strcmp(data_names,'Impaired')),'No') | ...
+    strcmp(adai_all_apoe4(:,strcmp(data_names,'Impaired')),'Yes')) ;
+stats_demography{25,3} = [ num2str(sum(strcmp(adai_all_apoe4(:,strcmp(data_names,'Impaired')),'Yes'))) ' (' ...
+    num2str(100*sum(strcmp(adai_all_apoe4(:,strcmp(data_names,'Impaired')),'Yes'))/stats_demography{25,2},'%.0f') '%)' ];
+
+stats_demography{25,4} = sum(strcmp(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))==0,strcmp(data_names,'Impaired')),'No') | ...
+    strcmp(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))==0,strcmp(data_names,'Impaired')),'Yes')) ;
+stats_demography{25,5} = [ num2str(sum(strcmp(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))==0,strcmp(data_names,'Impaired')),'Yes'))) ' (' ...
+    num2str(100*sum(strcmp(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))==0,strcmp(data_names,'Impaired')),'Yes'))/stats_demography{25,4},'%.0f') '%)' ];
+
+stats_demography{25,6} = sum(strcmp(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))>=1,strcmp(data_names,'Impaired')),'No') | ...
+    strcmp(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))>=1,strcmp(data_names,'Impaired')),'Yes')) ;
+stats_demography{25,7} = [ num2str(sum(strcmp(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))>=1,strcmp(data_names,'Impaired')),'Yes'))) ' (' ...
+    num2str(100*sum(strcmp(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))>=1,strcmp(data_names,'Impaired')),'Yes'))/stats_demography{25,6},'%.0f') '%)' ];
+
+x1 = [ ones(stats_demography{25,4},1); 2*ones(stats_demography{25,6},1) ];
+x2 = [strcmp(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))==0,strcmp(data_names,'Impaired')),'Yes'); ...
+    strcmp(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))>=1,strcmp(data_names,'Impaired')),'Yes') ];
+[~,~,stats_demography{25,8}] = crosstab(x1,x2);
+x2_adai=x2;
+
+stats_demography{25,9} = sum(strcmp(adni_all_apoe4(:,strcmp(data_names,'Impaired')),'No') | ...
+    strcmp(adni_all_apoe4(:,strcmp(data_names,'Impaired')),'Yes')) ;
+stats_demography{25,10} = [ num2str(sum(strcmp(adni_all_apoe4(:,strcmp(data_names,'Impaired')),'Yes'))) ' (' ...
+    num2str(100*sum(strcmp(adni_all_apoe4(:,strcmp(data_names,'Impaired')),'Yes'))/stats_demography{25,9},'%.0f') '%)' ];
+
+stats_demography{25,11} = sum(strcmp(adni_all_apoe4(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE4')))==0,strcmp(data_names,'Impaired')),'No') | ...
+    strcmp(adni_all_apoe4(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE4')))==0,strcmp(data_names,'Impaired')),'Yes')) ;
+stats_demography{25,12} = [ num2str(sum(strcmp(adni_all_apoe4(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE4')))==0,strcmp(data_names,'Impaired')),'Yes'))) ' (' ...
+    num2str(100*sum(strcmp(adni_all_apoe4(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE4')))==0,strcmp(data_names,'Impaired')),'Yes'))/stats_demography{25,11},'%.0f') '%)' ];
+
+stats_demography{25,13} = sum(strcmp(adni_all_apoe4(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE4')))>=1,strcmp(data_names,'Impaired')),'No') | ...
+    strcmp(adni_all_apoe4(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE4')))>=1,strcmp(data_names,'Impaired')),'Yes')) ;
+stats_demography{25,14} = [ num2str(sum(strcmp(adni_all_apoe4(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE4')))>=1,strcmp(data_names,'Impaired')),'Yes'))) ' (' ...
+    num2str(100*sum(strcmp(adni_all_apoe4(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE4')))>=1,strcmp(data_names,'Impaired')),'Yes'))/stats_demography{25,13},'%.0f') '%)' ];
+
+x1 = [ ones(stats_demography{25,11},1); 2*ones(stats_demography{25,13},1) ];
+x2 = [strcmp(adni_all_apoe4(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE4')))==0 & ~cellfun(@isempty,adni_all_apoe4(:,strcmp(data_names,'Impaired'))),strcmp(data_names,'Impaired')),'Yes'); ...
+    strcmp(adni_all_apoe4(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE4')))>=1 & ~cellfun(@isempty,adni_all_apoe4(:,strcmp(data_names,'Impaired'))),strcmp(data_names,'Impaired')),'Yes') ];
+[~,~,stats_demography{25,15}] = crosstab(x1,x2);
+
+x1 = [ ones(size(x2_adai,1),1); 2*ones(size(x2,1),1) ];
+[~,~,stats_demography{25,16}] = crosstab(x1,[x2_adai; x2]);
+
+
+% Dementia stats
+stats_demography{26,2} = sum(strcmp(adai_all_apoe4(:,strcmp(data_names,'Dementia')),'No') | ...
+    strcmp(adai_all_apoe4(:,strcmp(data_names,'Dementia')),'Yes')) ;
+stats_demography{26,3} = [ num2str(sum(strcmp(adai_all_apoe4(:,strcmp(data_names,'Dementia')),'Yes'))) ' (' ...
+    num2str(100*sum(strcmp(adai_all_apoe4(:,strcmp(data_names,'Dementia')),'Yes'))/stats_demography{26,2},'%.1f') '%)' ];
+
+stats_demography{26,4} = sum(strcmp(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))==0,strcmp(data_names,'Dementia')),'No') | ...
+    strcmp(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))==0,strcmp(data_names,'Dementia')),'Yes')) ;
+stats_demography{26,5} = [ num2str(sum(strcmp(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))==0,strcmp(data_names,'Dementia')),'Yes'))) ' (' ...
+    num2str(100*sum(strcmp(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))==0,strcmp(data_names,'Dementia')),'Yes'))/stats_demography{26,4},'%.1f') '%)' ];
+
+stats_demography{26,6} = sum(strcmp(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))>=1,strcmp(data_names,'Dementia')),'No') | ...
+    strcmp(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))>=1,strcmp(data_names,'Dementia')),'Yes')) ;
+stats_demography{26,7} = [ num2str(sum(strcmp(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))>=1,strcmp(data_names,'Dementia')),'Yes'))) ' (' ...
+    num2str(100*sum(strcmp(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))>=1,strcmp(data_names,'Dementia')),'Yes'))/stats_demography{26,6},'%.1f') '%)' ];
+
+x1 = [ ones(stats_demography{26,4},1); 2*ones(stats_demography{26,6},1) ];
+x2 = [strcmp(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))==0,strcmp(data_names,'Dementia')),'Yes'); ...
+    strcmp(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))>=1,strcmp(data_names,'Dementia')),'Yes') ];
+[~,~,stats_demography{26,8}] = crosstab(x1,x2);
+x2_adai=x2;
+
+stats_demography{26,9} = sum(strcmp(adni_all_apoe4(:,strcmp(data_names,'Dementia')),'No') | ...
+    strcmp(adni_all_apoe4(:,strcmp(data_names,'Dementia')),'Yes')) ;
+stats_demography{26,10} = [ num2str(sum(strcmp(adni_all_apoe4(:,strcmp(data_names,'Dementia')),'Yes'))) ' (' ...
+    num2str(100*sum(strcmp(adni_all_apoe4(:,strcmp(data_names,'Dementia')),'Yes'))/stats_demography{26,9},'%.1f') '%)' ];
+
+stats_demography{26,11} = sum(strcmp(adni_all_apoe4(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE4')))==0,strcmp(data_names,'Dementia')),'No') | ...
+    strcmp(adni_all_apoe4(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE4')))==0,strcmp(data_names,'Dementia')),'Yes')) ;
+stats_demography{26,12} = [ num2str(sum(strcmp(adni_all_apoe4(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE4')))==0,strcmp(data_names,'Dementia')),'Yes'))) ' (' ...
+    num2str(100*sum(strcmp(adni_all_apoe4(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE4')))==0,strcmp(data_names,'Dementia')),'Yes'))/stats_demography{26,11},'%.1f') '%)' ];
+
+stats_demography{26,13} = sum(strcmp(adni_all_apoe4(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE4')))>=1,strcmp(data_names,'Dementia')),'No') | ...
+    strcmp(adni_all_apoe4(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE4')))>=1,strcmp(data_names,'Dementia')),'Yes')) ;
+stats_demography{26,14} = [ num2str(sum(strcmp(adni_all_apoe4(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE4')))>=1,strcmp(data_names,'Dementia')),'Yes'))) ' (' ...
+    num2str(100*sum(strcmp(adni_all_apoe4(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE4')))>=1,strcmp(data_names,'Dementia')),'Yes'))/stats_demography{26,13},'%.0f') '%)' ];
+
+x1 = [ ones(stats_demography{26,11},1); 2*ones(stats_demography{26,13},1) ];
+x2 = [strcmp(adni_all_apoe4(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE4')))==0 & ~cellfun(@isempty,adni_all_apoe4(:,strcmp(data_names,'Dementia'))),strcmp(data_names,'Dementia')),'Yes'); ...
+    strcmp(adni_all_apoe4(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE4')))>=1 & ~cellfun(@isempty,adni_all_apoe4(:,strcmp(data_names,'Dementia'))),strcmp(data_names,'Dementia')),'Yes') ];
+[~,~,stats_demography{26,15}] = crosstab(x1,x2);
+
+x1 = [ ones(size(x2_adai,1),1); 2*ones(size(x2,1),1) ];
+[~,~,stats_demography{26,16}] = crosstab(x1,[x2_adai; x2]);
+
+
+% SMCIAD stats
+stats_demography{27,2} = sum(strcmp(adai_all_apoe4(:,strcmp(data_names,'SMCIAD')),'No') | ...
+    strcmp(adai_all_apoe4(:,strcmp(data_names,'SMCIAD')),'Yes')) ;
+stats_demography{27,3} = [ num2str(sum(strcmp(adai_all_apoe4(:,strcmp(data_names,'SMCIAD')),'Yes'))) ' (' ...
+    num2str(100*sum(strcmp(adai_all_apoe4(:,strcmp(data_names,'SMCIAD')),'Yes'))/stats_demography{27,2},'%.0f') '%)' ];
+
+stats_demography{27,4} = sum(strcmp(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))==0,strcmp(data_names,'SMCIAD')),'No') | ...
+    strcmp(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))==0,strcmp(data_names,'SMCIAD')),'Yes')) ;
+stats_demography{27,5} = [ num2str(sum(strcmp(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))==0,strcmp(data_names,'SMCIAD')),'Yes'))) ' (' ...
+    num2str(100*sum(strcmp(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))==0,strcmp(data_names,'SMCIAD')),'Yes'))/stats_demography{27,4},'%.0f') '%)' ];
+
+stats_demography{27,6} = sum(strcmp(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))>=1,strcmp(data_names,'SMCIAD')),'No') | ...
+    strcmp(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))>=1,strcmp(data_names,'SMCIAD')),'Yes')) ;
+stats_demography{27,7} = [ num2str(sum(strcmp(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))>=1,strcmp(data_names,'SMCIAD')),'Yes'))) ' (' ...
+    num2str(100*sum(strcmp(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))>=1,strcmp(data_names,'SMCIAD')),'Yes'))/stats_demography{27,6},'%.0f') '%)' ];
+
+x1 = [ ones(stats_demography{27,4},1); 2*ones(stats_demography{27,6},1) ];
+x2 = [strcmp(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))==0,strcmp(data_names,'SMCIAD')),'Yes'); ...
+    strcmp(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))>=1,strcmp(data_names,'SMCIAD')),'Yes') ];
+[~,~,stats_demography{27,8}] = crosstab(x1,x2);
+x2_adai=x2;
+
+stats_demography{27,9} = sum(strcmp(adni_all_apoe4(:,strcmp(data_names,'SMCIAD')),'No') | ...
+    strcmp(adni_all_apoe4(:,strcmp(data_names,'SMCIAD')),'Yes')) ;
+stats_demography{27,10} = [ num2str(sum(strcmp(adni_all_apoe4(:,strcmp(data_names,'SMCIAD')),'Yes'))) ' (' ...
+    num2str(100*sum(strcmp(adni_all_apoe4(:,strcmp(data_names,'SMCIAD')),'Yes'))/stats_demography{27,9},'%.0f') '%)' ];
+
+stats_demography{27,11} = sum(strcmp(adni_all_apoe4(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE4')))==0,strcmp(data_names,'SMCIAD')),'No') | ...
+    strcmp(adni_all_apoe4(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE4')))==0,strcmp(data_names,'SMCIAD')),'Yes')) ;
+stats_demography{27,12} = [ num2str(sum(strcmp(adni_all_apoe4(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE4')))==0,strcmp(data_names,'SMCIAD')),'Yes'))) ' (' ...
+    num2str(100*sum(strcmp(adni_all_apoe4(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE4')))==0,strcmp(data_names,'SMCIAD')),'Yes'))/stats_demography{27,11},'%.0f') '%)' ];
+
+stats_demography{27,13} = sum(strcmp(adni_all_apoe4(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE4')))>=1,strcmp(data_names,'SMCIAD')),'No') | ...
+    strcmp(adni_all_apoe4(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE4')))>=1,strcmp(data_names,'SMCIAD')),'Yes')) ;
+stats_demography{27,14} = [ num2str(sum(strcmp(adni_all_apoe4(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE4')))>=1,strcmp(data_names,'SMCIAD')),'Yes'))) ' (' ...
+    num2str(100*sum(strcmp(adni_all_apoe4(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE4')))>=1,strcmp(data_names,'SMCIAD')),'Yes'))/stats_demography{27,13},'%.0f') '%)' ];
+
+x1 = [ ones(stats_demography{27,11},1); 2*ones(stats_demography{27,13},1) ];
+x2 = [strcmp(adni_all_apoe4(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE4')))==0 & ~cellfun(@isempty,adni_all_apoe4(:,strcmp(data_names,'SMCIAD'))),strcmp(data_names,'SMCIAD')),'Yes'); ...
+    strcmp(adni_all_apoe4(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE4')))>=1 & ~cellfun(@isempty,adni_all_apoe4(:,strcmp(data_names,'SMCIAD'))),strcmp(data_names,'SMCIAD')),'Yes') ];
+[~,~,stats_demography{27,15}] = crosstab(x1,x2);
+
+x1 = [ ones(size(x2_adai,1),1); 2*ones(size(x2,1),1) ];
+[~,~,stats_demography{27,16}] = crosstab(x1,[x2_adai; x2]);
+
+
 
 tmp = cell(1,size(stats_demography,2));
 stats_demography = [tmp; stats_demography];
@@ -1453,6 +1729,10 @@ stats_demography_gfronly{20,1} = 'MMSE';
 stats_demography_gfronly{21,1} = 'Ancestry';
 stats_demography_gfronly{22,1} = 'Homeless';
 stats_demography_gfronly{23,1} = 'Education [y]';
+stats_demography_gfronly{24,1} = 'No impairment';
+stats_demography_gfronly{25,1} = 'SMCI';
+stats_demography_gfronly{26,1} = 'Dementia';
+stats_demography_gfronly{27,1} = 'Cognitively impaired';
 
 % SEX stats
 
@@ -2526,7 +2806,7 @@ x1 = [ ones(size(x2,1),1); 2*ones(size(x2_nogfr,1),1) ];
 stats_demography_gfronly{19,20} = sum(strcmp(adai_excluded(:,strcmp(data_names,'Stroke')),'No') | ...
     strcmp(adai_excluded(:,strcmp(data_names,'Stroke')),'Yes')) ;
 stats_demography_gfronly{19,21} = [ num2str(sum(strcmp(adai_excluded(:,strcmp(data_names,'Stroke')),'Yes'))) ' (' ...
-    num2str(100*sum(strcmp(adai_excluded(:,strcmp(data_names,'Stroke')),'Yes'))/stats_demography_gfronly{19,20},'%.0f') '%)' ];
+    num2str(100*sum(strcmp(adai_excluded(:,strcmp(data_names,'Stroke')),'Yes'))/stats_demography_gfronly{19,20},'%.1f') '%)' ];
 
 x1_excluded = [ ones(stats_demography_gfronly{19,2},1); 2*ones(stats_demography_gfronly{19,20},1) ];
 pos_x2_excluded = strcmp(adai_excluded(:,strcmp(data_names,'Stroke')),'Yes') | strcmp(adai_excluded(:,strcmp(data_names,'Stroke')),'No');
@@ -2637,17 +2917,17 @@ stats_demography_gfronly{21,22} = ranksum( ...
 stats_demography_gfronly{22,2} = sum(strcmp(adai_all_apoe4(:,strcmp(data_names,'Homeless')),'No') | ...
     strcmp(adai_all_apoe4(:,strcmp(data_names,'Homeless')),'Yes')) ;
 stats_demography_gfronly{22,3} = [ num2str(sum(strcmp(adai_all_apoe4(:,strcmp(data_names,'Homeless')),'Yes'))) ' (' ...
-    num2str(100*sum(strcmp(adai_all_apoe4(:,strcmp(data_names,'Homeless')),'Yes'))/stats_demography_gfronly{22,2},'%.0f') '%)' ];
+    num2str(100*sum(strcmp(adai_all_apoe4(:,strcmp(data_names,'Homeless')),'Yes'))/stats_demography_gfronly{22,2},'%.1f') '%)' ];
 
 stats_demography_gfronly{22,4} = sum(strcmp(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))==0,strcmp(data_names,'Homeless')),'No') | ...
     strcmp(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))==0,strcmp(data_names,'Homeless')),'Yes')) ;
 stats_demography_gfronly{22,5} = [ num2str(sum(strcmp(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))==0,strcmp(data_names,'Homeless')),'Yes'))) ' (' ...
-    num2str(100*sum(strcmp(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))==0,strcmp(data_names,'Homeless')),'Yes'))/stats_demography_gfronly{22,4},'%.0f') '%)' ];
+    num2str(100*sum(strcmp(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))==0,strcmp(data_names,'Homeless')),'Yes'))/stats_demography_gfronly{22,4},'%.1f') '%)' ];
 
 stats_demography_gfronly{22,6} = sum(strcmp(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))>=1,strcmp(data_names,'Homeless')),'No') | ...
     strcmp(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))>=1,strcmp(data_names,'Homeless')),'Yes')) ;
 stats_demography_gfronly{22,7} = [ num2str(sum(strcmp(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))>=1,strcmp(data_names,'Homeless')),'Yes'))) ' (' ...
-    num2str(100*sum(strcmp(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))>=1,strcmp(data_names,'Homeless')),'Yes'))/stats_demography_gfronly{22,6},'%.0f') '%)' ];
+    num2str(100*sum(strcmp(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))>=1,strcmp(data_names,'Homeless')),'Yes'))/stats_demography_gfronly{22,6},'%.1f') '%)' ];
 
 x1 = [ ones(stats_demography_gfronly{22,4},1); 2*ones(stats_demography_gfronly{22,6},1) ];
 pos_x2 = strcmp(adai_all_apoe4(:,strcmp(data_names,'Homeless')),'Yes') | strcmp(adai_all_apoe4(:,strcmp(data_names,'Homeless')),'No');
@@ -2736,7 +3016,274 @@ stats_demography_gfronly{23,22} = ranksum( ...
     );
 
 
-stats_demography_adni_excluded  = stats_demography_gfronly([1:12 15:17 19:20 23],[1 9:10 17:19]);
+% NoImpairment stats
+stats_demography_gfronly{24,2} = sum(strcmp(adai_all_apoe4(:,strcmp(data_names,'NoImpairment')),'No') | ...
+    strcmp(adai_all_apoe4(:,strcmp(data_names,'NoImpairment')),'Yes')) ;
+stats_demography_gfronly{24,3} = [ num2str(sum(strcmp(adai_all_apoe4(:,strcmp(data_names,'NoImpairment')),'Yes'))) ' (' ...
+    num2str(100*sum(strcmp(adai_all_apoe4(:,strcmp(data_names,'NoImpairment')),'Yes'))/stats_demography_gfronly{24,2},'%.0f') '%)' ];
+
+stats_demography_gfronly{24,4} = sum(strcmp(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))==0,strcmp(data_names,'NoImpairment')),'No') | ...
+    strcmp(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))==0,strcmp(data_names,'NoImpairment')),'Yes')) ;
+stats_demography_gfronly{24,5} = [ num2str(sum(strcmp(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))==0,strcmp(data_names,'NoImpairment')),'Yes'))) ' (' ...
+    num2str(100*sum(strcmp(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))==0,strcmp(data_names,'NoImpairment')),'Yes'))/stats_demography_gfronly{24,4},'%.0f') '%)' ];
+
+stats_demography_gfronly{24,6} = sum(strcmp(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))>=1,strcmp(data_names,'NoImpairment')),'No') | ...
+    strcmp(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))>=1,strcmp(data_names,'NoImpairment')),'Yes')) ;
+stats_demography_gfronly{24,7} = [ num2str(sum(strcmp(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))>=1,strcmp(data_names,'NoImpairment')),'Yes'))) ' (' ...
+    num2str(100*sum(strcmp(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))>=1,strcmp(data_names,'NoImpairment')),'Yes'))/stats_demography_gfronly{24,6},'%.0f') '%)' ];
+
+x1 = [ ones(stats_demography_gfronly{24,4},1); 2*ones(stats_demography_gfronly{24,6},1) ];
+x2 = [strcmp(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))==0,strcmp(data_names,'NoImpairment')),'Yes'); ...
+    strcmp(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))>=1,strcmp(data_names,'NoImpairment')),'Yes') ];
+[~,~,stats_demography_gfronly{24,8}] = crosstab(x1,x2);
+x2_adai=x2;
+
+stats_demography_gfronly{24,9} = sum(strcmp(adni_all_apoe4(~isnan(adni_all_apoe4_gfr),strcmp(data_names,'NoImpairment')),'No') | ...
+    strcmp(adni_all_apoe4(~isnan(adni_all_apoe4_gfr),strcmp(data_names,'NoImpairment')),'Yes')) ;
+stats_demography_gfronly{24,10} = [ num2str(sum(strcmp(adni_all_apoe4(~isnan(adni_all_apoe4_gfr),strcmp(data_names,'NoImpairment')),'Yes'))) ' (' ...
+    num2str(100*sum(strcmp(adni_all_apoe4(~isnan(adni_all_apoe4_gfr),strcmp(data_names,'NoImpairment')),'Yes'))/stats_demography_gfronly{24,9},'%.0f') '%)' ];
+
+stats_demography_gfronly{24,11} = sum(strcmp(adni_all_apoe4(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE4')))==0 & ~isnan(adni_all_apoe4_gfr),strcmp(data_names,'NoImpairment')),'No') | ...
+    strcmp(adni_all_apoe4(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE4')))==0 & ~isnan(adni_all_apoe4_gfr),strcmp(data_names,'NoImpairment')),'Yes')) ;
+stats_demography_gfronly{24,12} = [ num2str(sum(strcmp(adni_all_apoe4(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE4')))==0 & ~isnan(adni_all_apoe4_gfr),strcmp(data_names,'NoImpairment')),'Yes'))) ' (' ...
+    num2str(100*sum(strcmp(adni_all_apoe4(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE4')))==0 & ~isnan(adni_all_apoe4_gfr),strcmp(data_names,'NoImpairment')),'Yes'))/stats_demography_gfronly{24,11},'%.0f') '%)' ];
+
+stats_demography_gfronly{24,13} = sum(strcmp(adni_all_apoe4(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE4')))>=1 & ~isnan(adni_all_apoe4_gfr),strcmp(data_names,'NoImpairment')),'No') | ...
+    strcmp(adni_all_apoe4(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE4')))>=1 & ~isnan(adni_all_apoe4_gfr),strcmp(data_names,'NoImpairment')),'Yes')) ;
+stats_demography_gfronly{24,14} = [ num2str(sum(strcmp(adni_all_apoe4(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE4')))>=1 & ~isnan(adni_all_apoe4_gfr),strcmp(data_names,'NoImpairment')),'Yes'))) ' (' ...
+    num2str(100*sum(strcmp(adni_all_apoe4(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE4')))>=1 & ~isnan(adni_all_apoe4_gfr),strcmp(data_names,'NoImpairment')),'Yes'))/stats_demography_gfronly{24,13},'%.0f') '%)' ];
+
+x1 = [ ones(stats_demography_gfronly{24,11},1); 2*ones(stats_demography_gfronly{24,13},1) ];
+x2 = [strcmp(adni_all_apoe4(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE4')))==0 & ~isnan(adni_all_apoe4_gfr),strcmp(data_names,'NoImpairment')),'Yes'); ...
+    strcmp(adni_all_apoe4(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE4')))>=1 & ~isnan(adni_all_apoe4_gfr),strcmp(data_names,'NoImpairment')),'Yes') ];
+[~,~,stats_demography_gfronly{24,15}] = crosstab(x1,x2);
+
+x1 = [ ones(size(x2_adai,1),1); 2*ones(size(x2,1),1) ];
+[~,~,stats_demography_gfronly{24,16}] = crosstab(x1,[x2_adai; x2]);
+
+stats_demography_gfronly{24,17} = sum(strcmp(adni_all_apoe4(isnan(adni_all_apoe4_gfr),strcmp(data_names,'NoImpairment')),'No') | ...
+    strcmp(adni_all_apoe4(isnan(adni_all_apoe4_gfr),strcmp(data_names,'NoImpairment')),'Yes')) ;
+stats_demography_gfronly{24,18} = [ num2str(sum(strcmp(adni_all_apoe4(isnan(adni_all_apoe4_gfr),strcmp(data_names,'NoImpairment')),'Yes'))) ' (' ...
+    num2str(100*sum(strcmp(adni_all_apoe4(isnan(adni_all_apoe4_gfr),strcmp(data_names,'NoImpairment')),'Yes'))/stats_demography_gfronly{24,17},'%.0f') '%)' ];
+
+x2_nogfr = [strcmp(adni_all_apoe4(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE4')))==0 & isnan(adni_all_apoe4_gfr),strcmp(data_names,'NoImpairment')),'Yes'); ...
+    strcmp(adni_all_apoe4(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE4')))>=1 & isnan(adni_all_apoe4_gfr),strcmp(data_names,'NoImpairment')),'Yes') ];
+x1 = [ ones(size(x2,1),1); 2*ones(size(x2_nogfr,1),1) ];
+[~,~,stats_demography_gfronly{24,19}] = crosstab(x1,[x2; x2_nogfr]);
+
+stats_demography_gfronly{24,20} = sum(strcmp(adai_excluded(:,strcmp(data_names,'NoImpairment')),'No') | ...
+    strcmp(adai_excluded(:,strcmp(data_names,'NoImpairment')),'Yes')) ;
+stats_demography_gfronly{24,21} = [ num2str(sum(strcmp(adai_excluded(:,strcmp(data_names,'NoImpairment')),'Yes'))) ' (' ...
+    num2str(100*sum(strcmp(adai_excluded(:,strcmp(data_names,'NoImpairment')),'Yes'))/stats_demography_gfronly{24,20},'%.0f') '%)' ];
+
+x1_excluded = [ ones(stats_demography_gfronly{24,2},1); 2*ones(stats_demography_gfronly{24,20},1) ];
+pos_x2_excluded = strcmp(adai_excluded(:,strcmp(data_names,'NoImpairment')),'Yes') | strcmp(adai_excluded(:,strcmp(data_names,'NoImpairment')),'No');
+x2_excluded = [strcmp(adai_all_apoe4(:,strcmp(data_names,'NoImpairment')),'Yes'); ...
+    strcmp(adai_excluded(pos_x2_excluded,strcmp(data_names,'NoImpairment')),'Yes') ];
+[~,~,stats_demography_gfronly{24,22}] = crosstab(x1_excluded,x2_excluded);
+
+
+% Impaired stats
+stats_demography_gfronly{25,2} = sum(strcmp(adai_all_apoe4(:,strcmp(data_names,'Impaired')),'No') | ...
+    strcmp(adai_all_apoe4(:,strcmp(data_names,'Impaired')),'Yes')) ;
+stats_demography_gfronly{25,3} = [ num2str(sum(strcmp(adai_all_apoe4(:,strcmp(data_names,'Impaired')),'Yes'))) ' (' ...
+    num2str(100*sum(strcmp(adai_all_apoe4(:,strcmp(data_names,'Impaired')),'Yes'))/stats_demography_gfronly{25,2},'%.0f') '%)' ];
+
+stats_demography_gfronly{25,4} = sum(strcmp(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))==0,strcmp(data_names,'Impaired')),'No') | ...
+    strcmp(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))==0,strcmp(data_names,'Impaired')),'Yes')) ;
+stats_demography_gfronly{25,5} = [ num2str(sum(strcmp(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))==0,strcmp(data_names,'Impaired')),'Yes'))) ' (' ...
+    num2str(100*sum(strcmp(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))==0,strcmp(data_names,'Impaired')),'Yes'))/stats_demography_gfronly{25,4},'%.0f') '%)' ];
+
+stats_demography_gfronly{25,6} = sum(strcmp(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))>=1,strcmp(data_names,'Impaired')),'No') | ...
+    strcmp(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))>=1,strcmp(data_names,'Impaired')),'Yes')) ;
+stats_demography_gfronly{25,7} = [ num2str(sum(strcmp(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))>=1,strcmp(data_names,'Impaired')),'Yes'))) ' (' ...
+    num2str(100*sum(strcmp(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))>=1,strcmp(data_names,'Impaired')),'Yes'))/stats_demography_gfronly{25,6},'%.0f') '%)' ];
+
+x1 = [ ones(stats_demography_gfronly{25,4},1); 2*ones(stats_demography_gfronly{25,6},1) ];
+x2 = [strcmp(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))==0,strcmp(data_names,'Impaired')),'Yes'); ...
+    strcmp(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))>=1,strcmp(data_names,'Impaired')),'Yes') ];
+[~,~,stats_demography_gfronly{25,8}] = crosstab(x1,x2);
+x2_adai=x2;
+
+stats_demography_gfronly{25,9} = sum(strcmp(adni_all_apoe4(~isnan(adni_all_apoe4_gfr),strcmp(data_names,'Impaired')),'No') | ...
+    strcmp(adni_all_apoe4(~isnan(adni_all_apoe4_gfr),strcmp(data_names,'Impaired')),'Yes')) ;
+stats_demography_gfronly{25,10} = [ num2str(sum(strcmp(adni_all_apoe4(~isnan(adni_all_apoe4_gfr),strcmp(data_names,'Impaired')),'Yes'))) ' (' ...
+    num2str(100*sum(strcmp(adni_all_apoe4(~isnan(adni_all_apoe4_gfr),strcmp(data_names,'Impaired')),'Yes'))/stats_demography_gfronly{25,9},'%.0f') '%)' ];
+
+stats_demography_gfronly{25,11} = sum(strcmp(adni_all_apoe4(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE4')))==0 & ~isnan(adni_all_apoe4_gfr),strcmp(data_names,'Impaired')),'No') | ...
+    strcmp(adni_all_apoe4(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE4')))==0 & ~isnan(adni_all_apoe4_gfr),strcmp(data_names,'Impaired')),'Yes')) ;
+stats_demography_gfronly{25,12} = [ num2str(sum(strcmp(adni_all_apoe4(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE4')))==0 & ~isnan(adni_all_apoe4_gfr),strcmp(data_names,'Impaired')),'Yes'))) ' (' ...
+    num2str(100*sum(strcmp(adni_all_apoe4(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE4')))==0 & ~isnan(adni_all_apoe4_gfr),strcmp(data_names,'Impaired')),'Yes'))/stats_demography_gfronly{25,11},'%.0f') '%)' ];
+
+stats_demography_gfronly{25,13} = sum(strcmp(adni_all_apoe4(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE4')))>=1 & ~isnan(adni_all_apoe4_gfr),strcmp(data_names,'Impaired')),'No') | ...
+    strcmp(adni_all_apoe4(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE4')))>=1 & ~isnan(adni_all_apoe4_gfr),strcmp(data_names,'Impaired')),'Yes')) ;
+stats_demography_gfronly{25,14} = [ num2str(sum(strcmp(adni_all_apoe4(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE4')))>=1 & ~isnan(adni_all_apoe4_gfr),strcmp(data_names,'Impaired')),'Yes'))) ' (' ...
+    num2str(100*sum(strcmp(adni_all_apoe4(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE4')))>=1 & ~isnan(adni_all_apoe4_gfr),strcmp(data_names,'Impaired')),'Yes'))/stats_demography_gfronly{25,13},'%.0f') '%)' ];
+
+x1 = [ ones(stats_demography_gfronly{25,11},1); 2*ones(stats_demography_gfronly{25,13},1) ];
+x2 = [strcmp(adni_all_apoe4(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE4')))==0 & ~isnan(adni_all_apoe4_gfr),strcmp(data_names,'Impaired')),'Yes'); ...
+    strcmp(adni_all_apoe4(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE4')))>=1 & ~isnan(adni_all_apoe4_gfr),strcmp(data_names,'Impaired')),'Yes') ];
+[~,~,stats_demography_gfronly{25,15}] = crosstab(x1,x2);
+
+x1 = [ ones(size(x2_adai,1),1); 2*ones(size(x2,1),1) ];
+[~,~,stats_demography_gfronly{25,16}] = crosstab(x1,[x2_adai; x2]);
+
+stats_demography_gfronly{25,17} = sum(strcmp(adni_all_apoe4(isnan(adni_all_apoe4_gfr),strcmp(data_names,'Impaired')),'No') | ...
+    strcmp(adni_all_apoe4(isnan(adni_all_apoe4_gfr),strcmp(data_names,'Impaired')),'Yes')) ;
+stats_demography_gfronly{25,18} = [ num2str(sum(strcmp(adni_all_apoe4(isnan(adni_all_apoe4_gfr),strcmp(data_names,'Impaired')),'Yes'))) ' (' ...
+    num2str(100*sum(strcmp(adni_all_apoe4(isnan(adni_all_apoe4_gfr),strcmp(data_names,'Impaired')),'Yes'))/stats_demography_gfronly{25,17},'%.0f') '%)' ];
+
+x2_nogfr = [strcmp(adni_all_apoe4(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE4')))==0 & isnan(adni_all_apoe4_gfr),strcmp(data_names,'Impaired')),'Yes'); ...
+    strcmp(adni_all_apoe4(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE4')))>=1 & isnan(adni_all_apoe4_gfr),strcmp(data_names,'Impaired')),'Yes') ];
+x1 = [ ones(size(x2,1),1); 2*ones(size(x2_nogfr,1),1) ];
+[~,~,stats_demography_gfronly{25,19}] = crosstab(x1,[x2; x2_nogfr]);
+
+stats_demography_gfronly{25,20} = sum(strcmp(adai_excluded(:,strcmp(data_names,'Impaired')),'No') | ...
+    strcmp(adai_excluded(:,strcmp(data_names,'Impaired')),'Yes')) ;
+stats_demography_gfronly{25,21} = [ num2str(sum(strcmp(adai_excluded(:,strcmp(data_names,'Impaired')),'Yes'))) ' (' ...
+    num2str(100*sum(strcmp(adai_excluded(:,strcmp(data_names,'Impaired')),'Yes'))/stats_demography_gfronly{25,20},'%.0f') '%)' ];
+
+x1_excluded = [ ones(stats_demography_gfronly{25,2},1); 2*ones(stats_demography_gfronly{25,20},1) ];
+pos_x2_excluded = strcmp(adai_excluded(:,strcmp(data_names,'Impaired')),'Yes') | strcmp(adai_excluded(:,strcmp(data_names,'Impaired')),'No');
+x2_excluded = [strcmp(adai_all_apoe4(:,strcmp(data_names,'Impaired')),'Yes'); ...
+    strcmp(adai_excluded(pos_x2_excluded,strcmp(data_names,'Impaired')),'Yes') ];
+[~,~,stats_demography_gfronly{25,22}] = crosstab(x1_excluded,x2_excluded);
+
+% Dementia stats
+stats_demography_gfronly{26,2} = sum(strcmp(adai_all_apoe4(:,strcmp(data_names,'Dementia')),'No') | ...
+    strcmp(adai_all_apoe4(:,strcmp(data_names,'Dementia')),'Yes')) ;
+stats_demography_gfronly{26,3} = [ num2str(sum(strcmp(adai_all_apoe4(:,strcmp(data_names,'Dementia')),'Yes'))) ' (' ...
+    num2str(100*sum(strcmp(adai_all_apoe4(:,strcmp(data_names,'Dementia')),'Yes'))/stats_demography_gfronly{26,2},'%.1f') '%)' ];
+
+stats_demography_gfronly{26,4} = sum(strcmp(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))==0,strcmp(data_names,'Dementia')),'No') | ...
+    strcmp(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))==0,strcmp(data_names,'Dementia')),'Yes')) ;
+stats_demography_gfronly{26,5} = [ num2str(sum(strcmp(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))==0,strcmp(data_names,'Dementia')),'Yes'))) ' (' ...
+    num2str(100*sum(strcmp(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))==0,strcmp(data_names,'Dementia')),'Yes'))/stats_demography_gfronly{26,4},'%.1f') '%)' ];
+
+stats_demography_gfronly{26,6} = sum(strcmp(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))>=1,strcmp(data_names,'Dementia')),'No') | ...
+    strcmp(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))>=1,strcmp(data_names,'Dementia')),'Yes')) ;
+stats_demography_gfronly{26,7} = [ num2str(sum(strcmp(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))>=1,strcmp(data_names,'Dementia')),'Yes'))) ' (' ...
+    num2str(100*sum(strcmp(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))>=1,strcmp(data_names,'Dementia')),'Yes'))/stats_demography_gfronly{26,6},'%.1f') '%)' ];
+
+x1 = [ ones(stats_demography_gfronly{26,4},1); 2*ones(stats_demography_gfronly{26,6},1) ];
+x2 = [strcmp(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))==0,strcmp(data_names,'Dementia')),'Yes'); ...
+    strcmp(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))>=1,strcmp(data_names,'Dementia')),'Yes') ];
+[~,~,stats_demography_gfronly{26,8}] = crosstab(x1,x2);
+x2_adai=x2;
+
+stats_demography_gfronly{26,9} = sum(strcmp(adni_all_apoe4(~isnan(adni_all_apoe4_gfr),strcmp(data_names,'Dementia')),'No') | ...
+    strcmp(adni_all_apoe4(~isnan(adni_all_apoe4_gfr),strcmp(data_names,'Dementia')),'Yes')) ;
+stats_demography_gfronly{26,10} = [ num2str(sum(strcmp(adni_all_apoe4(~isnan(adni_all_apoe4_gfr),strcmp(data_names,'Dementia')),'Yes'))) ' (' ...
+    num2str(100*sum(strcmp(adni_all_apoe4(~isnan(adni_all_apoe4_gfr),strcmp(data_names,'Dementia')),'Yes'))/stats_demography_gfronly{26,9},'%.0f') '%)' ];
+
+stats_demography_gfronly{26,11} = sum(strcmp(adni_all_apoe4(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE4')))==0 & ~isnan(adni_all_apoe4_gfr),strcmp(data_names,'Dementia')),'No') | ...
+    strcmp(adni_all_apoe4(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE4')))==0 & ~isnan(adni_all_apoe4_gfr),strcmp(data_names,'Dementia')),'Yes')) ;
+stats_demography_gfronly{26,12} = [ num2str(sum(strcmp(adni_all_apoe4(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE4')))==0 & ~isnan(adni_all_apoe4_gfr),strcmp(data_names,'Dementia')),'Yes'))) ' (' ...
+    num2str(100*sum(strcmp(adni_all_apoe4(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE4')))==0 & ~isnan(adni_all_apoe4_gfr),strcmp(data_names,'Dementia')),'Yes'))/stats_demography_gfronly{26,11},'%.1f') '%)' ];
+
+stats_demography_gfronly{26,13} = sum(strcmp(adni_all_apoe4(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE4')))>=1 & ~isnan(adni_all_apoe4_gfr),strcmp(data_names,'Dementia')),'No') | ...
+    strcmp(adni_all_apoe4(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE4')))>=1 & ~isnan(adni_all_apoe4_gfr),strcmp(data_names,'Dementia')),'Yes')) ;
+stats_demography_gfronly{26,14} = [ num2str(sum(strcmp(adni_all_apoe4(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE4')))>=1 & ~isnan(adni_all_apoe4_gfr),strcmp(data_names,'Dementia')),'Yes'))) ' (' ...
+    num2str(100*sum(strcmp(adni_all_apoe4(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE4')))>=1 & ~isnan(adni_all_apoe4_gfr),strcmp(data_names,'Dementia')),'Yes'))/stats_demography_gfronly{26,13},'%.0f') '%)' ];
+
+x1 = [ ones(stats_demography_gfronly{26,11},1); 2*ones(stats_demography_gfronly{26,13},1) ];
+x2 = [strcmp(adni_all_apoe4(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE4')))==0 & ~isnan(adni_all_apoe4_gfr),strcmp(data_names,'Dementia')),'Yes'); ...
+    strcmp(adni_all_apoe4(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE4')))>=1 & ~isnan(adni_all_apoe4_gfr),strcmp(data_names,'Dementia')),'Yes') ];
+[~,~,stats_demography_gfronly{26,15}] = crosstab(x1,x2);
+
+x1 = [ ones(size(x2_adai,1),1); 2*ones(size(x2,1),1) ];
+[~,~,stats_demography_gfronly{26,16}] = crosstab(x1,[x2_adai; x2]);
+
+stats_demography_gfronly{26,17} = sum(strcmp(adni_all_apoe4(isnan(adni_all_apoe4_gfr),strcmp(data_names,'Dementia')),'No') | ...
+    strcmp(adni_all_apoe4(isnan(adni_all_apoe4_gfr),strcmp(data_names,'Dementia')),'Yes')) ;
+stats_demography_gfronly{26,18} = [ num2str(sum(strcmp(adni_all_apoe4(isnan(adni_all_apoe4_gfr),strcmp(data_names,'Dementia')),'Yes'))) ' (' ...
+    num2str(100*sum(strcmp(adni_all_apoe4(isnan(adni_all_apoe4_gfr),strcmp(data_names,'Dementia')),'Yes'))/stats_demography_gfronly{26,17},'%.1f') '%)' ];
+
+x2_nogfr = [strcmp(adni_all_apoe4(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE4')))==0 & isnan(adni_all_apoe4_gfr),strcmp(data_names,'Dementia')),'Yes'); ...
+    strcmp(adni_all_apoe4(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE4')))>=1 & isnan(adni_all_apoe4_gfr),strcmp(data_names,'Dementia')),'Yes') ];
+x1 = [ ones(size(x2,1),1); 2*ones(size(x2_nogfr,1),1) ];
+[~,~,stats_demography_gfronly{26,19}] = crosstab(x1,[x2; x2_nogfr]);
+
+stats_demography_gfronly{26,20} = sum(strcmp(adai_excluded(:,strcmp(data_names,'Dementia')),'No') | ...
+    strcmp(adai_excluded(:,strcmp(data_names,'Dementia')),'Yes')) ;
+stats_demography_gfronly{26,21} = [ num2str(sum(strcmp(adai_excluded(:,strcmp(data_names,'Dementia')),'Yes'))) ' (' ...
+    num2str(100*sum(strcmp(adai_excluded(:,strcmp(data_names,'Dementia')),'Yes'))/stats_demography_gfronly{26,20},'%.1f') '%)' ];
+
+x1_excluded = [ ones(stats_demography_gfronly{26,2},1); 2*ones(stats_demography_gfronly{26,20},1) ];
+pos_x2_excluded = strcmp(adai_excluded(:,strcmp(data_names,'Dementia')),'Yes') | strcmp(adai_excluded(:,strcmp(data_names,'Dementia')),'No');
+x2_excluded = [strcmp(adai_all_apoe4(:,strcmp(data_names,'Dementia')),'Yes'); ...
+    strcmp(adai_excluded(pos_x2_excluded,strcmp(data_names,'Dementia')),'Yes') ];
+[~,~,stats_demography_gfronly{26,22}] = crosstab(x1_excluded,x2_excluded);
+
+
+% SMCIAD stats
+stats_demography_gfronly{27,2} = sum(strcmp(adai_all_apoe4(:,strcmp(data_names,'SMCIAD')),'No') | ...
+    strcmp(adai_all_apoe4(:,strcmp(data_names,'SMCIAD')),'Yes')) ;
+stats_demography_gfronly{27,3} = [ num2str(sum(strcmp(adai_all_apoe4(:,strcmp(data_names,'SMCIAD')),'Yes'))) ' (' ...
+    num2str(100*sum(strcmp(adai_all_apoe4(:,strcmp(data_names,'SMCIAD')),'Yes'))/stats_demography_gfronly{27,2},'%.0f') '%)' ];
+
+stats_demography_gfronly{27,4} = sum(strcmp(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))==0,strcmp(data_names,'SMCIAD')),'No') | ...
+    strcmp(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))==0,strcmp(data_names,'SMCIAD')),'Yes')) ;
+stats_demography_gfronly{27,5} = [ num2str(sum(strcmp(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))==0,strcmp(data_names,'SMCIAD')),'Yes'))) ' (' ...
+    num2str(100*sum(strcmp(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))==0,strcmp(data_names,'SMCIAD')),'Yes'))/stats_demography_gfronly{27,4},'%.0f') '%)' ];
+
+stats_demography_gfronly{27,6} = sum(strcmp(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))>=1,strcmp(data_names,'SMCIAD')),'No') | ...
+    strcmp(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))>=1,strcmp(data_names,'SMCIAD')),'Yes')) ;
+stats_demography_gfronly{27,7} = [ num2str(sum(strcmp(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))>=1,strcmp(data_names,'SMCIAD')),'Yes'))) ' (' ...
+    num2str(100*sum(strcmp(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))>=1,strcmp(data_names,'SMCIAD')),'Yes'))/stats_demography_gfronly{27,6},'%.0f') '%)' ];
+
+x1 = [ ones(stats_demography_gfronly{27,4},1); 2*ones(stats_demography_gfronly{27,6},1) ];
+x2 = [strcmp(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))==0,strcmp(data_names,'SMCIAD')),'Yes'); ...
+    strcmp(adai_all_apoe4(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))>=1,strcmp(data_names,'SMCIAD')),'Yes') ];
+[~,~,stats_demography_gfronly{27,8}] = crosstab(x1,x2);
+x2_adai=x2;
+
+stats_demography_gfronly{27,9} = sum(strcmp(adni_all_apoe4(~isnan(adni_all_apoe4_gfr),strcmp(data_names,'SMCIAD')),'No') | ...
+    strcmp(adni_all_apoe4(~isnan(adni_all_apoe4_gfr),strcmp(data_names,'SMCIAD')),'Yes')) ;
+stats_demography_gfronly{27,10} = [ num2str(sum(strcmp(adni_all_apoe4(~isnan(adni_all_apoe4_gfr),strcmp(data_names,'SMCIAD')),'Yes'))) ' (' ...
+    num2str(100*sum(strcmp(adni_all_apoe4(~isnan(adni_all_apoe4_gfr),strcmp(data_names,'SMCIAD')),'Yes'))/stats_demography_gfronly{27,9},'%.0f') '%)' ];
+
+stats_demography_gfronly{27,11} = sum(strcmp(adni_all_apoe4(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE4')))==0 & ~isnan(adni_all_apoe4_gfr),strcmp(data_names,'SMCIAD')),'No') | ...
+    strcmp(adni_all_apoe4(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE4')))==0 & ~isnan(adni_all_apoe4_gfr),strcmp(data_names,'SMCIAD')),'Yes')) ;
+stats_demography_gfronly{27,12} = [ num2str(sum(strcmp(adni_all_apoe4(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE4')))==0 & ~isnan(adni_all_apoe4_gfr),strcmp(data_names,'SMCIAD')),'Yes'))) ' (' ...
+    num2str(100*sum(strcmp(adni_all_apoe4(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE4')))==0 & ~isnan(adni_all_apoe4_gfr),strcmp(data_names,'SMCIAD')),'Yes'))/stats_demography_gfronly{27,11},'%.0f') '%)' ];
+
+stats_demography_gfronly{27,13} = sum(strcmp(adni_all_apoe4(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE4')))>=1 & ~isnan(adni_all_apoe4_gfr),strcmp(data_names,'SMCIAD')),'No') | ...
+    strcmp(adni_all_apoe4(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE4')))>=1 & ~isnan(adni_all_apoe4_gfr),strcmp(data_names,'SMCIAD')),'Yes')) ;
+stats_demography_gfronly{27,14} = [ num2str(sum(strcmp(adni_all_apoe4(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE4')))>=1 & ~isnan(adni_all_apoe4_gfr),strcmp(data_names,'SMCIAD')),'Yes'))) ' (' ...
+    num2str(100*sum(strcmp(adni_all_apoe4(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE4')))>=1 & ~isnan(adni_all_apoe4_gfr),strcmp(data_names,'SMCIAD')),'Yes'))/stats_demography_gfronly{27,13},'%.0f') '%)' ];
+
+x1 = [ ones(stats_demography_gfronly{27,11},1); 2*ones(stats_demography_gfronly{27,13},1) ];
+x2 = [strcmp(adni_all_apoe4(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE4')))==0 & ~isnan(adni_all_apoe4_gfr),strcmp(data_names,'SMCIAD')),'Yes'); ...
+    strcmp(adni_all_apoe4(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE4')))>=1 & ~isnan(adni_all_apoe4_gfr),strcmp(data_names,'SMCIAD')),'Yes') ];
+[~,~,stats_demography_gfronly{27,15}] = crosstab(x1,x2);
+
+x1 = [ ones(size(x2_adai,1),1); 2*ones(size(x2,1),1) ];
+[~,~,stats_demography_gfronly{27,16}] = crosstab(x1,[x2_adai; x2]);
+
+stats_demography_gfronly{27,17} = sum(strcmp(adni_all_apoe4(isnan(adni_all_apoe4_gfr),strcmp(data_names,'SMCIAD')),'No') | ...
+    strcmp(adni_all_apoe4(isnan(adni_all_apoe4_gfr),strcmp(data_names,'SMCIAD')),'Yes')) ;
+stats_demography_gfronly{27,18} = [ num2str(sum(strcmp(adni_all_apoe4(isnan(adni_all_apoe4_gfr),strcmp(data_names,'SMCIAD')),'Yes'))) ' (' ...
+    num2str(100*sum(strcmp(adni_all_apoe4(isnan(adni_all_apoe4_gfr),strcmp(data_names,'SMCIAD')),'Yes'))/stats_demography_gfronly{27,17},'%.0f') '%)' ];
+
+x2_nogfr = [strcmp(adni_all_apoe4(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE4')))==0 & isnan(adni_all_apoe4_gfr),strcmp(data_names,'SMCIAD')),'Yes'); ...
+    strcmp(adni_all_apoe4(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE4')))>=1 & isnan(adni_all_apoe4_gfr),strcmp(data_names,'SMCIAD')),'Yes') ];
+x1 = [ ones(size(x2,1),1); 2*ones(size(x2_nogfr,1),1) ];
+[~,~,stats_demography_gfronly{27,19}] = crosstab(x1,[x2; x2_nogfr]);
+
+stats_demography_gfronly{27,20} = sum(strcmp(adai_excluded(:,strcmp(data_names,'SMCIAD')),'No') | ...
+    strcmp(adai_excluded(:,strcmp(data_names,'SMCIAD')),'Yes')) ;
+stats_demography_gfronly{27,21} = [ num2str(sum(strcmp(adai_excluded(:,strcmp(data_names,'SMCIAD')),'Yes'))) ' (' ...
+    num2str(100*sum(strcmp(adai_excluded(:,strcmp(data_names,'SMCIAD')),'Yes'))/stats_demography_gfronly{27,20},'%.0f') '%)' ];
+
+x1_excluded = [ ones(stats_demography_gfronly{27,2},1); 2*ones(stats_demography_gfronly{27,20},1) ];
+pos_x2_excluded = strcmp(adai_excluded(:,strcmp(data_names,'SMCIAD')),'Yes') | strcmp(adai_excluded(:,strcmp(data_names,'SMCIAD')),'No');
+x2_excluded = [strcmp(adai_all_apoe4(:,strcmp(data_names,'SMCIAD')),'Yes'); ...
+    strcmp(adai_excluded(pos_x2_excluded,strcmp(data_names,'SMCIAD')),'Yes') ];
+[~,~,stats_demography_gfronly{27,22}] = crosstab(x1_excluded,x2_excluded);
+
+
+stats_demography_adni_excluded  = stats_demography_gfronly([1:12 15:17 19:20 23:27],[1 9:10 17:19]);
 stats_demography_adni_excluded{1,3} = 'Included';
 stats_demography_adni_excluded{1,5} = 'Excluded';
 
@@ -2758,6 +3305,8 @@ stats_demography_reorder = [
     stats_demography(24,:)
     stats_demography(16:18,:)
     stats_demography(20,:)
+    stats_demography(28,:)
+    stats_demography(25:27,:)
     stats_demography(14:15,:)
     stats_demography(19,:)
     stats_demography(22:23,:)
@@ -2769,6 +3318,8 @@ stats_demography_gfronly_reorder = [
     stats_demography_gfronly(24,:)
     stats_demography_gfronly(16:18,:)
     stats_demography_gfronly(20,:)
+    stats_demography_gfronly(28,:)
+    stats_demography_gfronly(25:27,:)
     stats_demography_gfronly(14:15,:)
     stats_demography_gfronly(19,:)
     stats_demography_gfronly(22:23,:)
@@ -2780,6 +3331,8 @@ stats_demography_adai_excluded_reorder = [
     stats_demography_adai_excluded(23,:)
     stats_demography_adai_excluded(15:17,:)
     stats_demography_adai_excluded(19,:)
+    stats_demography_adai_excluded(27,:)
+    stats_demography_adai_excluded(24:26,:)
     stats_demography_adai_excluded(13:14,:)
     stats_demography_adai_excluded(18,:)
     stats_demography_adai_excluded(21:22,:)
@@ -2789,6 +3342,8 @@ stats_demography_adni_excluded_reorder = [
     stats_demography_adni_excluded(1:12,:)
     stats_demography_adni_excluded(17:18,:)
     stats_demography_adni_excluded(13:16,:)
+    stats_demography_adni_excluded(22,:)
+    stats_demography_adni_excluded(19:21,:)
     ];
 
 %% Stats demography GFR>=60 only
@@ -3531,6 +4086,7 @@ tblrace_model3_allele_ai_gfr = [ tblrace_model3_allele_ai table(categorical(ckd_
 tblrace_model3_carrier_gfr = [ tblrace_model3_carrier table(categorical(ckd_all),'VariableNames',{'CKD'}) ];
 tblrace_model3_carrier_ai_gfr = [ tblrace_model3_carrier_ai table(categorical(ckd_all),'VariableNames',{'CKD'}) ];
 
+tbl_egfr = table(log2(gfr_all(~isnan(gfr_all))),'VariableNames',{'eGFR'});
 tblrace_model1_allele_gfr = tblrace_model1_allele_gfr(~isnan(gfr_all),:);
 tblrace_model1_allele_ai_gfr = tblrace_model1_allele_ai_gfr(~isnan(gfr_all),:);
 tblrace_model1_carrier_gfr = tblrace_model1_carrier_gfr(~isnan(gfr_all),:);
@@ -3663,6 +4219,11 @@ mdl_ai_model1_all_allelle_gfr = fitglm(tblrace_model1_allele_gfr(tblrace_model1_
 mdl_nhw_model1_all_carrier_gfr = fitglm(tblrace_model1_carrier_gfr(tblrace_model1_carrier_gfr.Race=='NHW',{'pTau217','APOE4','Age','Sex','CKD'}),Tnhw_model2);
 mdl_ai_model1_all_carrier_gfr = fitglm(tblrace_model1_carrier_gfr(tblrace_model1_carrier_gfr.Race=='AI',{'pTau217','APOE4','Age','Sex','CKD'}),Tnhw_model2);
 
+mdl_nhw_model1_all_allelle_egfr = fitglm([ tblrace_model1_allele_gfr(tblrace_model1_allele_gfr.Race=='NHW',{'pTau217','APOE4','Age','Sex'}) tbl_egfr(tblrace_model1_allele_gfr.Race=='NHW',:) ],Tnhw_model2);
+mdl_ai_model1_all_allelle_egfr = fitglm([ tblrace_model1_allele_gfr(tblrace_model1_allele_gfr.Race=='AI',{'pTau217','APOE4','Age','Sex'}) tbl_egfr(tblrace_model1_allele_gfr.Race=='AI',:) ],Tnhw_model2);
+mdl_nhw_model1_all_carrier_egfr = fitglm([ tblrace_model1_carrier_gfr(tblrace_model1_carrier_gfr.Race=='NHW',{'pTau217','APOE4','Age','Sex'}) tbl_egfr(tblrace_model1_carrier_gfr.Race=='NHW',:) ],Tnhw_model2);
+mdl_ai_model1_all_carrier_egfr = fitglm([ tblrace_model1_carrier_gfr(tblrace_model1_carrier_gfr.Race=='AI',{'pTau217','APOE4','Age','Sex'}) tbl_egfr(tblrace_model1_carrier_gfr.Race=='AI',:) ],Tnhw_model2);
+
 mdl_nhw_model2_all_allelle = fitglm(tblrace_model2_allele(tblrace_model2_allele.Race=='NHW',{'pTau217','APOE4','Age','Sex','Abeta42/40'}),Tnhw_model2);
 mdl_ai_model2_all_allelle = fitglm(tblrace_model2_allele(tblrace_model2_allele.Race=='AI',{'pTau217','APOE4','Age','Sex','Abeta42/40'}),Tnhw_model2);
 mdl_nhw_model2_all_carrier = fitglm(tblrace_model2_carrier(tblrace_model2_carrier.Race=='NHW',{'pTau217','APOE4','Age','Sex','Abeta42/40'}),Tnhw_model2);
@@ -3673,6 +4234,11 @@ mdl_ai_model2_all_allelle_gfr = fitglm(tblrace_model2_allele_gfr(tblrace_model2_
 mdl_nhw_model2_all_carrier_gfr = fitglm(tblrace_model2_carrier_gfr(tblrace_model2_carrier_gfr.Race=='NHW',{'pTau217','APOE4','Age','Sex','Abeta42/40','CKD'}),Tnhw_model2_gfr);
 mdl_ai_model2_all_carrier_gfr = fitglm(tblrace_model2_carrier_gfr(tblrace_model2_carrier_gfr.Race=='AI',{'pTau217','APOE4','Age','Sex','Abeta42/40','CKD'}),Tnhw_model2_gfr);
 
+mdl_nhw_model2_all_allelle_egfr = fitglm([ tblrace_model2_allele_gfr(tblrace_model2_allele_gfr.Race=='NHW',{'pTau217','APOE4','Age','Sex','Abeta42/40'}) tbl_egfr(tblrace_model2_allele_gfr.Race=='NHW',:) ],Tnhw_model2_gfr);
+mdl_ai_model2_all_allelle_egfr = fitglm([ tblrace_model2_allele_gfr(tblrace_model2_allele_gfr.Race=='AI',{'pTau217','APOE4','Age','Sex','Abeta42/40'}) tbl_egfr(tblrace_model2_allele_gfr.Race=='AI',:) ],Tnhw_model2_gfr);
+mdl_nhw_model2_all_carrier_egfr = fitglm([ tblrace_model2_carrier_gfr(tblrace_model2_carrier_gfr.Race=='NHW',{'pTau217','APOE4','Age','Sex','Abeta42/40'}) tbl_egfr(tblrace_model2_carrier_gfr.Race=='NHW',:) ],Tnhw_model2_gfr);
+mdl_ai_model2_all_carrier_egfr = fitglm([ tblrace_model2_carrier_gfr(tblrace_model2_carrier_gfr.Race=='AI',{'pTau217','APOE4','Age','Sex','Abeta42/40'}) tbl_egfr(tblrace_model2_carrier_gfr.Race=='AI',:) ],Tnhw_model2_gfr);
+
 mdl_nhw_model3_all_allelle = fitglm(tblrace_model3_allele(tblrace_model3_allele.Race=='NHW',{'Abeta42/40','APOE4','Age','Sex'}),Tnhw_model1);
 mdl_ai_model3_all_allelle = fitglm(tblrace_model3_allele(tblrace_model3_allele.Race=='AI',{'Abeta42/40','APOE4','Age','Sex'}),Tnhw_model1);
 mdl_nhw_model3_all_carrier = fitglm(tblrace_model3_carrier(tblrace_model3_carrier.Race=='NHW',{'Abeta42/40','APOE4','Age','Sex'}),Tnhw_model1);
@@ -3682,6 +4248,11 @@ mdl_nhw_model3_all_allelle_gfr = fitglm(tblrace_model3_allele_gfr(tblrace_model3
 mdl_ai_model3_all_allelle_gfr = fitglm(tblrace_model3_allele_gfr(tblrace_model3_allele_gfr.Race=='AI',{'Abeta42/40','APOE4','Age','Sex','CKD'}),Tnhw_model2);
 mdl_nhw_model3_all_carrier_gfr = fitglm(tblrace_model3_carrier_gfr(tblrace_model3_carrier_gfr.Race=='NHW',{'Abeta42/40','APOE4','Age','Sex','CKD'}),Tnhw_model2);
 mdl_ai_model3_all_carrier_gfr = fitglm(tblrace_model3_carrier_gfr(tblrace_model3_carrier_gfr.Race=='AI',{'Abeta42/40','APOE4','Age','Sex','CKD'}),Tnhw_model2);
+
+mdl_nhw_model3_all_allelle_egfr = fitglm([ tblrace_model3_allele_gfr(tblrace_model3_allele_gfr.Race=='NHW',{'Abeta42/40','APOE4','Age','Sex'}) tbl_egfr(tblrace_model3_allele_gfr.Race=='NHW',:) ],Tnhw_model2);
+mdl_ai_model3_all_allelle_egfr = fitglm([ tblrace_model3_allele_gfr(tblrace_model3_allele_gfr.Race=='AI',{'Abeta42/40','APOE4','Age','Sex'}) tbl_egfr(tblrace_model3_allele_gfr.Race=='AI',:) ],Tnhw_model2);
+mdl_nhw_model3_all_carrier_egfr = fitglm([ tblrace_model3_carrier_gfr(tblrace_model3_carrier_gfr.Race=='NHW',{'Abeta42/40','APOE4','Age','Sex'}) tbl_egfr(tblrace_model3_carrier_gfr.Race=='NHW',:) ],Tnhw_model2);
+mdl_ai_model3_all_carrier_egfr = fitglm([ tblrace_model3_carrier_gfr(tblrace_model3_carrier_gfr.Race=='AI',{'Abeta42/40','APOE4','Age','Sex'}) tbl_egfr(tblrace_model3_carrier_gfr.Race=='AI',:) ],Tnhw_model2);
 
 % Estimate models for each race separately for GFAP
 mdl_gfap_nhw_model1_all_allelle = fitglm(tblracegfap_model1_allele(tblracegfap_model1_allele.Race=='NHW',{'GFAP','APOE4','Age','Sex'}),Tnhw_model1);
@@ -3694,6 +4265,11 @@ mdl_gfap_ai_model1_all_allelle_gfr = fitglm(tblracegfap_model1_allele_gfr(tblrac
 mdl_gfap_nhw_model1_all_carrier_gfr = fitglm(tblracegfap_model1_carrier_gfr(tblracegfap_model1_carrier_gfr.Race=='NHW',{'GFAP','APOE4','Age','Sex','CKD'}),Tnhw_model2);
 mdl_gfap_ai_model1_all_carrier_gfr = fitglm(tblracegfap_model1_carrier_gfr(tblracegfap_model1_carrier_gfr.Race=='AI',{'GFAP','APOE4','Age','Sex','CKD'}),Tnhw_model2);
 
+mdl_gfap_nhw_model1_all_allelle_egfr = fitglm([ tblracegfap_model1_allele_gfr(tblracegfap_model1_allele_gfr.Race=='NHW',{'GFAP','APOE4','Age','Sex'}) tbl_egfr(tblracegfap_model1_allele_gfr.Race=='NHW',:) ],Tnhw_model2);
+mdl_gfap_ai_model1_all_allelle_egfr = fitglm([ tblracegfap_model1_allele_gfr(tblracegfap_model1_allele_gfr.Race=='AI',{'GFAP','APOE4','Age','Sex'}) tbl_egfr(tblracegfap_model1_allele_gfr.Race=='AI',:) ],Tnhw_model2);
+mdl_gfap_nhw_model1_all_carrier_egfr = fitglm([ tblracegfap_model1_carrier_gfr(tblracegfap_model1_carrier_gfr.Race=='NHW',{'GFAP','APOE4','Age','Sex'}) tbl_egfr(tblracegfap_model1_carrier_gfr.Race=='NHW',:) ],Tnhw_model2);
+mdl_gfap_ai_model1_all_carrier_egfr = fitglm([ tblracegfap_model1_carrier_gfr(tblracegfap_model1_carrier_gfr.Race=='AI',{'GFAP','APOE4','Age','Sex'}) tbl_egfr(tblracegfap_model1_carrier_gfr.Race=='AI',:) ],Tnhw_model2);
+
 mdl_gfap_nhw_model2_all_allelle = fitglm(tblracegfap_model2_allele(tblracegfap_model2_allele.Race=='NHW',{'GFAP','APOE4','Age','Sex','Abeta42/40'}),Tnhw_model2);
 mdl_gfap_ai_model2_all_allelle = fitglm(tblracegfap_model2_allele(tblracegfap_model2_allele.Race=='AI',{'GFAP','APOE4','Age','Sex','Abeta42/40'}),Tnhw_model2);
 mdl_gfap_nhw_model2_all_carrier = fitglm(tblracegfap_model2_carrier(tblracegfap_model2_carrier.Race=='NHW',{'GFAP','APOE4','Age','Sex','Abeta42/40'}),Tnhw_model2);
@@ -3703,6 +4279,11 @@ mdl_gfap_nhw_model2_all_allelle_gfr = fitglm(tblracegfap_model2_allele_gfr(tblra
 mdl_gfap_ai_model2_all_allelle_gfr = fitglm(tblracegfap_model2_allele_gfr(tblracegfap_model2_allele_gfr.Race=='AI',{'GFAP','APOE4','Age','Sex','Abeta42/40','CKD'}),Tnhw_model2_gfr);
 mdl_gfap_nhw_model2_all_carrier_gfr = fitglm(tblracegfap_model2_carrier_gfr(tblracegfap_model2_carrier_gfr.Race=='NHW',{'GFAP','APOE4','Age','Sex','Abeta42/40','CKD'}),Tnhw_model2_gfr);
 mdl_gfap_ai_model2_all_carrier_gfr = fitglm(tblracegfap_model2_carrier_gfr(tblracegfap_model2_carrier_gfr.Race=='AI',{'GFAP','APOE4','Age','Sex','Abeta42/40','CKD'}),Tnhw_model2_gfr);
+
+mdl_gfap_nhw_model2_all_allelle_egfr = fitglm([ tblracegfap_model2_allele_gfr(tblracegfap_model2_allele_gfr.Race=='NHW',{'GFAP','APOE4','Age','Sex','Abeta42/40'}) tbl_egfr(tblracegfap_model2_allele_gfr.Race=='NHW',:) ],Tnhw_model2_gfr);
+mdl_gfap_ai_model2_all_allelle_egfr = fitglm([ tblracegfap_model2_allele_gfr(tblracegfap_model2_allele_gfr.Race=='AI',{'GFAP','APOE4','Age','Sex','Abeta42/40'}) tbl_egfr(tblracegfap_model2_allele_gfr.Race=='AI',:) ],Tnhw_model2_gfr);
+mdl_gfap_nhw_model2_all_carrier_egfr = fitglm([ tblracegfap_model2_carrier_gfr(tblracegfap_model2_carrier_gfr.Race=='NHW',{'GFAP','APOE4','Age','Sex','Abeta42/40'}) tbl_egfr(tblracegfap_model2_carrier_gfr.Race=='NHW',:) ],Tnhw_model2_gfr);
+mdl_gfap_ai_model2_all_carrier_egfr = fitglm([ tblracegfap_model2_carrier_gfr(tblracegfap_model2_carrier_gfr.Race=='AI',{'GFAP','APOE4','Age','Sex','Abeta42/40'}) tbl_egfr(tblracegfap_model2_carrier_gfr.Race=='AI',:) ],Tnhw_model2_gfr);
 
 % Estimate confidence intervals
 ci_race_model1_all_allelle_nhw = exp(coefCI(mdl_race_model1_all_allelle_nhw));
@@ -3779,6 +4360,20 @@ ci_ai_model3_all_allelle_gfr = exp(coefCI(mdl_ai_model3_all_allelle_gfr));
 ci_nhw_model3_all_carrier_gfr = exp(coefCI(mdl_nhw_model3_all_carrier_gfr));
 ci_ai_model3_all_carrier_gfr = exp(coefCI(mdl_ai_model3_all_carrier_gfr));
 
+ci_nhw_model1_all_allelle_egfr = exp(coefCI(mdl_nhw_model1_all_allelle_egfr));
+ci_ai_model1_all_allelle_egfr = exp(coefCI(mdl_ai_model1_all_allelle_egfr));
+ci_nhw_model1_all_carrier_egfr = exp(coefCI(mdl_nhw_model1_all_carrier_egfr));
+ci_ai_model1_all_carrier_egfr = exp(coefCI(mdl_ai_model1_all_carrier_egfr));
+ci_nhw_model2_all_allelle_egfr = exp(coefCI(mdl_nhw_model2_all_allelle_egfr));
+ci_ai_model2_all_allelle_egfr = exp(coefCI(mdl_ai_model2_all_allelle_egfr));
+ci_nhw_model2_all_carrier_egfr = exp(coefCI(mdl_nhw_model2_all_carrier_egfr));
+ci_ai_model2_all_carrier_egfr = exp(coefCI(mdl_ai_model2_all_carrier_egfr));
+ci_nhw_model3_all_allelle_egfr = exp(coefCI(mdl_nhw_model3_all_allelle_egfr));
+ci_ai_model3_all_allelle_egfr = exp(coefCI(mdl_ai_model3_all_allelle_egfr));
+ci_nhw_model3_all_carrier_egfr = exp(coefCI(mdl_nhw_model3_all_carrier_egfr));
+ci_ai_model3_all_carrier_egfr = exp(coefCI(mdl_ai_model3_all_carrier_egfr));
+
+
 % Estimate confidence intervals for each race separately for GFAP
 ci_gfap_nhw_model1_all_allelle = exp(coefCI(mdl_gfap_nhw_model1_all_allelle));
 ci_gfap_ai_model1_all_allelle = exp(coefCI(mdl_gfap_ai_model1_all_allelle));
@@ -3797,6 +4392,15 @@ ci_gfap_nhw_model2_all_allelle_gfr = exp(coefCI(mdl_gfap_nhw_model2_all_allelle_
 ci_gfap_ai_model2_all_allelle_gfr = exp(coefCI(mdl_gfap_ai_model2_all_allelle_gfr));
 ci_gfap_nhw_model2_all_carrier_gfr = exp(coefCI(mdl_gfap_nhw_model2_all_carrier_gfr));
 ci_gfap_ai_model2_all_carrier_gfr = exp(coefCI(mdl_gfap_ai_model2_all_carrier_gfr));
+
+ci_gfap_nhw_model1_all_allelle_egfr = exp(coefCI(mdl_gfap_nhw_model1_all_allelle_egfr));
+ci_gfap_ai_model1_all_allelle_egfr = exp(coefCI(mdl_gfap_ai_model1_all_allelle_egfr));
+ci_gfap_nhw_model1_all_carrier_egfr = exp(coefCI(mdl_gfap_nhw_model1_all_carrier_egfr));
+ci_gfap_ai_model1_all_carrier_egfr = exp(coefCI(mdl_gfap_ai_model1_all_carrier_egfr));
+ci_gfap_nhw_model2_all_allelle_egfr = exp(coefCI(mdl_gfap_nhw_model2_all_allelle_egfr));
+ci_gfap_ai_model2_all_allelle_egfr = exp(coefCI(mdl_gfap_ai_model2_all_allelle_egfr));
+ci_gfap_nhw_model2_all_carrier_egfr = exp(coefCI(mdl_gfap_nhw_model2_all_carrier_egfr));
+ci_gfap_ai_model2_all_carrier_egfr = exp(coefCI(mdl_gfap_ai_model2_all_carrier_egfr));
 %% Assemble TABLE of RACE regression coefficients
 stats_race_regression{1,1} = 'y';
 stats_race_regression{2,1} = 'pTau217';
@@ -3892,6 +4496,55 @@ stats_separate_regression{1,18} = 'APOE4 [Carrier]';
 stats_separate_regression{1,19} = 'Abeta42/40';
 stats_separate_regression{1,20} = 'CKD';
 stats_separate_regression{1,21} = 'R^2';
+
+%% Assemble TABLE of RACE-SPECIFIC MODEL regression coefficients for approach modeling eGFR instead of CKD
+stats_separate_regression_egfr{1,1} = 'y';
+stats_separate_regression_egfr{2,1} = 'pTau217';
+stats_separate_regression_egfr{6,1} = 'pTau217';
+stats_separate_regression_egfr{10,1} = 'Abeta42/40';
+stats_separate_regression_egfr{14,1} = 'GFAP';
+stats_separate_regression_egfr{18,1} = 'GFAP';
+
+stats_separate_regression_egfr{1,2} = 'Model';
+stats_separate_regression_egfr(2,2) = {'Eq. 1 [# alleles]'};
+stats_separate_regression_egfr(3,2) = {'Eq. 1 [carrier]'};
+stats_separate_regression_egfr(4,2) = {'Eq. 1 [# alleles; eGFR]'};
+stats_separate_regression_egfr(5,2) = {'Eq. 1 [carrier; eGFR]'};
+stats_separate_regression_egfr(6,2) = {'Eq. 2 [# alleles]'};
+stats_separate_regression_egfr(7,2) = {'Eq. 2 [carrier]'};
+stats_separate_regression_egfr(8,2) = {'Eq. 2 [# alleles; eGFR]'};
+stats_separate_regression_egfr(9,2) = {'Eq. 2 [carrier; eGFR]'};
+stats_separate_regression_egfr(10,2) = {'Eq. 3 [# alleles]'};
+stats_separate_regression_egfr(11,2) = {'Eq. 3 [carrier]'};
+stats_separate_regression_egfr(12,2) = {'Eq. 3 [# alleles; eGFR]'};
+stats_separate_regression_egfr(13,2) = {'Eq. 3 [carrier; eGFR]'};
+stats_separate_regression_egfr(14,2) = {'Eq. 1 [# alleles]'};
+stats_separate_regression_egfr(15,2) = {'Eq. 1 [carrier]'};
+stats_separate_regression_egfr(16,2) = {'Eq. 1 [# alleles; eGFR]'};
+stats_separate_regression_egfr(17,2) = {'Eq. 1 [carrier; eGFR]'};
+stats_separate_regression_egfr(18,2) = {'Eq. 2 [# alleles]'};
+stats_separate_regression_egfr(19,2) = {'Eq. 2 [carrier]'};
+stats_separate_regression_egfr(20,2) = {'Eq. 2 [# alleles; eGFR]'};
+stats_separate_regression_egfr(21,2) = {'Eq. 2 [carrier; eGFR]'};
+
+stats_separate_regression_egfr{1,4} = ['N (' num2str(size(adai_all,1)) ')'];
+stats_separate_regression_egfr{1,5} = 'Age [10y]^-1';
+stats_separate_regression_egfr{1,6} = 'Sex [Male]';
+stats_separate_regression_egfr{1,7} = 'APOE4 [Hom]';
+stats_separate_regression_egfr{1,8} = 'APOE4 [Het]';
+stats_separate_regression_egfr{1,9} = 'APOE4 [Carrier]';
+stats_separate_regression_egfr{1,10} = 'Abeta42/40';
+stats_separate_regression_egfr{1,11} = 'eGFR';
+stats_separate_regression_egfr{1,12} = 'R^2';
+stats_separate_regression_egfr{1,13} = ['N (' num2str(size(adni_all,1)) ')'];
+stats_separate_regression_egfr{1,14} = 'Age [10y]^-1';
+stats_separate_regression_egfr{1,15} = 'Sex [Male]';
+stats_separate_regression_egfr{1,16} = 'APOE4 [Hom]';
+stats_separate_regression_egfr{1,17} = 'APOE4 [Het]';
+stats_separate_regression_egfr{1,18} = 'APOE4 [Carrier]';
+stats_separate_regression_egfr{1,19} = 'Abeta42/40';
+stats_separate_regression_egfr{1,20} = 'eGFR';
+stats_separate_regression_egfr{1,21} = 'R^2';
 
 %% Assemble TABLE of regression coefficients
 stats_regression{1,1} = 'y';
@@ -8381,6 +9034,1817 @@ stats_separate_regression{21,20} = tmp;
 stats_separate_regression{21,21} = mdl_gfap_nhw_model2_all_carrier_gfr.Rsquared.Ordinary;
 
 
+%% RACE-SEPARATE regressions modeling eGFR instead of CKD
+
+%% ptau217 RACE-SEPARATE-regression model1 - allele
+stats_separate_regression_egfr{2,4} = mdl_ai_model1_all_allelle.NumObservations;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_ai_model1_all_allelle.Coefficients('Age','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_ai_model1_all_allelle(strcmp(mdl_ai_model1_all_allelle.CoefficientNames,'Age'),1) , '%.2f' ) '; ' ...
+    num2str( ci_ai_model1_all_allelle(strcmp(mdl_ai_model1_all_allelle.CoefficientNames,'Age'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_ai_model1_all_allelle.Coefficients('Age','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{2,5} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_ai_model1_all_allelle.Coefficients('Sex_Male','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_ai_model1_all_allelle(strcmp(mdl_ai_model1_all_allelle.CoefficientNames,'Sex_Male'),1) , '%.2f' ) '; ' ...
+    num2str( ci_ai_model1_all_allelle(strcmp(mdl_ai_model1_all_allelle.CoefficientNames,'Sex_Male'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_ai_model1_all_allelle.Coefficients('Sex_Male','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{2,6} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_ai_model1_all_allelle.Coefficients('APOE4_2','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_ai_model1_all_allelle(strcmp(mdl_ai_model1_all_allelle.CoefficientNames,'APOE4_2'),1) , '%.2f' ) '; ' ...
+    num2str( ci_ai_model1_all_allelle(strcmp(mdl_ai_model1_all_allelle.CoefficientNames,'APOE4_2'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_ai_model1_all_allelle.Coefficients('APOE4_2','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{2,7} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_ai_model1_all_allelle.Coefficients('APOE4_1','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_ai_model1_all_allelle(strcmp(mdl_ai_model1_all_allelle.CoefficientNames,'APOE4_1'),1) , '%.2f' ) '; ' ...
+    num2str( ci_ai_model1_all_allelle(strcmp(mdl_ai_model1_all_allelle.CoefficientNames,'APOE4_1'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_ai_model1_all_allelle.Coefficients('APOE4_1','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{2,8} = tmp;
+
+stats_separate_regression_egfr{2,12} = mdl_ai_model1_all_allelle.Rsquared.Ordinary;
+
+
+stats_separate_regression_egfr{2,13} = mdl_nhw_model1_all_allelle.NumObservations;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_nhw_model1_all_allelle.Coefficients('Age','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_nhw_model1_all_allelle(strcmp(mdl_nhw_model1_all_allelle.CoefficientNames,'Age'),1) , '%.2f' ) '; ' ...
+    num2str( ci_nhw_model1_all_allelle(strcmp(mdl_nhw_model1_all_allelle.CoefficientNames,'Age'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_nhw_model1_all_allelle.Coefficients('Age','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{2,14} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_nhw_model1_all_allelle.Coefficients('Sex_Male','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_nhw_model1_all_allelle(strcmp(mdl_nhw_model1_all_allelle.CoefficientNames,'Sex_Male'),1) , '%.2f' ) '; ' ...
+    num2str( ci_nhw_model1_all_allelle(strcmp(mdl_nhw_model1_all_allelle.CoefficientNames,'Sex_Male'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_nhw_model1_all_allelle.Coefficients('Sex_Male','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{2,15} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_nhw_model1_all_allelle.Coefficients('APOE4_2','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_nhw_model1_all_allelle(strcmp(mdl_nhw_model1_all_allelle.CoefficientNames,'APOE4_2'),1) , '%.2f' ) '; ' ...
+    num2str( ci_nhw_model1_all_allelle(strcmp(mdl_nhw_model1_all_allelle.CoefficientNames,'APOE4_2'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_nhw_model1_all_allelle.Coefficients('APOE4_2','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{2,16} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_nhw_model1_all_allelle.Coefficients('APOE4_1','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_nhw_model1_all_allelle(strcmp(mdl_nhw_model1_all_allelle.CoefficientNames,'APOE4_1'),1) , '%.2f' ) '; ' ...
+    num2str( ci_nhw_model1_all_allelle(strcmp(mdl_nhw_model1_all_allelle.CoefficientNames,'APOE4_1'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_nhw_model1_all_allelle.Coefficients('APOE4_1','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{2,17} = tmp;
+
+stats_separate_regression_egfr{2,21} = mdl_nhw_model1_all_allelle.Rsquared.Ordinary;
+
+
+%% ptau217 RACE-SEPARATE-regression model1 - carrier
+stats_separate_regression_egfr{3,4} = mdl_ai_model1_all_carrier.NumObservations;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_ai_model1_all_carrier.Coefficients('Age','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_ai_model1_all_carrier(strcmp(mdl_ai_model1_all_carrier.CoefficientNames,'Age'),1) , '%.2f' ) '; ' ...
+    num2str( ci_ai_model1_all_carrier(strcmp(mdl_ai_model1_all_carrier.CoefficientNames,'Age'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_ai_model1_all_carrier.Coefficients('Age','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{3,5} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_ai_model1_all_carrier.Coefficients('Sex_Male','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_ai_model1_all_carrier(strcmp(mdl_ai_model1_all_carrier.CoefficientNames,'Sex_Male'),1) , '%.2f' ) '; ' ...
+    num2str( ci_ai_model1_all_carrier(strcmp(mdl_ai_model1_all_carrier.CoefficientNames,'Sex_Male'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_ai_model1_all_carrier.Coefficients('Sex_Male','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{3,6} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_ai_model1_all_carrier.Coefficients('APOE4_1','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_ai_model1_all_carrier(strcmp(mdl_ai_model1_all_carrier.CoefficientNames,'APOE4_1'),1) , '%.2f' ) '; ' ...
+    num2str( ci_ai_model1_all_carrier(strcmp(mdl_ai_model1_all_carrier.CoefficientNames,'APOE4_1'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_ai_model1_all_carrier.Coefficients('APOE4_1','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{3,9} = tmp;
+
+stats_separate_regression_egfr{3,12} = mdl_ai_model1_all_carrier.Rsquared.Ordinary;
+
+
+stats_separate_regression_egfr{3,13} = mdl_nhw_model1_all_carrier.NumObservations;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_nhw_model1_all_carrier.Coefficients('Age','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_nhw_model1_all_carrier(strcmp(mdl_nhw_model1_all_carrier.CoefficientNames,'Age'),1) , '%.2f' ) '; ' ...
+    num2str( ci_nhw_model1_all_carrier(strcmp(mdl_nhw_model1_all_carrier.CoefficientNames,'Age'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_nhw_model1_all_carrier.Coefficients('Age','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{3,14} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_nhw_model1_all_carrier.Coefficients('Sex_Male','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_nhw_model1_all_carrier(strcmp(mdl_nhw_model1_all_carrier.CoefficientNames,'Sex_Male'),1) , '%.2f' ) '; ' ...
+    num2str( ci_nhw_model1_all_carrier(strcmp(mdl_nhw_model1_all_carrier.CoefficientNames,'Sex_Male'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_nhw_model1_all_carrier.Coefficients('Sex_Male','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{3,15} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_nhw_model1_all_carrier.Coefficients('APOE4_1','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_nhw_model1_all_carrier(strcmp(mdl_nhw_model1_all_carrier.CoefficientNames,'APOE4_1'),1) , '%.2f' ) '; ' ...
+    num2str( ci_nhw_model1_all_carrier(strcmp(mdl_nhw_model1_all_carrier.CoefficientNames,'APOE4_1'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_nhw_model1_all_carrier.Coefficients('APOE4_1','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{3,18} = tmp;
+
+stats_separate_regression_egfr{3,21} = mdl_nhw_model1_all_carrier.Rsquared.Ordinary;
+
+
+%% ptau217 RACE-SEPARATE-regression model1 - allele including CKD
+stats_separate_regression_egfr{4,4} = mdl_ai_model1_all_allelle_egfr.NumObservations;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_ai_model1_all_allelle_egfr.Coefficients('Age','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_ai_model1_all_allelle_egfr(strcmp(mdl_ai_model1_all_allelle_egfr.CoefficientNames,'Age'),1) , '%.2f' ) '; ' ...
+    num2str( ci_ai_model1_all_allelle_egfr(strcmp(mdl_ai_model1_all_allelle_egfr.CoefficientNames,'Age'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_ai_model1_all_allelle_egfr.Coefficients('Age','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{4,5} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_ai_model1_all_allelle_egfr.Coefficients('Sex_Male','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_ai_model1_all_allelle_egfr(strcmp(mdl_ai_model1_all_allelle_egfr.CoefficientNames,'Sex_Male'),1) , '%.2f' ) '; ' ...
+    num2str( ci_ai_model1_all_allelle_egfr(strcmp(mdl_ai_model1_all_allelle_egfr.CoefficientNames,'Sex_Male'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_ai_model1_all_allelle_egfr.Coefficients('Sex_Male','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{4,6} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_ai_model1_all_allelle_egfr.Coefficients('APOE4_2','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_ai_model1_all_allelle_egfr(strcmp(mdl_ai_model1_all_allelle_egfr.CoefficientNames,'APOE4_2'),1) , '%.2f' ) '; ' ...
+    num2str( ci_ai_model1_all_allelle_egfr(strcmp(mdl_ai_model1_all_allelle_egfr.CoefficientNames,'APOE4_2'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_ai_model1_all_allelle_egfr.Coefficients('APOE4_2','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{4,7} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_ai_model1_all_allelle_egfr.Coefficients('APOE4_1','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_ai_model1_all_allelle_egfr(strcmp(mdl_ai_model1_all_allelle_egfr.CoefficientNames,'APOE4_1'),1) , '%.2f' ) '; ' ...
+    num2str( ci_ai_model1_all_allelle_egfr(strcmp(mdl_ai_model1_all_allelle_egfr.CoefficientNames,'APOE4_1'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_ai_model1_all_allelle_egfr.Coefficients('APOE4_1','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{4,8} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_ai_model1_all_allelle_egfr.Coefficients('eGFR','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_ai_model1_all_allelle_egfr(strcmp(mdl_ai_model1_all_allelle_egfr.CoefficientNames,'eGFR'),1) , '%.2f' ) '; ' ...
+    num2str( ci_ai_model1_all_allelle_egfr(strcmp(mdl_ai_model1_all_allelle_egfr.CoefficientNames,'eGFR'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_ai_model1_all_allelle_egfr.Coefficients('eGFR','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{4,11} = tmp;
+
+stats_separate_regression_egfr{4,12} = mdl_ai_model1_all_allelle_egfr.Rsquared.Ordinary;
+
+
+stats_separate_regression_egfr{4,13} = mdl_nhw_model1_all_allelle_egfr.NumObservations;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_nhw_model1_all_allelle_egfr.Coefficients('Age','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_nhw_model1_all_allelle_egfr(strcmp(mdl_nhw_model1_all_allelle_egfr.CoefficientNames,'Age'),1) , '%.2f' ) '; ' ...
+    num2str( ci_nhw_model1_all_allelle_egfr(strcmp(mdl_nhw_model1_all_allelle_egfr.CoefficientNames,'Age'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_nhw_model1_all_allelle_egfr.Coefficients('Age','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{4,14} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_nhw_model1_all_allelle_egfr.Coefficients('Sex_Male','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_nhw_model1_all_allelle_egfr(strcmp(mdl_nhw_model1_all_allelle_egfr.CoefficientNames,'Sex_Male'),1) , '%.2f' ) '; ' ...
+    num2str( ci_nhw_model1_all_allelle_egfr(strcmp(mdl_nhw_model1_all_allelle_egfr.CoefficientNames,'Sex_Male'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_nhw_model1_all_allelle_egfr.Coefficients('Sex_Male','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{4,15} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_nhw_model1_all_allelle_egfr.Coefficients('APOE4_2','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_nhw_model1_all_allelle_egfr(strcmp(mdl_nhw_model1_all_allelle_egfr.CoefficientNames,'APOE4_2'),1) , '%.2f' ) '; ' ...
+    num2str( ci_nhw_model1_all_allelle_egfr(strcmp(mdl_nhw_model1_all_allelle_egfr.CoefficientNames,'APOE4_2'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_nhw_model1_all_allelle_egfr.Coefficients('APOE4_2','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{4,16} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_nhw_model1_all_allelle_egfr.Coefficients('APOE4_1','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_nhw_model1_all_allelle_egfr(strcmp(mdl_nhw_model1_all_allelle_egfr.CoefficientNames,'APOE4_1'),1) , '%.2f' ) '; ' ...
+    num2str( ci_nhw_model1_all_allelle_egfr(strcmp(mdl_nhw_model1_all_allelle_egfr.CoefficientNames,'APOE4_1'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_nhw_model1_all_allelle_egfr.Coefficients('APOE4_1','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{4,17} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_nhw_model1_all_allelle_egfr.Coefficients('eGFR','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_nhw_model1_all_allelle_egfr(strcmp(mdl_nhw_model1_all_allelle_egfr.CoefficientNames,'eGFR'),1) , '%.2f' ) '; ' ...
+    num2str( ci_nhw_model1_all_allelle_egfr(strcmp(mdl_nhw_model1_all_allelle_egfr.CoefficientNames,'eGFR'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_nhw_model1_all_allelle_egfr.Coefficients('eGFR','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{4,20} = tmp;
+
+stats_separate_regression_egfr{4,21} = mdl_nhw_model1_all_allelle_egfr.Rsquared.Ordinary;
+
+
+stats_separate_regression_egfr{5,4} = mdl_ai_model1_all_carrier_egfr.NumObservations;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_ai_model1_all_carrier_egfr.Coefficients('Age','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_ai_model1_all_carrier_egfr(strcmp(mdl_ai_model1_all_carrier_egfr.CoefficientNames,'Age'),1) , '%.2f' ) '; ' ...
+    num2str( ci_ai_model1_all_carrier_egfr(strcmp(mdl_ai_model1_all_carrier_egfr.CoefficientNames,'Age'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_ai_model1_all_carrier_egfr.Coefficients('Age','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{5,5} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_ai_model1_all_carrier_egfr.Coefficients('Sex_Male','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_ai_model1_all_carrier_egfr(strcmp(mdl_ai_model1_all_carrier_egfr.CoefficientNames,'Sex_Male'),1) , '%.2f' ) '; ' ...
+    num2str( ci_ai_model1_all_carrier_egfr(strcmp(mdl_ai_model1_all_carrier_egfr.CoefficientNames,'Sex_Male'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_ai_model1_all_carrier_egfr.Coefficients('Sex_Male','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{5,6} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_ai_model1_all_carrier_egfr.Coefficients('APOE4_1','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_ai_model1_all_carrier_egfr(strcmp(mdl_ai_model1_all_carrier_egfr.CoefficientNames,'APOE4_1'),1) , '%.2f' ) '; ' ...
+    num2str( ci_ai_model1_all_carrier_egfr(strcmp(mdl_ai_model1_all_carrier_egfr.CoefficientNames,'APOE4_1'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_ai_model1_all_carrier_egfr.Coefficients('APOE4_1','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{5,9} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_ai_model1_all_carrier_egfr.Coefficients('eGFR','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_ai_model1_all_carrier_egfr(strcmp(mdl_ai_model1_all_carrier_egfr.CoefficientNames,'eGFR'),1) , '%.2f' ) '; ' ...
+    num2str( ci_ai_model1_all_carrier_egfr(strcmp(mdl_ai_model1_all_carrier_egfr.CoefficientNames,'eGFR'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_ai_model1_all_carrier_egfr.Coefficients('eGFR','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{5,11} = tmp;
+
+stats_separate_regression_egfr{5,12} = mdl_ai_model1_all_carrier_egfr.Rsquared.Ordinary;
+
+
+stats_separate_regression_egfr{5,13} = mdl_nhw_model1_all_carrier_egfr.NumObservations;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_nhw_model1_all_carrier_egfr.Coefficients('Age','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_nhw_model1_all_carrier_egfr(strcmp(mdl_nhw_model1_all_carrier_egfr.CoefficientNames,'Age'),1) , '%.2f' ) '; ' ...
+    num2str( ci_nhw_model1_all_carrier_egfr(strcmp(mdl_nhw_model1_all_carrier_egfr.CoefficientNames,'Age'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_nhw_model1_all_carrier_egfr.Coefficients('Age','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{5,14} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_nhw_model1_all_carrier_egfr.Coefficients('Sex_Male','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_nhw_model1_all_carrier_egfr(strcmp(mdl_nhw_model1_all_carrier_egfr.CoefficientNames,'Sex_Male'),1) , '%.2f' ) '; ' ...
+    num2str( ci_nhw_model1_all_carrier_egfr(strcmp(mdl_nhw_model1_all_carrier_egfr.CoefficientNames,'Sex_Male'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_nhw_model1_all_carrier_egfr.Coefficients('Sex_Male','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{5,15} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_nhw_model1_all_carrier_egfr.Coefficients('APOE4_1','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_nhw_model1_all_carrier_egfr(strcmp(mdl_nhw_model1_all_carrier_egfr.CoefficientNames,'APOE4_1'),1) , '%.2f' ) '; ' ...
+    num2str( ci_nhw_model1_all_carrier_egfr(strcmp(mdl_nhw_model1_all_carrier_egfr.CoefficientNames,'APOE4_1'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_nhw_model1_all_carrier_egfr.Coefficients('APOE4_1','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{5,18} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_nhw_model1_all_carrier_egfr.Coefficients('eGFR','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_nhw_model1_all_carrier_egfr(strcmp(mdl_nhw_model1_all_carrier_egfr.CoefficientNames,'eGFR'),1) , '%.2f' ) '; ' ...
+    num2str( ci_nhw_model1_all_carrier_egfr(strcmp(mdl_nhw_model1_all_carrier_egfr.CoefficientNames,'eGFR'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_nhw_model1_all_carrier_egfr.Coefficients('eGFR','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{5,20} = tmp;
+
+stats_separate_regression_egfr{5,21} = mdl_nhw_model1_all_carrier_egfr.Rsquared.Ordinary;
+
+
+%% ptau217 RACE-SEPARATE-regression model2 - allele
+stats_separate_regression_egfr{6,4} = mdl_ai_model2_all_allelle.NumObservations;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_ai_model2_all_allelle.Coefficients('Age','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_ai_model2_all_allelle(strcmp(mdl_ai_model2_all_allelle.CoefficientNames,'Age'),1) , '%.2f' ) '; ' ...
+    num2str( ci_ai_model2_all_allelle(strcmp(mdl_ai_model2_all_allelle.CoefficientNames,'Age'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_ai_model2_all_allelle.Coefficients('Age','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{6,5} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_ai_model2_all_allelle.Coefficients('Sex_Male','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_ai_model2_all_allelle(strcmp(mdl_ai_model2_all_allelle.CoefficientNames,'Sex_Male'),1) , '%.2f' ) '; ' ...
+    num2str( ci_ai_model2_all_allelle(strcmp(mdl_ai_model2_all_allelle.CoefficientNames,'Sex_Male'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_ai_model2_all_allelle.Coefficients('Sex_Male','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{6,6} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_ai_model2_all_allelle.Coefficients('APOE4_2','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_ai_model2_all_allelle(strcmp(mdl_ai_model2_all_allelle.CoefficientNames,'APOE4_2'),1) , '%.2f' ) '; ' ...
+    num2str( ci_ai_model2_all_allelle(strcmp(mdl_ai_model2_all_allelle.CoefficientNames,'APOE4_2'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_ai_model2_all_allelle.Coefficients('APOE4_2','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{6,7} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_ai_model2_all_allelle.Coefficients('APOE4_1','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_ai_model2_all_allelle(strcmp(mdl_ai_model2_all_allelle.CoefficientNames,'APOE4_1'),1) , '%.2f' ) '; ' ...
+    num2str( ci_ai_model2_all_allelle(strcmp(mdl_ai_model2_all_allelle.CoefficientNames,'APOE4_1'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_ai_model2_all_allelle.Coefficients('APOE4_1','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{6,8} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_ai_model2_all_allelle.Coefficients('Abeta42/40','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_ai_model2_all_allelle(strcmp(mdl_ai_model2_all_allelle.CoefficientNames,'Abeta42/40'),1) , '%.2f' ) '; ' ...
+    num2str( ci_ai_model2_all_allelle(strcmp(mdl_ai_model2_all_allelle.CoefficientNames,'Abeta42/40'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_ai_model2_all_allelle.Coefficients('Abeta42/40','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{6,10} = tmp;
+
+stats_separate_regression_egfr{6,12} = mdl_ai_model2_all_allelle.Rsquared.Ordinary;
+
+
+stats_separate_regression_egfr{6,13} = mdl_nhw_model2_all_allelle.NumObservations;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_nhw_model2_all_allelle.Coefficients('Age','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_nhw_model2_all_allelle(strcmp(mdl_nhw_model2_all_allelle.CoefficientNames,'Age'),1) , '%.2f' ) '; ' ...
+    num2str( ci_nhw_model2_all_allelle(strcmp(mdl_nhw_model2_all_allelle.CoefficientNames,'Age'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_nhw_model2_all_allelle.Coefficients('Age','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{6,14} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_nhw_model2_all_allelle.Coefficients('Sex_Male','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_nhw_model2_all_allelle(strcmp(mdl_nhw_model2_all_allelle.CoefficientNames,'Sex_Male'),1) , '%.2f' ) '; ' ...
+    num2str( ci_nhw_model2_all_allelle(strcmp(mdl_nhw_model2_all_allelle.CoefficientNames,'Sex_Male'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_nhw_model2_all_allelle.Coefficients('Sex_Male','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{6,15} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_nhw_model2_all_allelle.Coefficients('APOE4_2','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_nhw_model2_all_allelle(strcmp(mdl_nhw_model2_all_allelle.CoefficientNames,'APOE4_2'),1) , '%.2f' ) '; ' ...
+    num2str( ci_nhw_model2_all_allelle(strcmp(mdl_nhw_model2_all_allelle.CoefficientNames,'APOE4_2'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_nhw_model2_all_allelle.Coefficients('APOE4_2','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{6,16} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_nhw_model2_all_allelle.Coefficients('APOE4_1','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_nhw_model2_all_allelle(strcmp(mdl_nhw_model2_all_allelle.CoefficientNames,'APOE4_1'),1) , '%.2f' ) '; ' ...
+    num2str( ci_nhw_model2_all_allelle(strcmp(mdl_nhw_model2_all_allelle.CoefficientNames,'APOE4_1'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_nhw_model2_all_allelle.Coefficients('APOE4_1','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{6,17} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_nhw_model2_all_allelle.Coefficients('Abeta42/40','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_nhw_model2_all_allelle(strcmp(mdl_nhw_model2_all_allelle.CoefficientNames,'Abeta42/40'),1) , '%.2f' ) '; ' ...
+    num2str( ci_nhw_model2_all_allelle(strcmp(mdl_nhw_model2_all_allelle.CoefficientNames,'Abeta42/40'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_nhw_model2_all_allelle.Coefficients('Abeta42/40','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{6,19} = tmp;
+
+stats_separate_regression_egfr{6,21} = mdl_nhw_model2_all_allelle.Rsquared.Ordinary;
+
+
+
+%% ptau217 RACE-SEPARATE-regression model2 - carrier
+stats_separate_regression_egfr{7,4} = mdl_ai_model2_all_carrier.NumObservations;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_ai_model2_all_carrier.Coefficients('Age','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_ai_model2_all_carrier(strcmp(mdl_ai_model2_all_carrier.CoefficientNames,'Age'),1) , '%.2f' ) '; ' ...
+    num2str( ci_ai_model2_all_carrier(strcmp(mdl_ai_model2_all_carrier.CoefficientNames,'Age'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_ai_model2_all_carrier.Coefficients('Age','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{7,5} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_ai_model2_all_carrier.Coefficients('Sex_Male','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_ai_model2_all_carrier(strcmp(mdl_ai_model2_all_carrier.CoefficientNames,'Sex_Male'),1) , '%.2f' ) '; ' ...
+    num2str( ci_ai_model2_all_carrier(strcmp(mdl_ai_model2_all_carrier.CoefficientNames,'Sex_Male'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_ai_model2_all_carrier.Coefficients('Sex_Male','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{7,6} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_ai_model2_all_carrier.Coefficients('APOE4_1','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_ai_model2_all_carrier(strcmp(mdl_ai_model2_all_carrier.CoefficientNames,'APOE4_1'),1) , '%.2f' ) '; ' ...
+    num2str( ci_ai_model2_all_carrier(strcmp(mdl_ai_model2_all_carrier.CoefficientNames,'APOE4_1'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_ai_model2_all_carrier.Coefficients('APOE4_1','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{7,9} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_ai_model2_all_carrier.Coefficients('Abeta42/40','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_ai_model2_all_carrier(strcmp(mdl_ai_model2_all_carrier.CoefficientNames,'Abeta42/40'),1) , '%.2f' ) '; ' ...
+    num2str( ci_ai_model2_all_carrier(strcmp(mdl_ai_model2_all_carrier.CoefficientNames,'Abeta42/40'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_ai_model2_all_carrier.Coefficients('Abeta42/40','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{7,10} = tmp;
+
+stats_separate_regression_egfr{7,12} = mdl_ai_model2_all_carrier.Rsquared.Ordinary;
+
+
+stats_separate_regression_egfr{7,13} = mdl_nhw_model2_all_carrier.NumObservations;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_nhw_model2_all_carrier.Coefficients('Age','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_nhw_model2_all_carrier(strcmp(mdl_nhw_model2_all_carrier.CoefficientNames,'Age'),1) , '%.2f' ) '; ' ...
+    num2str( ci_nhw_model2_all_carrier(strcmp(mdl_nhw_model2_all_carrier.CoefficientNames,'Age'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_nhw_model2_all_carrier.Coefficients('Age','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{7,14} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_nhw_model2_all_carrier.Coefficients('Sex_Male','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_nhw_model2_all_carrier(strcmp(mdl_nhw_model2_all_carrier.CoefficientNames,'Sex_Male'),1) , '%.2f' ) '; ' ...
+    num2str( ci_nhw_model2_all_carrier(strcmp(mdl_nhw_model2_all_carrier.CoefficientNames,'Sex_Male'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_nhw_model2_all_carrier.Coefficients('Sex_Male','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{7,15} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_nhw_model2_all_carrier.Coefficients('APOE4_1','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_nhw_model2_all_carrier(strcmp(mdl_nhw_model2_all_carrier.CoefficientNames,'APOE4_1'),1) , '%.2f' ) '; ' ...
+    num2str( ci_nhw_model2_all_carrier(strcmp(mdl_nhw_model2_all_carrier.CoefficientNames,'APOE4_1'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_nhw_model2_all_carrier.Coefficients('APOE4_1','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{7,18} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_nhw_model2_all_carrier.Coefficients('Abeta42/40','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_nhw_model2_all_carrier(strcmp(mdl_nhw_model2_all_carrier.CoefficientNames,'Abeta42/40'),1) , '%.2f' ) '; ' ...
+    num2str( ci_nhw_model2_all_carrier(strcmp(mdl_nhw_model2_all_carrier.CoefficientNames,'Abeta42/40'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_nhw_model2_all_carrier.Coefficients('Abeta42/40','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{7,19} = tmp;
+
+stats_separate_regression_egfr{7,21} = mdl_nhw_model2_all_carrier.Rsquared.Ordinary;
+
+
+
+%% ptau217 RACE-SEPARATE-regression model2 - allele including CKD
+stats_separate_regression_egfr{8,4} = mdl_ai_model2_all_allelle_egfr.NumObservations;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_ai_model2_all_allelle_egfr.Coefficients('Age','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_ai_model2_all_allelle_egfr(strcmp(mdl_ai_model2_all_allelle_egfr.CoefficientNames,'Age'),1) , '%.2f' ) '; ' ...
+    num2str( ci_ai_model2_all_allelle_egfr(strcmp(mdl_ai_model2_all_allelle_egfr.CoefficientNames,'Age'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_ai_model2_all_allelle_egfr.Coefficients('Age','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{8,5} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_ai_model2_all_allelle_egfr.Coefficients('Sex_Male','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_ai_model2_all_allelle_egfr(strcmp(mdl_ai_model2_all_allelle_egfr.CoefficientNames,'Sex_Male'),1) , '%.2f' ) '; ' ...
+    num2str( ci_ai_model2_all_allelle_egfr(strcmp(mdl_ai_model2_all_allelle_egfr.CoefficientNames,'Sex_Male'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_ai_model2_all_allelle_egfr.Coefficients('Sex_Male','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{8,6} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_ai_model2_all_allelle_egfr.Coefficients('APOE4_2','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_ai_model2_all_allelle_egfr(strcmp(mdl_ai_model2_all_allelle_egfr.CoefficientNames,'APOE4_2'),1) , '%.2f' ) '; ' ...
+    num2str( ci_ai_model2_all_allelle_egfr(strcmp(mdl_ai_model2_all_allelle_egfr.CoefficientNames,'APOE4_2'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_ai_model2_all_allelle_egfr.Coefficients('APOE4_2','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{8,7} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_ai_model2_all_allelle_egfr.Coefficients('APOE4_1','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_ai_model2_all_allelle_egfr(strcmp(mdl_ai_model2_all_allelle_egfr.CoefficientNames,'APOE4_1'),1) , '%.2f' ) '; ' ...
+    num2str( ci_ai_model2_all_allelle_egfr(strcmp(mdl_ai_model2_all_allelle_egfr.CoefficientNames,'APOE4_1'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_ai_model2_all_allelle_egfr.Coefficients('APOE4_1','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{8,8} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_ai_model2_all_allelle_egfr.Coefficients('Abeta42/40','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_ai_model2_all_allelle_egfr(strcmp(mdl_ai_model2_all_allelle_egfr.CoefficientNames,'Abeta42/40'),1) , '%.2f' ) '; ' ...
+    num2str( ci_ai_model2_all_allelle_egfr(strcmp(mdl_ai_model2_all_allelle_egfr.CoefficientNames,'Abeta42/40'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_ai_model2_all_allelle_egfr.Coefficients('Abeta42/40','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{8,10} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_ai_model2_all_allelle_egfr.Coefficients('eGFR','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_ai_model2_all_allelle_egfr(strcmp(mdl_ai_model2_all_allelle_egfr.CoefficientNames,'eGFR'),1) , '%.2f' ) '; ' ...
+    num2str( ci_ai_model2_all_allelle_egfr(strcmp(mdl_ai_model2_all_allelle_egfr.CoefficientNames,'eGFR'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_ai_model2_all_allelle_egfr.Coefficients('eGFR','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{8,11} = tmp;
+
+stats_separate_regression_egfr{8,12} = mdl_ai_model2_all_allelle_egfr.Rsquared.Ordinary;
+
+
+stats_separate_regression_egfr{8,13} = mdl_nhw_model2_all_allelle_egfr.NumObservations;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_nhw_model2_all_allelle_egfr.Coefficients('Age','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_nhw_model2_all_allelle_egfr(strcmp(mdl_nhw_model2_all_allelle_egfr.CoefficientNames,'Age'),1) , '%.2f' ) '; ' ...
+    num2str( ci_nhw_model2_all_allelle_egfr(strcmp(mdl_nhw_model2_all_allelle_egfr.CoefficientNames,'Age'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_nhw_model2_all_allelle_egfr.Coefficients('Age','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{8,14} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_nhw_model2_all_allelle_egfr.Coefficients('Sex_Male','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_nhw_model2_all_allelle_egfr(strcmp(mdl_nhw_model2_all_allelle_egfr.CoefficientNames,'Sex_Male'),1) , '%.2f' ) '; ' ...
+    num2str( ci_nhw_model2_all_allelle_egfr(strcmp(mdl_nhw_model2_all_allelle_egfr.CoefficientNames,'Sex_Male'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_nhw_model2_all_allelle_egfr.Coefficients('Sex_Male','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{8,15} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_nhw_model2_all_allelle_egfr.Coefficients('APOE4_2','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_nhw_model2_all_allelle_egfr(strcmp(mdl_nhw_model2_all_allelle_egfr.CoefficientNames,'APOE4_2'),1) , '%.2f' ) '; ' ...
+    num2str( ci_nhw_model2_all_allelle_egfr(strcmp(mdl_nhw_model2_all_allelle_egfr.CoefficientNames,'APOE4_2'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_nhw_model2_all_allelle_egfr.Coefficients('APOE4_2','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{8,16} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_nhw_model2_all_allelle_egfr.Coefficients('APOE4_1','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_nhw_model2_all_allelle_egfr(strcmp(mdl_nhw_model2_all_allelle_egfr.CoefficientNames,'APOE4_1'),1) , '%.2f' ) '; ' ...
+    num2str( ci_nhw_model2_all_allelle_egfr(strcmp(mdl_nhw_model2_all_allelle_egfr.CoefficientNames,'APOE4_1'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_nhw_model2_all_allelle_egfr.Coefficients('APOE4_1','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{8,17} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_nhw_model2_all_allelle_egfr.Coefficients('Abeta42/40','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_nhw_model2_all_allelle_egfr(strcmp(mdl_nhw_model2_all_allelle_egfr.CoefficientNames,'Abeta42/40'),1) , '%.2f' ) '; ' ...
+    num2str( ci_nhw_model2_all_allelle_egfr(strcmp(mdl_nhw_model2_all_allelle_egfr.CoefficientNames,'Abeta42/40'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_nhw_model2_all_allelle_egfr.Coefficients('Abeta42/40','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{8,19} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_nhw_model2_all_allelle_egfr.Coefficients('eGFR','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_nhw_model2_all_allelle_egfr(strcmp(mdl_nhw_model2_all_allelle_egfr.CoefficientNames,'eGFR'),1) , '%.2f' ) '; ' ...
+    num2str( ci_nhw_model2_all_allelle_egfr(strcmp(mdl_nhw_model2_all_allelle_egfr.CoefficientNames,'eGFR'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_nhw_model2_all_allelle_egfr.Coefficients('eGFR','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{8,20} = tmp;
+
+stats_separate_regression_egfr{8,21} = mdl_nhw_model2_all_allelle_egfr.Rsquared.Ordinary;
+
+
+
+%% ptau217 RACE-SEPARATE-regression model2 - carrier including CKD
+stats_separate_regression_egfr{9,4} = mdl_ai_model2_all_carrier_egfr.NumObservations;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_ai_model2_all_carrier_egfr.Coefficients('Age','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_ai_model2_all_carrier_egfr(strcmp(mdl_ai_model2_all_carrier_egfr.CoefficientNames,'Age'),1) , '%.2f' ) '; ' ...
+    num2str( ci_ai_model2_all_carrier_egfr(strcmp(mdl_ai_model2_all_carrier_egfr.CoefficientNames,'Age'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_ai_model2_all_carrier_egfr.Coefficients('Age','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{9,5} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_ai_model2_all_carrier_egfr.Coefficients('Sex_Male','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_ai_model2_all_carrier_egfr(strcmp(mdl_ai_model2_all_carrier_egfr.CoefficientNames,'Sex_Male'),1) , '%.2f' ) '; ' ...
+    num2str( ci_ai_model2_all_carrier_egfr(strcmp(mdl_ai_model2_all_carrier_egfr.CoefficientNames,'Sex_Male'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_ai_model2_all_carrier_egfr.Coefficients('Sex_Male','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{9,6} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_ai_model2_all_carrier_egfr.Coefficients('APOE4_1','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_ai_model2_all_carrier_egfr(strcmp(mdl_ai_model2_all_carrier_egfr.CoefficientNames,'APOE4_1'),1) , '%.2f' ) '; ' ...
+    num2str( ci_ai_model2_all_carrier_egfr(strcmp(mdl_ai_model2_all_carrier_egfr.CoefficientNames,'APOE4_1'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_ai_model2_all_carrier_egfr.Coefficients('APOE4_1','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{9,9} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_ai_model2_all_carrier_egfr.Coefficients('Abeta42/40','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_ai_model2_all_carrier_egfr(strcmp(mdl_ai_model2_all_carrier_egfr.CoefficientNames,'Abeta42/40'),1) , '%.2f' ) '; ' ...
+    num2str( ci_ai_model2_all_carrier_egfr(strcmp(mdl_ai_model2_all_carrier_egfr.CoefficientNames,'Abeta42/40'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_ai_model2_all_carrier_egfr.Coefficients('Abeta42/40','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{9,10} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_ai_model2_all_carrier_egfr.Coefficients('eGFR','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_ai_model2_all_carrier_egfr(strcmp(mdl_ai_model2_all_carrier_egfr.CoefficientNames,'eGFR'),1) , '%.2f' ) '; ' ...
+    num2str( ci_ai_model2_all_carrier_egfr(strcmp(mdl_ai_model2_all_carrier_egfr.CoefficientNames,'eGFR'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_ai_model2_all_carrier_egfr.Coefficients('eGFR','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{9,11} = tmp;
+
+stats_separate_regression_egfr{9,12} = mdl_ai_model2_all_carrier_egfr.Rsquared.Ordinary;
+
+
+stats_separate_regression_egfr{9,13} = mdl_nhw_model2_all_carrier_egfr.NumObservations;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_nhw_model2_all_carrier_egfr.Coefficients('Age','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_nhw_model2_all_carrier_egfr(strcmp(mdl_nhw_model2_all_carrier_egfr.CoefficientNames,'Age'),1) , '%.2f' ) '; ' ...
+    num2str( ci_nhw_model2_all_carrier_egfr(strcmp(mdl_nhw_model2_all_carrier_egfr.CoefficientNames,'Age'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_nhw_model2_all_carrier_egfr.Coefficients('Age','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{9,14} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_nhw_model2_all_carrier_egfr.Coefficients('Sex_Male','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_nhw_model2_all_carrier_egfr(strcmp(mdl_nhw_model2_all_carrier_egfr.CoefficientNames,'Sex_Male'),1) , '%.2f' ) '; ' ...
+    num2str( ci_nhw_model2_all_carrier_egfr(strcmp(mdl_nhw_model2_all_carrier_egfr.CoefficientNames,'Sex_Male'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_nhw_model2_all_carrier_egfr.Coefficients('Sex_Male','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{9,15} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_nhw_model2_all_carrier_egfr.Coefficients('APOE4_1','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_nhw_model2_all_carrier_egfr(strcmp(mdl_nhw_model2_all_carrier_egfr.CoefficientNames,'APOE4_1'),1) , '%.2f' ) '; ' ...
+    num2str( ci_nhw_model2_all_carrier_egfr(strcmp(mdl_nhw_model2_all_carrier_egfr.CoefficientNames,'APOE4_1'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_nhw_model2_all_carrier_egfr.Coefficients('APOE4_1','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{9,18} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_nhw_model2_all_carrier_egfr.Coefficients('Abeta42/40','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_nhw_model2_all_carrier_egfr(strcmp(mdl_nhw_model2_all_carrier_egfr.CoefficientNames,'Abeta42/40'),1) , '%.2f' ) '; ' ...
+    num2str( ci_nhw_model2_all_carrier_egfr(strcmp(mdl_nhw_model2_all_carrier_egfr.CoefficientNames,'Abeta42/40'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_nhw_model2_all_carrier_egfr.Coefficients('Abeta42/40','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{9,19} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_nhw_model2_all_carrier_egfr.Coefficients('eGFR','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_nhw_model2_all_carrier_egfr(strcmp(mdl_nhw_model2_all_carrier_egfr.CoefficientNames,'eGFR'),1) , '%.2f' ) '; ' ...
+    num2str( ci_nhw_model2_all_carrier_egfr(strcmp(mdl_nhw_model2_all_carrier_egfr.CoefficientNames,'eGFR'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_nhw_model2_all_carrier_egfr.Coefficients('eGFR','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{9,20} = tmp;
+
+stats_separate_regression_egfr{9,21} = mdl_nhw_model2_all_carrier_egfr.Rsquared.Ordinary;
+
+
+
+%% Abeta42/40 RACE-SEPARATE-regression model3 - allele
+stats_separate_regression_egfr{10,4} = mdl_ai_model3_all_allelle.NumObservations;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_ai_model3_all_allelle.Coefficients('Age','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_ai_model3_all_allelle(strcmp(mdl_ai_model3_all_allelle.CoefficientNames,'Age'),1) , '%.2f' ) '; ' ...
+    num2str( ci_ai_model3_all_allelle(strcmp(mdl_ai_model3_all_allelle.CoefficientNames,'Age'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_ai_model3_all_allelle.Coefficients('Age','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{10,5} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_ai_model3_all_allelle.Coefficients('Sex_Male','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_ai_model3_all_allelle(strcmp(mdl_ai_model3_all_allelle.CoefficientNames,'Sex_Male'),1) , '%.2f' ) '; ' ...
+    num2str( ci_ai_model3_all_allelle(strcmp(mdl_ai_model3_all_allelle.CoefficientNames,'Sex_Male'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_ai_model3_all_allelle.Coefficients('Sex_Male','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{10,6} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_ai_model3_all_allelle.Coefficients('APOE4_2','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_ai_model3_all_allelle(strcmp(mdl_ai_model3_all_allelle.CoefficientNames,'APOE4_2'),1) , '%.2f' ) '; ' ...
+    num2str( ci_ai_model3_all_allelle(strcmp(mdl_ai_model3_all_allelle.CoefficientNames,'APOE4_2'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_ai_model3_all_allelle.Coefficients('APOE4_2','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{10,7} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_ai_model3_all_allelle.Coefficients('APOE4_1','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_ai_model3_all_allelle(strcmp(mdl_ai_model3_all_allelle.CoefficientNames,'APOE4_1'),1) , '%.2f' ) '; ' ...
+    num2str( ci_ai_model3_all_allelle(strcmp(mdl_ai_model3_all_allelle.CoefficientNames,'APOE4_1'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_ai_model3_all_allelle.Coefficients('APOE4_1','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{10,8} = tmp;
+
+stats_separate_regression_egfr{10,12} = mdl_ai_model3_all_allelle.Rsquared.Ordinary;
+
+
+stats_separate_regression_egfr{10,13} = mdl_nhw_model3_all_allelle.NumObservations;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_nhw_model3_all_allelle.Coefficients('Age','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_nhw_model3_all_allelle(strcmp(mdl_nhw_model3_all_allelle.CoefficientNames,'Age'),1) , '%.2f' ) '; ' ...
+    num2str( ci_nhw_model3_all_allelle(strcmp(mdl_nhw_model3_all_allelle.CoefficientNames,'Age'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_nhw_model3_all_allelle.Coefficients('Age','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{10,14} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_nhw_model3_all_allelle.Coefficients('Sex_Male','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_nhw_model3_all_allelle(strcmp(mdl_nhw_model3_all_allelle.CoefficientNames,'Sex_Male'),1) , '%.2f' ) '; ' ...
+    num2str( ci_nhw_model3_all_allelle(strcmp(mdl_nhw_model3_all_allelle.CoefficientNames,'Sex_Male'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_nhw_model3_all_allelle.Coefficients('Sex_Male','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{10,15} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_nhw_model3_all_allelle.Coefficients('APOE4_2','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_nhw_model3_all_allelle(strcmp(mdl_nhw_model3_all_allelle.CoefficientNames,'APOE4_2'),1) , '%.2f' ) '; ' ...
+    num2str( ci_nhw_model3_all_allelle(strcmp(mdl_nhw_model3_all_allelle.CoefficientNames,'APOE4_2'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_nhw_model3_all_allelle.Coefficients('APOE4_2','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{10,16} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_nhw_model3_all_allelle.Coefficients('APOE4_1','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_nhw_model3_all_allelle(strcmp(mdl_nhw_model3_all_allelle.CoefficientNames,'APOE4_1'),1) , '%.2f' ) '; ' ...
+    num2str( ci_nhw_model3_all_allelle(strcmp(mdl_nhw_model3_all_allelle.CoefficientNames,'APOE4_1'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_nhw_model3_all_allelle.Coefficients('APOE4_1','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{10,17} = tmp;
+
+stats_separate_regression_egfr{10,21} = mdl_nhw_model3_all_allelle.Rsquared.Ordinary;
+
+%% Abeta42/40 RACE-SEPARATE-regression model3 - carrier
+stats_separate_regression_egfr{11,4} = mdl_ai_model3_all_carrier.NumObservations;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_ai_model3_all_carrier.Coefficients('Age','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_ai_model3_all_carrier(strcmp(mdl_ai_model3_all_carrier.CoefficientNames,'Age'),1) , '%.2f' ) '; ' ...
+    num2str( ci_ai_model3_all_carrier(strcmp(mdl_ai_model3_all_carrier.CoefficientNames,'Age'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_ai_model3_all_carrier.Coefficients('Age','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{11,5} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_ai_model3_all_carrier.Coefficients('Sex_Male','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_ai_model3_all_carrier(strcmp(mdl_ai_model3_all_carrier.CoefficientNames,'Sex_Male'),1) , '%.2f' ) '; ' ...
+    num2str( ci_ai_model3_all_carrier(strcmp(mdl_ai_model3_all_carrier.CoefficientNames,'Sex_Male'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_ai_model3_all_carrier.Coefficients('Sex_Male','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{11,6} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_ai_model3_all_carrier.Coefficients('APOE4_1','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_ai_model3_all_carrier(strcmp(mdl_ai_model3_all_carrier.CoefficientNames,'APOE4_1'),1) , '%.2f' ) '; ' ...
+    num2str( ci_ai_model3_all_carrier(strcmp(mdl_ai_model3_all_carrier.CoefficientNames,'APOE4_1'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_ai_model3_all_carrier.Coefficients('APOE4_1','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{11,9} = tmp;
+
+stats_separate_regression_egfr{11,12} = mdl_ai_model3_all_carrier.Rsquared.Ordinary;
+
+
+stats_separate_regression_egfr{11,13} = mdl_nhw_model3_all_carrier.NumObservations;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_nhw_model3_all_carrier.Coefficients('Age','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_nhw_model3_all_carrier(strcmp(mdl_nhw_model3_all_carrier.CoefficientNames,'Age'),1) , '%.2f' ) '; ' ...
+    num2str( ci_nhw_model3_all_carrier(strcmp(mdl_nhw_model3_all_carrier.CoefficientNames,'Age'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_nhw_model3_all_carrier.Coefficients('Age','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{11,14} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_nhw_model3_all_carrier.Coefficients('Sex_Male','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_nhw_model3_all_carrier(strcmp(mdl_nhw_model3_all_carrier.CoefficientNames,'Sex_Male'),1) , '%.2f' ) '; ' ...
+    num2str( ci_nhw_model3_all_carrier(strcmp(mdl_nhw_model3_all_carrier.CoefficientNames,'Sex_Male'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_nhw_model3_all_carrier.Coefficients('Sex_Male','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{11,15} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_nhw_model3_all_carrier.Coefficients('APOE4_1','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_nhw_model3_all_carrier(strcmp(mdl_nhw_model3_all_carrier.CoefficientNames,'APOE4_1'),1) , '%.2f' ) '; ' ...
+    num2str( ci_nhw_model3_all_carrier(strcmp(mdl_nhw_model3_all_carrier.CoefficientNames,'APOE4_1'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_nhw_model3_all_carrier.Coefficients('APOE4_1','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{11,18} = tmp;
+
+stats_separate_regression_egfr{11,21} = mdl_nhw_model3_all_carrier.Rsquared.Ordinary;
+
+
+%% Abeta42/40 RACE-SEPARATE-regression model3 - allele including CKD
+stats_separate_regression_egfr{12,4} = mdl_ai_model3_all_allelle_egfr.NumObservations;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_ai_model3_all_allelle_egfr.Coefficients('Age','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_ai_model3_all_allelle_egfr(strcmp(mdl_ai_model3_all_allelle_egfr.CoefficientNames,'Age'),1) , '%.2f' ) '; ' ...
+    num2str( ci_ai_model3_all_allelle_egfr(strcmp(mdl_ai_model3_all_allelle_egfr.CoefficientNames,'Age'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_ai_model3_all_allelle_egfr.Coefficients('Age','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{12,5} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_ai_model3_all_allelle_egfr.Coefficients('Sex_Male','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_ai_model3_all_allelle_egfr(strcmp(mdl_ai_model3_all_allelle_egfr.CoefficientNames,'Sex_Male'),1) , '%.2f' ) '; ' ...
+    num2str( ci_ai_model3_all_allelle_egfr(strcmp(mdl_ai_model3_all_allelle_egfr.CoefficientNames,'Sex_Male'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_ai_model3_all_allelle_egfr.Coefficients('Sex_Male','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{12,6} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_ai_model3_all_allelle_egfr.Coefficients('APOE4_2','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_ai_model3_all_allelle_egfr(strcmp(mdl_ai_model3_all_allelle_egfr.CoefficientNames,'APOE4_2'),1) , '%.2f' ) '; ' ...
+    num2str( ci_ai_model3_all_allelle_egfr(strcmp(mdl_ai_model3_all_allelle_egfr.CoefficientNames,'APOE4_2'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_ai_model3_all_allelle_egfr.Coefficients('APOE4_2','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{12,7} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_ai_model3_all_allelle_egfr.Coefficients('APOE4_1','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_ai_model3_all_allelle_egfr(strcmp(mdl_ai_model3_all_allelle_egfr.CoefficientNames,'APOE4_1'),1) , '%.2f' ) '; ' ...
+    num2str( ci_ai_model3_all_allelle_egfr(strcmp(mdl_ai_model3_all_allelle_egfr.CoefficientNames,'APOE4_1'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_ai_model3_all_allelle_egfr.Coefficients('APOE4_1','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{12,8} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_ai_model3_all_allelle_egfr.Coefficients('eGFR','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_ai_model3_all_allelle_egfr(strcmp(mdl_ai_model3_all_allelle_egfr.CoefficientNames,'eGFR'),1) , '%.2f' ) '; ' ...
+    num2str( ci_ai_model3_all_allelle_egfr(strcmp(mdl_ai_model3_all_allelle_egfr.CoefficientNames,'eGFR'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_ai_model3_all_allelle_egfr.Coefficients('eGFR','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{12,11} = tmp;
+
+stats_separate_regression_egfr{12,12} = mdl_ai_model3_all_allelle_egfr.Rsquared.Ordinary;
+
+
+stats_separate_regression_egfr{12,13} = mdl_nhw_model3_all_allelle_egfr.NumObservations;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_nhw_model3_all_allelle_egfr.Coefficients('Age','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_nhw_model3_all_allelle_egfr(strcmp(mdl_nhw_model3_all_allelle_egfr.CoefficientNames,'Age'),1) , '%.2f' ) '; ' ...
+    num2str( ci_nhw_model3_all_allelle_egfr(strcmp(mdl_nhw_model3_all_allelle_egfr.CoefficientNames,'Age'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_nhw_model3_all_allelle_egfr.Coefficients('Age','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{12,14} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_nhw_model3_all_allelle_egfr.Coefficients('Sex_Male','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_nhw_model3_all_allelle_egfr(strcmp(mdl_nhw_model3_all_allelle_egfr.CoefficientNames,'Sex_Male'),1) , '%.2f' ) '; ' ...
+    num2str( ci_nhw_model3_all_allelle_egfr(strcmp(mdl_nhw_model3_all_allelle_egfr.CoefficientNames,'Sex_Male'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_nhw_model3_all_allelle_egfr.Coefficients('Sex_Male','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{12,15} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_nhw_model3_all_allelle_egfr.Coefficients('APOE4_2','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_nhw_model3_all_allelle_egfr(strcmp(mdl_nhw_model3_all_allelle_egfr.CoefficientNames,'APOE4_2'),1) , '%.2f' ) '; ' ...
+    num2str( ci_nhw_model3_all_allelle_egfr(strcmp(mdl_nhw_model3_all_allelle_egfr.CoefficientNames,'APOE4_2'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_nhw_model3_all_allelle_egfr.Coefficients('APOE4_2','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{12,16} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_nhw_model3_all_allelle_egfr.Coefficients('APOE4_1','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_nhw_model3_all_allelle_egfr(strcmp(mdl_nhw_model3_all_allelle_egfr.CoefficientNames,'APOE4_1'),1) , '%.2f' ) '; ' ...
+    num2str( ci_nhw_model3_all_allelle_egfr(strcmp(mdl_nhw_model3_all_allelle_egfr.CoefficientNames,'APOE4_1'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_nhw_model3_all_allelle_egfr.Coefficients('APOE4_1','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{12,17} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_nhw_model3_all_allelle_egfr.Coefficients('eGFR','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_nhw_model3_all_allelle_egfr(strcmp(mdl_nhw_model3_all_allelle_egfr.CoefficientNames,'eGFR'),1) , '%.2f' ) '; ' ...
+    num2str( ci_nhw_model3_all_allelle_egfr(strcmp(mdl_nhw_model3_all_allelle_egfr.CoefficientNames,'eGFR'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_nhw_model3_all_allelle_egfr.Coefficients('eGFR','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{12,20} = tmp;
+
+stats_separate_regression_egfr{12,21} = mdl_nhw_model3_all_allelle_egfr.Rsquared.Ordinary;
+
+
+%% Abeta42/40 RACE-SEPARATE-regression model3 - carrier including CKD
+stats_separate_regression_egfr{13,4} = mdl_ai_model3_all_carrier_egfr.NumObservations;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_ai_model3_all_carrier_egfr.Coefficients('Age','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_ai_model3_all_carrier_egfr(strcmp(mdl_ai_model3_all_carrier_egfr.CoefficientNames,'Age'),1) , '%.2f' ) '; ' ...
+    num2str( ci_ai_model3_all_carrier_egfr(strcmp(mdl_ai_model3_all_carrier_egfr.CoefficientNames,'Age'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_ai_model3_all_carrier_egfr.Coefficients('Age','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{13,5} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_ai_model3_all_carrier_egfr.Coefficients('Sex_Male','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_ai_model3_all_carrier_egfr(strcmp(mdl_ai_model3_all_carrier_egfr.CoefficientNames,'Sex_Male'),1) , '%.2f' ) '; ' ...
+    num2str( ci_ai_model3_all_carrier_egfr(strcmp(mdl_ai_model3_all_carrier_egfr.CoefficientNames,'Sex_Male'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_ai_model3_all_carrier_egfr.Coefficients('Sex_Male','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{13,6} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_ai_model3_all_carrier_egfr.Coefficients('APOE4_1','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_ai_model3_all_carrier_egfr(strcmp(mdl_ai_model3_all_carrier_egfr.CoefficientNames,'APOE4_1'),1) , '%.2f' ) '; ' ...
+    num2str( ci_ai_model3_all_carrier_egfr(strcmp(mdl_ai_model3_all_carrier_egfr.CoefficientNames,'APOE4_1'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_ai_model3_all_carrier_egfr.Coefficients('APOE4_1','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{13,9} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_ai_model3_all_carrier_egfr.Coefficients('eGFR','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_ai_model3_all_carrier_egfr(strcmp(mdl_ai_model3_all_carrier_egfr.CoefficientNames,'eGFR'),1) , '%.2f' ) '; ' ...
+    num2str( ci_ai_model3_all_carrier_egfr(strcmp(mdl_ai_model3_all_carrier_egfr.CoefficientNames,'eGFR'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_ai_model3_all_carrier_egfr.Coefficients('eGFR','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{13,11} = tmp;
+
+stats_separate_regression_egfr{13,12} = mdl_ai_model3_all_carrier_egfr.Rsquared.Ordinary;
+
+
+stats_separate_regression_egfr{13,13} = mdl_nhw_model3_all_carrier_egfr.NumObservations;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_nhw_model3_all_carrier_egfr.Coefficients('Age','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_nhw_model3_all_carrier_egfr(strcmp(mdl_nhw_model3_all_carrier_egfr.CoefficientNames,'Age'),1) , '%.2f' ) '; ' ...
+    num2str( ci_nhw_model3_all_carrier_egfr(strcmp(mdl_nhw_model3_all_carrier_egfr.CoefficientNames,'Age'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_nhw_model3_all_carrier_egfr.Coefficients('Age','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{13,14} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_nhw_model3_all_carrier_egfr.Coefficients('Sex_Male','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_nhw_model3_all_carrier_egfr(strcmp(mdl_nhw_model3_all_carrier_egfr.CoefficientNames,'Sex_Male'),1) , '%.2f' ) '; ' ...
+    num2str( ci_nhw_model3_all_carrier_egfr(strcmp(mdl_nhw_model3_all_carrier_egfr.CoefficientNames,'Sex_Male'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_nhw_model3_all_carrier_egfr.Coefficients('Sex_Male','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{13,15} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_nhw_model3_all_carrier_egfr.Coefficients('APOE4_1','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_nhw_model3_all_carrier_egfr(strcmp(mdl_nhw_model3_all_carrier_egfr.CoefficientNames,'APOE4_1'),1) , '%.2f' ) '; ' ...
+    num2str( ci_nhw_model3_all_carrier_egfr(strcmp(mdl_nhw_model3_all_carrier_egfr.CoefficientNames,'APOE4_1'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_nhw_model3_all_carrier_egfr.Coefficients('APOE4_1','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{13,18} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_nhw_model3_all_carrier_egfr.Coefficients('eGFR','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_nhw_model3_all_carrier_egfr(strcmp(mdl_nhw_model3_all_carrier_egfr.CoefficientNames,'eGFR'),1) , '%.2f' ) '; ' ...
+    num2str( ci_nhw_model3_all_carrier_egfr(strcmp(mdl_nhw_model3_all_carrier_egfr.CoefficientNames,'eGFR'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_nhw_model3_all_carrier_egfr.Coefficients('eGFR','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{13,20} = tmp;
+
+stats_separate_regression_egfr{13,21} = mdl_nhw_model3_all_carrier_egfr.Rsquared.Ordinary;
+
+
+%% GFAP RACE-SEPARATE REGRESSION
+
+%% GFAP RACE-SEPARATE-regression model1 - allele
+stats_separate_regression_egfr{14,4} = mdl_gfap_ai_model1_all_allelle.NumObservations;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_gfap_ai_model1_all_allelle.Coefficients('Age','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_gfap_ai_model1_all_allelle(strcmp(mdl_gfap_ai_model1_all_allelle.CoefficientNames,'Age'),1) , '%.2f' ) '; ' ...
+    num2str( ci_gfap_ai_model1_all_allelle(strcmp(mdl_gfap_ai_model1_all_allelle.CoefficientNames,'Age'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_gfap_ai_model1_all_allelle.Coefficients('Age','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{14,5} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_gfap_ai_model1_all_allelle.Coefficients('Sex_Male','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_gfap_ai_model1_all_allelle(strcmp(mdl_gfap_ai_model1_all_allelle.CoefficientNames,'Sex_Male'),1) , '%.2f' ) '; ' ...
+    num2str( ci_gfap_ai_model1_all_allelle(strcmp(mdl_gfap_ai_model1_all_allelle.CoefficientNames,'Sex_Male'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_gfap_ai_model1_all_allelle.Coefficients('Sex_Male','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{14,6} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_gfap_ai_model1_all_allelle.Coefficients('APOE4_2','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_gfap_ai_model1_all_allelle(strcmp(mdl_gfap_ai_model1_all_allelle.CoefficientNames,'APOE4_2'),1) , '%.2f' ) '; ' ...
+    num2str( ci_gfap_ai_model1_all_allelle(strcmp(mdl_gfap_ai_model1_all_allelle.CoefficientNames,'APOE4_2'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_gfap_ai_model1_all_allelle.Coefficients('APOE4_2','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{14,7} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_gfap_ai_model1_all_allelle.Coefficients('APOE4_1','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_gfap_ai_model1_all_allelle(strcmp(mdl_gfap_ai_model1_all_allelle.CoefficientNames,'APOE4_1'),1) , '%.2f' ) '; ' ...
+    num2str( ci_gfap_ai_model1_all_allelle(strcmp(mdl_gfap_ai_model1_all_allelle.CoefficientNames,'APOE4_1'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_gfap_ai_model1_all_allelle.Coefficients('APOE4_1','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{14,8} = tmp;
+
+stats_separate_regression_egfr{14,12} = mdl_gfap_ai_model1_all_allelle.Rsquared.Ordinary;
+
+
+stats_separate_regression_egfr{14,13} = mdl_gfap_nhw_model1_all_allelle.NumObservations;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_gfap_nhw_model1_all_allelle.Coefficients('Age','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_gfap_nhw_model1_all_allelle(strcmp(mdl_gfap_nhw_model1_all_allelle.CoefficientNames,'Age'),1) , '%.2f' ) '; ' ...
+    num2str( ci_gfap_nhw_model1_all_allelle(strcmp(mdl_gfap_nhw_model1_all_allelle.CoefficientNames,'Age'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_gfap_nhw_model1_all_allelle.Coefficients('Age','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{14,14} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_gfap_nhw_model1_all_allelle.Coefficients('Sex_Male','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_gfap_nhw_model1_all_allelle(strcmp(mdl_gfap_nhw_model1_all_allelle.CoefficientNames,'Sex_Male'),1) , '%.2f' ) '; ' ...
+    num2str( ci_gfap_nhw_model1_all_allelle(strcmp(mdl_gfap_nhw_model1_all_allelle.CoefficientNames,'Sex_Male'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_gfap_nhw_model1_all_allelle.Coefficients('Sex_Male','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{14,15} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_gfap_nhw_model1_all_allelle.Coefficients('APOE4_2','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_gfap_nhw_model1_all_allelle(strcmp(mdl_gfap_nhw_model1_all_allelle.CoefficientNames,'APOE4_2'),1) , '%.2f' ) '; ' ...
+    num2str( ci_gfap_nhw_model1_all_allelle(strcmp(mdl_gfap_nhw_model1_all_allelle.CoefficientNames,'APOE4_2'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_gfap_nhw_model1_all_allelle.Coefficients('APOE4_2','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{14,16} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_gfap_nhw_model1_all_allelle.Coefficients('APOE4_1','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_gfap_nhw_model1_all_allelle(strcmp(mdl_gfap_nhw_model1_all_allelle.CoefficientNames,'APOE4_1'),1) , '%.2f' ) '; ' ...
+    num2str( ci_gfap_nhw_model1_all_allelle(strcmp(mdl_gfap_nhw_model1_all_allelle.CoefficientNames,'APOE4_1'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_gfap_nhw_model1_all_allelle.Coefficients('APOE4_1','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{14,17} = tmp;
+
+stats_separate_regression_egfr{14,21} = mdl_gfap_nhw_model1_all_allelle.Rsquared.Ordinary;
+
+
+%% GFAP RACE-SEPARATE-regression model1 - carrier
+stats_separate_regression_egfr{15,4} = mdl_gfap_ai_model1_all_carrier.NumObservations;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_gfap_ai_model1_all_carrier.Coefficients('Age','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_gfap_ai_model1_all_carrier(strcmp(mdl_gfap_ai_model1_all_carrier.CoefficientNames,'Age'),1) , '%.2f' ) '; ' ...
+    num2str( ci_gfap_ai_model1_all_carrier(strcmp(mdl_gfap_ai_model1_all_carrier.CoefficientNames,'Age'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_gfap_ai_model1_all_carrier.Coefficients('Age','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{15,5} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_gfap_ai_model1_all_carrier.Coefficients('Sex_Male','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_gfap_ai_model1_all_carrier(strcmp(mdl_gfap_ai_model1_all_carrier.CoefficientNames,'Sex_Male'),1) , '%.2f' ) '; ' ...
+    num2str( ci_gfap_ai_model1_all_carrier(strcmp(mdl_gfap_ai_model1_all_carrier.CoefficientNames,'Sex_Male'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_gfap_ai_model1_all_carrier.Coefficients('Sex_Male','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{15,6} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_gfap_ai_model1_all_carrier.Coefficients('APOE4_1','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_gfap_ai_model1_all_carrier(strcmp(mdl_gfap_ai_model1_all_carrier.CoefficientNames,'APOE4_1'),1) , '%.2f' ) '; ' ...
+    num2str( ci_gfap_ai_model1_all_carrier(strcmp(mdl_gfap_ai_model1_all_carrier.CoefficientNames,'APOE4_1'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_gfap_ai_model1_all_carrier.Coefficients('APOE4_1','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{15,9} = tmp;
+
+stats_separate_regression_egfr{15,12} = mdl_gfap_ai_model1_all_carrier.Rsquared.Ordinary;
+
+
+stats_separate_regression_egfr{15,13} = mdl_gfap_nhw_model1_all_carrier.NumObservations;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_gfap_nhw_model1_all_carrier.Coefficients('Age','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_gfap_nhw_model1_all_carrier(strcmp(mdl_gfap_nhw_model1_all_carrier.CoefficientNames,'Age'),1) , '%.2f' ) '; ' ...
+    num2str( ci_gfap_nhw_model1_all_carrier(strcmp(mdl_gfap_nhw_model1_all_carrier.CoefficientNames,'Age'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_gfap_nhw_model1_all_carrier.Coefficients('Age','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{15,14} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_gfap_nhw_model1_all_carrier.Coefficients('Sex_Male','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_gfap_nhw_model1_all_carrier(strcmp(mdl_gfap_nhw_model1_all_carrier.CoefficientNames,'Sex_Male'),1) , '%.2f' ) '; ' ...
+    num2str( ci_gfap_nhw_model1_all_carrier(strcmp(mdl_gfap_nhw_model1_all_carrier.CoefficientNames,'Sex_Male'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_gfap_nhw_model1_all_carrier.Coefficients('Sex_Male','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{15,15} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_gfap_nhw_model1_all_carrier.Coefficients('APOE4_1','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_gfap_nhw_model1_all_carrier(strcmp(mdl_gfap_nhw_model1_all_carrier.CoefficientNames,'APOE4_1'),1) , '%.2f' ) '; ' ...
+    num2str( ci_gfap_nhw_model1_all_carrier(strcmp(mdl_gfap_nhw_model1_all_carrier.CoefficientNames,'APOE4_1'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_gfap_nhw_model1_all_carrier.Coefficients('APOE4_1','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{15,18} = tmp;
+
+stats_separate_regression_egfr{15,21} = mdl_gfap_nhw_model1_all_carrier.Rsquared.Ordinary;
+
+
+%% GFAP RACE-SEPARATE-regression model1 - allele including CKD
+stats_separate_regression_egfr{16,4} = mdl_gfap_ai_model1_all_allelle_egfr.NumObservations;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_gfap_ai_model1_all_allelle_egfr.Coefficients('Age','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_gfap_ai_model1_all_allelle_egfr(strcmp(mdl_gfap_ai_model1_all_allelle_egfr.CoefficientNames,'Age'),1) , '%.2f' ) '; ' ...
+    num2str( ci_gfap_ai_model1_all_allelle_egfr(strcmp(mdl_gfap_ai_model1_all_allelle_egfr.CoefficientNames,'Age'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_gfap_ai_model1_all_allelle_egfr.Coefficients('Age','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{16,5} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_gfap_ai_model1_all_allelle_egfr.Coefficients('Sex_Male','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_gfap_ai_model1_all_allelle_egfr(strcmp(mdl_gfap_ai_model1_all_allelle_egfr.CoefficientNames,'Sex_Male'),1) , '%.2f' ) '; ' ...
+    num2str( ci_gfap_ai_model1_all_allelle_egfr(strcmp(mdl_gfap_ai_model1_all_allelle_egfr.CoefficientNames,'Sex_Male'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_gfap_ai_model1_all_allelle_egfr.Coefficients('Sex_Male','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{16,6} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_gfap_ai_model1_all_allelle_egfr.Coefficients('APOE4_2','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_gfap_ai_model1_all_allelle_egfr(strcmp(mdl_gfap_ai_model1_all_allelle_egfr.CoefficientNames,'APOE4_2'),1) , '%.2f' ) '; ' ...
+    num2str( ci_gfap_ai_model1_all_allelle_egfr(strcmp(mdl_gfap_ai_model1_all_allelle_egfr.CoefficientNames,'APOE4_2'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_gfap_ai_model1_all_allelle_egfr.Coefficients('APOE4_2','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{16,7} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_gfap_ai_model1_all_allelle_egfr.Coefficients('APOE4_1','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_gfap_ai_model1_all_allelle_egfr(strcmp(mdl_gfap_ai_model1_all_allelle_egfr.CoefficientNames,'APOE4_1'),1) , '%.2f' ) '; ' ...
+    num2str( ci_gfap_ai_model1_all_allelle_egfr(strcmp(mdl_gfap_ai_model1_all_allelle_egfr.CoefficientNames,'APOE4_1'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_gfap_ai_model1_all_allelle_egfr.Coefficients('APOE4_1','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{16,8} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_gfap_ai_model1_all_allelle_egfr.Coefficients('eGFR','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_gfap_ai_model1_all_allelle_egfr(strcmp(mdl_gfap_ai_model1_all_allelle_egfr.CoefficientNames,'eGFR'),1) , '%.2f' ) '; ' ...
+    num2str( ci_gfap_ai_model1_all_allelle_egfr(strcmp(mdl_gfap_ai_model1_all_allelle_egfr.CoefficientNames,'eGFR'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_gfap_ai_model1_all_allelle_egfr.Coefficients('eGFR','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{16,11} = tmp;
+
+stats_separate_regression_egfr{16,12} = mdl_gfap_ai_model1_all_allelle_egfr.Rsquared.Ordinary;
+
+
+stats_separate_regression_egfr{16,13} = mdl_gfap_nhw_model1_all_allelle_egfr.NumObservations;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_gfap_nhw_model1_all_allelle_egfr.Coefficients('Age','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_gfap_nhw_model1_all_allelle_egfr(strcmp(mdl_gfap_nhw_model1_all_allelle_egfr.CoefficientNames,'Age'),1) , '%.2f' ) '; ' ...
+    num2str( ci_gfap_nhw_model1_all_allelle_egfr(strcmp(mdl_gfap_nhw_model1_all_allelle_egfr.CoefficientNames,'Age'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_gfap_nhw_model1_all_allelle_egfr.Coefficients('Age','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{16,14} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_gfap_nhw_model1_all_allelle_egfr.Coefficients('Sex_Male','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_gfap_nhw_model1_all_allelle_egfr(strcmp(mdl_gfap_nhw_model1_all_allelle_egfr.CoefficientNames,'Sex_Male'),1) , '%.2f' ) '; ' ...
+    num2str( ci_gfap_nhw_model1_all_allelle_egfr(strcmp(mdl_gfap_nhw_model1_all_allelle_egfr.CoefficientNames,'Sex_Male'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_gfap_nhw_model1_all_allelle_egfr.Coefficients('Sex_Male','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{16,15} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_gfap_nhw_model1_all_allelle_egfr.Coefficients('APOE4_2','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_gfap_nhw_model1_all_allelle_egfr(strcmp(mdl_gfap_nhw_model1_all_allelle_egfr.CoefficientNames,'APOE4_2'),1) , '%.2f' ) '; ' ...
+    num2str( ci_gfap_nhw_model1_all_allelle_egfr(strcmp(mdl_gfap_nhw_model1_all_allelle_egfr.CoefficientNames,'APOE4_2'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_gfap_nhw_model1_all_allelle_egfr.Coefficients('APOE4_2','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{16,16} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_gfap_nhw_model1_all_allelle_egfr.Coefficients('APOE4_1','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_gfap_nhw_model1_all_allelle_egfr(strcmp(mdl_gfap_nhw_model1_all_allelle_egfr.CoefficientNames,'APOE4_1'),1) , '%.2f' ) '; ' ...
+    num2str( ci_gfap_nhw_model1_all_allelle_egfr(strcmp(mdl_gfap_nhw_model1_all_allelle_egfr.CoefficientNames,'APOE4_1'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_gfap_nhw_model1_all_allelle_egfr.Coefficients('APOE4_1','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{16,17} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_gfap_nhw_model1_all_allelle_egfr.Coefficients('eGFR','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_gfap_nhw_model1_all_allelle_egfr(strcmp(mdl_gfap_nhw_model1_all_allelle_egfr.CoefficientNames,'eGFR'),1) , '%.2f' ) '; ' ...
+    num2str( ci_gfap_nhw_model1_all_allelle_egfr(strcmp(mdl_gfap_nhw_model1_all_allelle_egfr.CoefficientNames,'eGFR'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_gfap_nhw_model1_all_allelle_egfr.Coefficients('eGFR','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{16,20} = tmp;
+
+stats_separate_regression_egfr{16,21} = mdl_gfap_nhw_model1_all_allelle_egfr.Rsquared.Ordinary;
+
+
+stats_separate_regression_egfr{17,4} = mdl_gfap_ai_model1_all_carrier_egfr.NumObservations;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_gfap_ai_model1_all_carrier_egfr.Coefficients('Age','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_gfap_ai_model1_all_carrier_egfr(strcmp(mdl_gfap_ai_model1_all_carrier_egfr.CoefficientNames,'Age'),1) , '%.2f' ) '; ' ...
+    num2str( ci_gfap_ai_model1_all_carrier_egfr(strcmp(mdl_gfap_ai_model1_all_carrier_egfr.CoefficientNames,'Age'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_gfap_ai_model1_all_carrier_egfr.Coefficients('Age','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{17,5} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_gfap_ai_model1_all_carrier_egfr.Coefficients('Sex_Male','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_gfap_ai_model1_all_carrier_egfr(strcmp(mdl_gfap_ai_model1_all_carrier_egfr.CoefficientNames,'Sex_Male'),1) , '%.2f' ) '; ' ...
+    num2str( ci_gfap_ai_model1_all_carrier_egfr(strcmp(mdl_gfap_ai_model1_all_carrier_egfr.CoefficientNames,'Sex_Male'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_gfap_ai_model1_all_carrier_egfr.Coefficients('Sex_Male','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{17,6} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_gfap_ai_model1_all_carrier_egfr.Coefficients('APOE4_1','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_gfap_ai_model1_all_carrier_egfr(strcmp(mdl_gfap_ai_model1_all_carrier_egfr.CoefficientNames,'APOE4_1'),1) , '%.2f' ) '; ' ...
+    num2str( ci_gfap_ai_model1_all_carrier_egfr(strcmp(mdl_gfap_ai_model1_all_carrier_egfr.CoefficientNames,'APOE4_1'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_gfap_ai_model1_all_carrier_egfr.Coefficients('APOE4_1','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{17,9} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_gfap_ai_model1_all_carrier_egfr.Coefficients('eGFR','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_gfap_ai_model1_all_carrier_egfr(strcmp(mdl_gfap_ai_model1_all_carrier_egfr.CoefficientNames,'eGFR'),1) , '%.2f' ) '; ' ...
+    num2str( ci_gfap_ai_model1_all_carrier_egfr(strcmp(mdl_gfap_ai_model1_all_carrier_egfr.CoefficientNames,'eGFR'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_gfap_ai_model1_all_carrier_egfr.Coefficients('eGFR','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{17,11} = tmp;
+
+stats_separate_regression_egfr{17,12} = mdl_gfap_ai_model1_all_carrier_egfr.Rsquared.Ordinary;
+
+
+stats_separate_regression_egfr{17,13} = mdl_gfap_nhw_model1_all_carrier_egfr.NumObservations;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_gfap_nhw_model1_all_carrier_egfr.Coefficients('Age','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_gfap_nhw_model1_all_carrier_egfr(strcmp(mdl_gfap_nhw_model1_all_carrier_egfr.CoefficientNames,'Age'),1) , '%.2f' ) '; ' ...
+    num2str( ci_gfap_nhw_model1_all_carrier_egfr(strcmp(mdl_gfap_nhw_model1_all_carrier_egfr.CoefficientNames,'Age'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_gfap_nhw_model1_all_carrier_egfr.Coefficients('Age','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{17,14} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_gfap_nhw_model1_all_carrier_egfr.Coefficients('Sex_Male','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_gfap_nhw_model1_all_carrier_egfr(strcmp(mdl_gfap_nhw_model1_all_carrier_egfr.CoefficientNames,'Sex_Male'),1) , '%.2f' ) '; ' ...
+    num2str( ci_gfap_nhw_model1_all_carrier_egfr(strcmp(mdl_gfap_nhw_model1_all_carrier_egfr.CoefficientNames,'Sex_Male'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_gfap_nhw_model1_all_carrier_egfr.Coefficients('Sex_Male','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{17,15} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_gfap_nhw_model1_all_carrier_egfr.Coefficients('APOE4_1','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_gfap_nhw_model1_all_carrier_egfr(strcmp(mdl_gfap_nhw_model1_all_carrier_egfr.CoefficientNames,'APOE4_1'),1) , '%.2f' ) '; ' ...
+    num2str( ci_gfap_nhw_model1_all_carrier_egfr(strcmp(mdl_gfap_nhw_model1_all_carrier_egfr.CoefficientNames,'APOE4_1'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_gfap_nhw_model1_all_carrier_egfr.Coefficients('APOE4_1','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{17,18} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_gfap_nhw_model1_all_carrier_egfr.Coefficients('eGFR','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_gfap_nhw_model1_all_carrier_egfr(strcmp(mdl_gfap_nhw_model1_all_carrier_egfr.CoefficientNames,'eGFR'),1) , '%.2f' ) '; ' ...
+    num2str( ci_gfap_nhw_model1_all_carrier_egfr(strcmp(mdl_gfap_nhw_model1_all_carrier_egfr.CoefficientNames,'eGFR'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_gfap_nhw_model1_all_carrier_egfr.Coefficients('eGFR','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{17,20} = tmp;
+
+stats_separate_regression_egfr{17,21} = mdl_gfap_nhw_model1_all_carrier_egfr.Rsquared.Ordinary;
+
+
+%% GFAP RACE-SEPARATE-regression model2 - allele
+stats_separate_regression_egfr{18,4} = mdl_gfap_ai_model2_all_allelle.NumObservations;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_gfap_ai_model2_all_allelle.Coefficients('Age','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_gfap_ai_model2_all_allelle(strcmp(mdl_gfap_ai_model2_all_allelle.CoefficientNames,'Age'),1) , '%.2f' ) '; ' ...
+    num2str( ci_gfap_ai_model2_all_allelle(strcmp(mdl_gfap_ai_model2_all_allelle.CoefficientNames,'Age'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_gfap_ai_model2_all_allelle.Coefficients('Age','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{18,5} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_gfap_ai_model2_all_allelle.Coefficients('Sex_Male','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_gfap_ai_model2_all_allelle(strcmp(mdl_gfap_ai_model2_all_allelle.CoefficientNames,'Sex_Male'),1) , '%.2f' ) '; ' ...
+    num2str( ci_gfap_ai_model2_all_allelle(strcmp(mdl_gfap_ai_model2_all_allelle.CoefficientNames,'Sex_Male'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_gfap_ai_model2_all_allelle.Coefficients('Sex_Male','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{18,6} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_gfap_ai_model2_all_allelle.Coefficients('APOE4_2','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_gfap_ai_model2_all_allelle(strcmp(mdl_gfap_ai_model2_all_allelle.CoefficientNames,'APOE4_2'),1) , '%.2f' ) '; ' ...
+    num2str( ci_gfap_ai_model2_all_allelle(strcmp(mdl_gfap_ai_model2_all_allelle.CoefficientNames,'APOE4_2'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_gfap_ai_model2_all_allelle.Coefficients('APOE4_2','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{18,7} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_gfap_ai_model2_all_allelle.Coefficients('APOE4_1','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_gfap_ai_model2_all_allelle(strcmp(mdl_gfap_ai_model2_all_allelle.CoefficientNames,'APOE4_1'),1) , '%.2f' ) '; ' ...
+    num2str( ci_gfap_ai_model2_all_allelle(strcmp(mdl_gfap_ai_model2_all_allelle.CoefficientNames,'APOE4_1'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_gfap_ai_model2_all_allelle.Coefficients('APOE4_1','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{18,8} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_gfap_ai_model2_all_allelle.Coefficients('Abeta42/40','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_gfap_ai_model2_all_allelle(strcmp(mdl_gfap_ai_model2_all_allelle.CoefficientNames,'Abeta42/40'),1) , '%.2f' ) '; ' ...
+    num2str( ci_gfap_ai_model2_all_allelle(strcmp(mdl_gfap_ai_model2_all_allelle.CoefficientNames,'Abeta42/40'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_gfap_ai_model2_all_allelle.Coefficients('Abeta42/40','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{18,10} = tmp;
+
+stats_separate_regression_egfr{18,12} = mdl_gfap_ai_model2_all_allelle.Rsquared.Ordinary;
+
+
+stats_separate_regression_egfr{18,13} = mdl_gfap_nhw_model2_all_allelle.NumObservations;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_gfap_nhw_model2_all_allelle.Coefficients('Age','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_gfap_nhw_model2_all_allelle(strcmp(mdl_gfap_nhw_model2_all_allelle.CoefficientNames,'Age'),1) , '%.2f' ) '; ' ...
+    num2str( ci_gfap_nhw_model2_all_allelle(strcmp(mdl_gfap_nhw_model2_all_allelle.CoefficientNames,'Age'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_gfap_nhw_model2_all_allelle.Coefficients('Age','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{18,14} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_gfap_nhw_model2_all_allelle.Coefficients('Sex_Male','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_gfap_nhw_model2_all_allelle(strcmp(mdl_gfap_nhw_model2_all_allelle.CoefficientNames,'Sex_Male'),1) , '%.2f' ) '; ' ...
+    num2str( ci_gfap_nhw_model2_all_allelle(strcmp(mdl_gfap_nhw_model2_all_allelle.CoefficientNames,'Sex_Male'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_gfap_nhw_model2_all_allelle.Coefficients('Sex_Male','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{18,15} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_gfap_nhw_model2_all_allelle.Coefficients('APOE4_2','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_gfap_nhw_model2_all_allelle(strcmp(mdl_gfap_nhw_model2_all_allelle.CoefficientNames,'APOE4_2'),1) , '%.2f' ) '; ' ...
+    num2str( ci_gfap_nhw_model2_all_allelle(strcmp(mdl_gfap_nhw_model2_all_allelle.CoefficientNames,'APOE4_2'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_gfap_nhw_model2_all_allelle.Coefficients('APOE4_2','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{18,16} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_gfap_nhw_model2_all_allelle.Coefficients('APOE4_1','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_gfap_nhw_model2_all_allelle(strcmp(mdl_gfap_nhw_model2_all_allelle.CoefficientNames,'APOE4_1'),1) , '%.2f' ) '; ' ...
+    num2str( ci_gfap_nhw_model2_all_allelle(strcmp(mdl_gfap_nhw_model2_all_allelle.CoefficientNames,'APOE4_1'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_gfap_nhw_model2_all_allelle.Coefficients('APOE4_1','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{18,17} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_gfap_nhw_model2_all_allelle.Coefficients('Abeta42/40','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_gfap_nhw_model2_all_allelle(strcmp(mdl_gfap_nhw_model2_all_allelle.CoefficientNames,'Abeta42/40'),1) , '%.2f' ) '; ' ...
+    num2str( ci_gfap_nhw_model2_all_allelle(strcmp(mdl_gfap_nhw_model2_all_allelle.CoefficientNames,'Abeta42/40'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_gfap_nhw_model2_all_allelle.Coefficients('Abeta42/40','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{18,19} = tmp;
+
+stats_separate_regression_egfr{18,21} = mdl_gfap_nhw_model2_all_allelle.Rsquared.Ordinary;
+
+
+
+%% GFAP RACE-SEPARATE-regression model2 - carrier
+stats_separate_regression_egfr{19,4} = mdl_gfap_ai_model2_all_carrier.NumObservations;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_gfap_ai_model2_all_carrier.Coefficients('Age','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_gfap_ai_model2_all_carrier(strcmp(mdl_gfap_ai_model2_all_carrier.CoefficientNames,'Age'),1) , '%.2f' ) '; ' ...
+    num2str( ci_gfap_ai_model2_all_carrier(strcmp(mdl_gfap_ai_model2_all_carrier.CoefficientNames,'Age'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_gfap_ai_model2_all_carrier.Coefficients('Age','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{19,5} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_gfap_ai_model2_all_carrier.Coefficients('Sex_Male','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_gfap_ai_model2_all_carrier(strcmp(mdl_gfap_ai_model2_all_carrier.CoefficientNames,'Sex_Male'),1) , '%.2f' ) '; ' ...
+    num2str( ci_gfap_ai_model2_all_carrier(strcmp(mdl_gfap_ai_model2_all_carrier.CoefficientNames,'Sex_Male'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_gfap_ai_model2_all_carrier.Coefficients('Sex_Male','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{19,6} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_gfap_ai_model2_all_carrier.Coefficients('APOE4_1','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_gfap_ai_model2_all_carrier(strcmp(mdl_gfap_ai_model2_all_carrier.CoefficientNames,'APOE4_1'),1) , '%.2f' ) '; ' ...
+    num2str( ci_gfap_ai_model2_all_carrier(strcmp(mdl_gfap_ai_model2_all_carrier.CoefficientNames,'APOE4_1'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_gfap_ai_model2_all_carrier.Coefficients('APOE4_1','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{19,9} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_gfap_ai_model2_all_carrier.Coefficients('Abeta42/40','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_gfap_ai_model2_all_carrier(strcmp(mdl_gfap_ai_model2_all_carrier.CoefficientNames,'Abeta42/40'),1) , '%.2f' ) '; ' ...
+    num2str( ci_gfap_ai_model2_all_carrier(strcmp(mdl_gfap_ai_model2_all_carrier.CoefficientNames,'Abeta42/40'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_gfap_ai_model2_all_carrier.Coefficients('Abeta42/40','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{19,10} = tmp;
+
+stats_separate_regression_egfr{19,12} = mdl_gfap_ai_model2_all_carrier.Rsquared.Ordinary;
+
+
+stats_separate_regression_egfr{19,13} = mdl_gfap_nhw_model2_all_carrier.NumObservations;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_gfap_nhw_model2_all_carrier.Coefficients('Age','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_gfap_nhw_model2_all_carrier(strcmp(mdl_gfap_nhw_model2_all_carrier.CoefficientNames,'Age'),1) , '%.2f' ) '; ' ...
+    num2str( ci_gfap_nhw_model2_all_carrier(strcmp(mdl_gfap_nhw_model2_all_carrier.CoefficientNames,'Age'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_gfap_nhw_model2_all_carrier.Coefficients('Age','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{19,14} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_gfap_nhw_model2_all_carrier.Coefficients('Sex_Male','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_gfap_nhw_model2_all_carrier(strcmp(mdl_gfap_nhw_model2_all_carrier.CoefficientNames,'Sex_Male'),1) , '%.2f' ) '; ' ...
+    num2str( ci_gfap_nhw_model2_all_carrier(strcmp(mdl_gfap_nhw_model2_all_carrier.CoefficientNames,'Sex_Male'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_gfap_nhw_model2_all_carrier.Coefficients('Sex_Male','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{19,15} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_gfap_nhw_model2_all_carrier.Coefficients('APOE4_1','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_gfap_nhw_model2_all_carrier(strcmp(mdl_gfap_nhw_model2_all_carrier.CoefficientNames,'APOE4_1'),1) , '%.2f' ) '; ' ...
+    num2str( ci_gfap_nhw_model2_all_carrier(strcmp(mdl_gfap_nhw_model2_all_carrier.CoefficientNames,'APOE4_1'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_gfap_nhw_model2_all_carrier.Coefficients('APOE4_1','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{19,18} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_gfap_nhw_model2_all_carrier.Coefficients('Abeta42/40','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_gfap_nhw_model2_all_carrier(strcmp(mdl_gfap_nhw_model2_all_carrier.CoefficientNames,'Abeta42/40'),1) , '%.2f' ) '; ' ...
+    num2str( ci_gfap_nhw_model2_all_carrier(strcmp(mdl_gfap_nhw_model2_all_carrier.CoefficientNames,'Abeta42/40'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_gfap_nhw_model2_all_carrier.Coefficients('Abeta42/40','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{19,19} = tmp;
+
+stats_separate_regression_egfr{19,21} = mdl_gfap_nhw_model2_all_carrier.Rsquared.Ordinary;
+
+
+
+%% GFAP RACE-SEPARATE-regression model2 - allele including CKD
+stats_separate_regression_egfr{20,4} = mdl_gfap_ai_model2_all_allelle_egfr.NumObservations;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_gfap_ai_model2_all_allelle_egfr.Coefficients('Age','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_gfap_ai_model2_all_allelle_egfr(strcmp(mdl_gfap_ai_model2_all_allelle_egfr.CoefficientNames,'Age'),1) , '%.2f' ) '; ' ...
+    num2str( ci_gfap_ai_model2_all_allelle_egfr(strcmp(mdl_gfap_ai_model2_all_allelle_egfr.CoefficientNames,'Age'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_gfap_ai_model2_all_allelle_egfr.Coefficients('Age','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{20,5} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_gfap_ai_model2_all_allelle_egfr.Coefficients('Sex_Male','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_gfap_ai_model2_all_allelle_egfr(strcmp(mdl_gfap_ai_model2_all_allelle_egfr.CoefficientNames,'Sex_Male'),1) , '%.2f' ) '; ' ...
+    num2str( ci_gfap_ai_model2_all_allelle_egfr(strcmp(mdl_gfap_ai_model2_all_allelle_egfr.CoefficientNames,'Sex_Male'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_gfap_ai_model2_all_allelle_egfr.Coefficients('Sex_Male','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{20,6} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_gfap_ai_model2_all_allelle_egfr.Coefficients('APOE4_2','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_gfap_ai_model2_all_allelle_egfr(strcmp(mdl_gfap_ai_model2_all_allelle_egfr.CoefficientNames,'APOE4_2'),1) , '%.2f' ) '; ' ...
+    num2str( ci_gfap_ai_model2_all_allelle_egfr(strcmp(mdl_gfap_ai_model2_all_allelle_egfr.CoefficientNames,'APOE4_2'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_gfap_ai_model2_all_allelle_egfr.Coefficients('APOE4_2','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{20,7} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_gfap_ai_model2_all_allelle_egfr.Coefficients('APOE4_1','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_gfap_ai_model2_all_allelle_egfr(strcmp(mdl_gfap_ai_model2_all_allelle_egfr.CoefficientNames,'APOE4_1'),1) , '%.2f' ) '; ' ...
+    num2str( ci_gfap_ai_model2_all_allelle_egfr(strcmp(mdl_gfap_ai_model2_all_allelle_egfr.CoefficientNames,'APOE4_1'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_gfap_ai_model2_all_allelle_egfr.Coefficients('APOE4_1','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{20,8} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_gfap_ai_model2_all_allelle_egfr.Coefficients('Abeta42/40','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_gfap_ai_model2_all_allelle_egfr(strcmp(mdl_gfap_ai_model2_all_allelle_egfr.CoefficientNames,'Abeta42/40'),1) , '%.2f' ) '; ' ...
+    num2str( ci_gfap_ai_model2_all_allelle_egfr(strcmp(mdl_gfap_ai_model2_all_allelle_egfr.CoefficientNames,'Abeta42/40'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_gfap_ai_model2_all_allelle_egfr.Coefficients('Abeta42/40','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{20,10} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_gfap_ai_model2_all_allelle_egfr.Coefficients('eGFR','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_gfap_ai_model2_all_allelle_egfr(strcmp(mdl_gfap_ai_model2_all_allelle_egfr.CoefficientNames,'eGFR'),1) , '%.2f' ) '; ' ...
+    num2str( ci_gfap_ai_model2_all_allelle_egfr(strcmp(mdl_gfap_ai_model2_all_allelle_egfr.CoefficientNames,'eGFR'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_gfap_ai_model2_all_allelle_egfr.Coefficients('eGFR','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{20,11} = tmp;
+
+stats_separate_regression_egfr{20,12} = mdl_gfap_ai_model2_all_allelle_egfr.Rsquared.Ordinary;
+
+
+stats_separate_regression_egfr{20,13} = mdl_gfap_nhw_model2_all_allelle_egfr.NumObservations;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_gfap_nhw_model2_all_allelle_egfr.Coefficients('Age','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_gfap_nhw_model2_all_allelle_egfr(strcmp(mdl_gfap_nhw_model2_all_allelle_egfr.CoefficientNames,'Age'),1) , '%.2f' ) '; ' ...
+    num2str( ci_gfap_nhw_model2_all_allelle_egfr(strcmp(mdl_gfap_nhw_model2_all_allelle_egfr.CoefficientNames,'Age'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_gfap_nhw_model2_all_allelle_egfr.Coefficients('Age','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{20,14} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_gfap_nhw_model2_all_allelle_egfr.Coefficients('Sex_Male','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_gfap_nhw_model2_all_allelle_egfr(strcmp(mdl_gfap_nhw_model2_all_allelle_egfr.CoefficientNames,'Sex_Male'),1) , '%.2f' ) '; ' ...
+    num2str( ci_gfap_nhw_model2_all_allelle_egfr(strcmp(mdl_gfap_nhw_model2_all_allelle_egfr.CoefficientNames,'Sex_Male'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_gfap_nhw_model2_all_allelle_egfr.Coefficients('Sex_Male','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{20,15} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_gfap_nhw_model2_all_allelle_egfr.Coefficients('APOE4_2','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_gfap_nhw_model2_all_allelle_egfr(strcmp(mdl_gfap_nhw_model2_all_allelle_egfr.CoefficientNames,'APOE4_2'),1) , '%.2f' ) '; ' ...
+    num2str( ci_gfap_nhw_model2_all_allelle_egfr(strcmp(mdl_gfap_nhw_model2_all_allelle_egfr.CoefficientNames,'APOE4_2'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_gfap_nhw_model2_all_allelle_egfr.Coefficients('APOE4_2','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{20,16} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_gfap_nhw_model2_all_allelle_egfr.Coefficients('APOE4_1','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_gfap_nhw_model2_all_allelle_egfr(strcmp(mdl_gfap_nhw_model2_all_allelle_egfr.CoefficientNames,'APOE4_1'),1) , '%.2f' ) '; ' ...
+    num2str( ci_gfap_nhw_model2_all_allelle_egfr(strcmp(mdl_gfap_nhw_model2_all_allelle_egfr.CoefficientNames,'APOE4_1'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_gfap_nhw_model2_all_allelle_egfr.Coefficients('APOE4_1','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{20,17} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_gfap_nhw_model2_all_allelle_egfr.Coefficients('Abeta42/40','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_gfap_nhw_model2_all_allelle_egfr(strcmp(mdl_gfap_nhw_model2_all_allelle_egfr.CoefficientNames,'Abeta42/40'),1) , '%.2f' ) '; ' ...
+    num2str( ci_gfap_nhw_model2_all_allelle_egfr(strcmp(mdl_gfap_nhw_model2_all_allelle_egfr.CoefficientNames,'Abeta42/40'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_gfap_nhw_model2_all_allelle_egfr.Coefficients('Abeta42/40','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{20,19} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_gfap_nhw_model2_all_allelle_egfr.Coefficients('eGFR','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_gfap_nhw_model2_all_allelle_egfr(strcmp(mdl_gfap_nhw_model2_all_allelle_egfr.CoefficientNames,'eGFR'),1) , '%.2f' ) '; ' ...
+    num2str( ci_gfap_nhw_model2_all_allelle_egfr(strcmp(mdl_gfap_nhw_model2_all_allelle_egfr.CoefficientNames,'eGFR'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_gfap_nhw_model2_all_allelle_egfr.Coefficients('eGFR','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{20,20} = tmp;
+
+stats_separate_regression_egfr{20,21} = mdl_gfap_nhw_model2_all_allelle_egfr.Rsquared.Ordinary;
+
+
+
+%% GFAP RACE-SEPARATE-regression model2 - carrier including CKD
+stats_separate_regression_egfr{21,4} = mdl_gfap_ai_model2_all_carrier_egfr.NumObservations;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_gfap_ai_model2_all_carrier_egfr.Coefficients('Age','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_gfap_ai_model2_all_carrier_egfr(strcmp(mdl_gfap_ai_model2_all_carrier_egfr.CoefficientNames,'Age'),1) , '%.2f' ) '; ' ...
+    num2str( ci_gfap_ai_model2_all_carrier_egfr(strcmp(mdl_gfap_ai_model2_all_carrier_egfr.CoefficientNames,'Age'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_gfap_ai_model2_all_carrier_egfr.Coefficients('Age','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{21,5} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_gfap_ai_model2_all_carrier_egfr.Coefficients('Sex_Male','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_gfap_ai_model2_all_carrier_egfr(strcmp(mdl_gfap_ai_model2_all_carrier_egfr.CoefficientNames,'Sex_Male'),1) , '%.2f' ) '; ' ...
+    num2str( ci_gfap_ai_model2_all_carrier_egfr(strcmp(mdl_gfap_ai_model2_all_carrier_egfr.CoefficientNames,'Sex_Male'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_gfap_ai_model2_all_carrier_egfr.Coefficients('Sex_Male','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{21,6} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_gfap_ai_model2_all_carrier_egfr.Coefficients('APOE4_1','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_gfap_ai_model2_all_carrier_egfr(strcmp(mdl_gfap_ai_model2_all_carrier_egfr.CoefficientNames,'APOE4_1'),1) , '%.2f' ) '; ' ...
+    num2str( ci_gfap_ai_model2_all_carrier_egfr(strcmp(mdl_gfap_ai_model2_all_carrier_egfr.CoefficientNames,'APOE4_1'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_gfap_ai_model2_all_carrier_egfr.Coefficients('APOE4_1','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{21,9} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_gfap_ai_model2_all_carrier_egfr.Coefficients('Abeta42/40','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_gfap_ai_model2_all_carrier_egfr(strcmp(mdl_gfap_ai_model2_all_carrier_egfr.CoefficientNames,'Abeta42/40'),1) , '%.2f' ) '; ' ...
+    num2str( ci_gfap_ai_model2_all_carrier_egfr(strcmp(mdl_gfap_ai_model2_all_carrier_egfr.CoefficientNames,'Abeta42/40'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_gfap_ai_model2_all_carrier_egfr.Coefficients('Abeta42/40','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{21,10} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_gfap_ai_model2_all_carrier_egfr.Coefficients('eGFR','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_gfap_ai_model2_all_carrier_egfr(strcmp(mdl_gfap_ai_model2_all_carrier_egfr.CoefficientNames,'eGFR'),1) , '%.2f' ) '; ' ...
+    num2str( ci_gfap_ai_model2_all_carrier_egfr(strcmp(mdl_gfap_ai_model2_all_carrier_egfr.CoefficientNames,'eGFR'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_gfap_ai_model2_all_carrier_egfr.Coefficients('eGFR','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{21,11} = tmp;
+
+stats_separate_regression_egfr{21,12} = mdl_gfap_ai_model2_all_carrier_egfr.Rsquared.Ordinary;
+
+
+stats_separate_regression_egfr{21,13} = mdl_gfap_nhw_model2_all_carrier_egfr.NumObservations;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_gfap_nhw_model2_all_carrier_egfr.Coefficients('Age','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_gfap_nhw_model2_all_carrier_egfr(strcmp(mdl_gfap_nhw_model2_all_carrier_egfr.CoefficientNames,'Age'),1) , '%.2f' ) '; ' ...
+    num2str( ci_gfap_nhw_model2_all_carrier_egfr(strcmp(mdl_gfap_nhw_model2_all_carrier_egfr.CoefficientNames,'Age'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_gfap_nhw_model2_all_carrier_egfr.Coefficients('Age','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{21,14} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_gfap_nhw_model2_all_carrier_egfr.Coefficients('Sex_Male','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_gfap_nhw_model2_all_carrier_egfr(strcmp(mdl_gfap_nhw_model2_all_carrier_egfr.CoefficientNames,'Sex_Male'),1) , '%.2f' ) '; ' ...
+    num2str( ci_gfap_nhw_model2_all_carrier_egfr(strcmp(mdl_gfap_nhw_model2_all_carrier_egfr.CoefficientNames,'Sex_Male'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_gfap_nhw_model2_all_carrier_egfr.Coefficients('Sex_Male','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{21,15} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_gfap_nhw_model2_all_carrier_egfr.Coefficients('APOE4_1','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_gfap_nhw_model2_all_carrier_egfr(strcmp(mdl_gfap_nhw_model2_all_carrier_egfr.CoefficientNames,'APOE4_1'),1) , '%.2f' ) '; ' ...
+    num2str( ci_gfap_nhw_model2_all_carrier_egfr(strcmp(mdl_gfap_nhw_model2_all_carrier_egfr.CoefficientNames,'APOE4_1'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_gfap_nhw_model2_all_carrier_egfr.Coefficients('APOE4_1','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{21,18} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_gfap_nhw_model2_all_carrier_egfr.Coefficients('Abeta42/40','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_gfap_nhw_model2_all_carrier_egfr(strcmp(mdl_gfap_nhw_model2_all_carrier_egfr.CoefficientNames,'Abeta42/40'),1) , '%.2f' ) '; ' ...
+    num2str( ci_gfap_nhw_model2_all_carrier_egfr(strcmp(mdl_gfap_nhw_model2_all_carrier_egfr.CoefficientNames,'Abeta42/40'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_gfap_nhw_model2_all_carrier_egfr.Coefficients('Abeta42/40','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{21,19} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_gfap_nhw_model2_all_carrier_egfr.Coefficients('eGFR','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_gfap_nhw_model2_all_carrier_egfr(strcmp(mdl_gfap_nhw_model2_all_carrier_egfr.CoefficientNames,'eGFR'),1) , '%.2f' ) '; ' ...
+    num2str( ci_gfap_nhw_model2_all_carrier_egfr(strcmp(mdl_gfap_nhw_model2_all_carrier_egfr.CoefficientNames,'eGFR'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_gfap_nhw_model2_all_carrier_egfr.Coefficients('eGFR','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_separate_regression_egfr{21,20} = tmp;
+
+stats_separate_regression_egfr{21,21} = mdl_gfap_nhw_model2_all_carrier_egfr.Rsquared.Ordinary;
+
 %% Transpose stats_race_regression
 stats_race_regression = stats_race_regression';
 stats_race_regression(3,:) = [];
@@ -8392,6 +10856,81 @@ tmp{4,1} = 'AI';
 tmp{13,1} = 'NHW';
 stats_separate_regression = [tmp stats_separate_regression];
 stats_separate_regression(3,:) = [];
+
+stats_separate_regression_egfr = stats_separate_regression_egfr';
+tmp = cell(size(stats_separate_regression_egfr,1),1);
+tmp{2,1} = 'Race';
+tmp{4,1} = 'AI';
+tmp{13,1} = 'NHW';
+stats_separate_regression_egfr = [tmp stats_separate_regression_egfr];
+stats_separate_regression_egfr(3,:) = [];
+
+%% Make manuscript tables
+table2 = stats_separate_regression(:,[1:2 5:6 9:10 13:14]);
+for ind = 3:6
+    table2{1,ind} = 'pTau217';
+end
+for ind = 7:8
+    table2{1,ind} = 'Abeta42/40';
+end
+table2{1,2} = 'Outcome';
+table2{2,2} = 'APOE4 Covariate Form';
+table2{2,1} = [];
+for ind = 3:2:7
+    table2{2,ind} = 'Number of Alleles';
+    table2{2,ind+1} = 'Carrier Status';
+end
+table2{4,2} = 'Age [/10y]';
+table2{13,2} = 'Age [/10y]';
+table2{9,2} = 'Abeta42/40 (Doubling)';
+table2{18,2} = 'Abeta42/40 (Doubling)';
+table2{10,2} = 'Chronic Kidney Disease';
+table2{19,2} = 'Chronic Kidney Disease';
+
+
+table3 = stats_separate_regression(:,[1:2 17:18 21:22]);
+for ind = 3:6
+    table3{1,ind} = 'GFAP';
+end
+table3{1,2} = 'Outcome';
+table3{2,2} = 'APOE4 Covariate Form';
+table3{2,1} = [];
+for ind = 3:2:5
+    table3{2,ind} = 'Number of Alleles';
+    table3{2,ind+1} = 'Carrier Status';
+end
+table3{4,2} = 'Age [/10y]';
+table3{13,2} = 'Age [/10y]';
+table3{9,2} = 'Abeta42/40 (Doubling)';
+table3{18,2} = 'Abeta42/40 (Doubling)';
+table3{10,2} = 'Chronic Kidney Disease';
+table3{19,2} = 'Chronic Kidney Disease';
+
+
+supplementary_table3 = stats_separate_regression_egfr(:,[1:2 5:6 9:10 13:14 17:18 21:22]);
+for ind = 3:6
+    supplementary_table3{1,ind} = 'pTau217';
+end
+for ind = 7:8
+    supplementary_table3{1,ind} = 'Abeta42/40';
+end
+for ind = 9:12
+    supplementary_table3{1,ind} = 'GFAP';
+end
+supplementary_table3{1,2} = 'Outcome';
+supplementary_table3{2,2} = 'APOE4 Covariate Form';
+supplementary_table3{2,1} = [];
+for ind = 3:2:11
+    supplementary_table3{2,ind} = 'Number of Alleles';
+    supplementary_table3{2,ind+1} = 'Carrier Status';
+end
+supplementary_table3{4,2} = 'Age [/10y]';
+supplementary_table3{13,2} = 'Age [/10y]';
+supplementary_table3{9,2} = 'Abeta42/40 (Doubling)';
+supplementary_table3{18,2} = 'Abeta42/40 (Doubling)';
+supplementary_table3{10,2} = 'eGFR (Doubling)';
+supplementary_table3{19,2} = 'eGFR (Doubling)';
+
 %% Forest plot ADAI+ADNI
 clr_nhw = [0 0 1];
 clr_ai = [1 0 0];
