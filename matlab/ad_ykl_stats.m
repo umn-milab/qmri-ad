@@ -27,7 +27,9 @@ include_bmi = 1; % values: 0 1 2
 % xls_file = fullfile(project_folder,'HeartDataset','MasterDataset_Oct23.xlsx');
 % xls_file = fullfile(project_folder,'HeartDataset','MasterDataset_December3.xlsx'); % Last used for the YKL analysis
 % xls_file = fullfile(project_folder,'HeartDataset','MasterDataset_01-13.xlsx');
-xls_file = fullfile(project_folder,'HeartDataset','MasterDataset_03-30.xlsx');
+% xls_file = fullfile(project_folder,'HeartDataset','MasterDataset_03-30.xlsx');
+xls_file = fullfile(project_folder,'HeartDataset','MasterDataset_05-19-26.xlsx');
+
  
 [~, ~, raw] = xlsread(xls_file);
 raw(strcmp(raw,'Male ')) = {'Male'};
@@ -179,6 +181,8 @@ for ind = 2:size(raw,1)
             adai_sedatingmed{ind,1} = 'Yes';
         elseif strcmp(adai_sedatingmed{ind,1},'no')
             adai_sedatingmed{ind,1} = 'No';
+        elseif strcmp(adai_sedatingmed{ind,1},' ')
+            adai_sedatingmed{ind,1} = '';
         end
     else
         adai_sedatingmed{ind,1} = '';
@@ -325,9 +329,9 @@ adai_epworth = NaN*ones(size(raw,1)-1,1);
 for ind = 2:size(raw,1)
     tmp = raw{ind,strcmp(raw(1,:),'Epworth')};
     if strcmp(tmp,'#REF!')
-        adai_apoeprotein(ind-1,1) = NaN;
+        adai_epworth(ind-1,1) = NaN;
     else
-        adai_apoeprotein(ind-1,1) = tmp;
+        adai_epworth(ind-1,1) = tmp;
     end
 end
 
@@ -413,6 +417,10 @@ adai_apoe_genotype(cell2mat(adai(:,strcmp(data_names,'APOE4')))==2,1) = 6;
 adai_apoe4_carrier = NaN*ones(size(adai,1),1);
 adai_apoe4_carrier( cell2mat(adai(:,strcmp(data_names,'APOE4')))==0 , 1) = 0;
 adai_apoe4_carrier( cell2mat(adai(:,strcmp(data_names,'APOE4')))>=1 , 1) = 1;
+%% Define APOE2 carrier
+adai_apoe2_carrier = NaN*ones(size(adai,1),1);
+adai_apoe2_carrier( cell2mat(adai(:,strcmp(data_names,'APOE2')))==0 , 1) = 0;
+adai_apoe2_carrier( cell2mat(adai(:,strcmp(data_names,'APOE2')))>=1 , 1) = 1;
 %% Linear mixture models
 
 % & ~cellfun(@isempty,adai(:,strcmp(data_names,'Alcohol')))
@@ -550,6 +558,9 @@ tbl_ptau217_carrier_gfr_manuscript.Sex = categorical(tbl_ptau217_carrier_gfr_man
 tbl_ptau217_carrier_gfr_manuscript.APOE4 = categorical(tbl_ptau217_carrier_gfr_manuscript.APOE4);
 tbl_ptau217_carrier_gfr_manuscript.Statin = categorical(tbl_ptau217_carrier_gfr_manuscript.Statin);
 
+tbl_ptau217_carrier_gfr_manuscript_apoe2 = [ tbl_ptau217_carrier_gfr_manuscript table(adai_apoe2_carrier(pos_ptau217,1),'VariableNames',{'APOE2'}) ];
+tbl_ptau217_carrier_gfr_manuscript_apoe2.APOE2 = categorical(tbl_ptau217_carrier_gfr_manuscript_apoe2.APOE2);
+
 tbl_ptau217_carrier_gfr_manuscript_bmi = [ tbl_ptau217_carrier_gfr_manuscript table(cell2mat(adai(pos_ptau217,strcmp(data_names,'BMI'))),'VariableNames',{'BMI'}) ];
 
 tbl_ptau217_carrier_gfr_manuscript_bmisamplesonly = tbl_ptau217_carrier_gfr_manuscript_bmi;
@@ -597,7 +608,8 @@ tbl_ptau217_carrier_supplementary = table( log(cell2mat(adai(pos_ptau217only,str
     adai(pos_ptau217only,strcmp(data_names,'Alcohol')), ...
     adai(pos_ptau217only,strcmp(data_names,'Insomnia')), ...
     adai(pos_ptau217only,strcmp(data_names,'HeadTrauma')), ...
-    'VariableNames', {'pTau217','Age','Sex','IHD','Stroke','Cancer','Tobacco','Alcohol','Insomnia','HeadTrauma'} );
+    adai(pos_ptau217only,strcmp(data_names,'HTN')), ...
+    'VariableNames', {'pTau217','Age','Sex','IHD','Stroke','Cancer','Tobacco','Alcohol','Insomnia','HeadTrauma','Hypertension'} );
 tbl_ptau217_carrier_supplementary.Sex = categorical(tbl_ptau217_carrier_supplementary.Sex);
 tbl_ptau217_carrier_supplementary.IHD = categorical(tbl_ptau217_carrier_supplementary.IHD);
 tbl_ptau217_carrier_supplementary.Stroke = categorical(tbl_ptau217_carrier_supplementary.Stroke);
@@ -808,6 +820,7 @@ mdl_ptau217_carrier_gfr_manuscript_impairment = fitglm(tbl_ptau217_carrier_gfr_m
 mdl_ptau217_carrier_gfr_manuscript_statintype = fitglm(tbl_ptau217_carrier_gfr_manuscript_statintype,T_ptau217_carrier_gfr_manuscript);
 mdl_ptau217_carrier_gfr_manuscript_alcohol = fitglm(tbl_ptau217_carrier_gfr_manuscript_alcohol,T_ptau217_carrier_gfr_manuscript_alcohol);
 mdl_ptau217_carrier_gfr_manuscript_notriglycerides = fitglm(tbl_ptau217_carrier_gfr_manuscript_notriglycerides,T_ptau217_carrier_gfr_manuscript_notriglycerides);
+mdl_ptau217_carrier_gfr_manuscript_apoe2 = fitglm(tbl_ptau217_carrier_gfr_manuscript_apoe2,T_ptau217_carrier_gfr_manuscript_bmi);
 
 mdl_ptau217_carrier_supplementary = fitglm(tbl_ptau217_carrier_supplementary,T_ptau217_carrier_supplementary);
 mdl_ptau217_carrier_supplementary_education = fitglm(tbl_ptau217_carrier_supplementary_education,T_ptau217_carrier_supplementary_education);
@@ -850,15 +863,18 @@ ci_ptau217_carrier_gfr_manuscript_impairment = exp(coefCI(mdl_ptau217_carrier_gf
 ci_ptau217_carrier_gfr_manuscript_statintype = exp(coefCI(mdl_ptau217_carrier_gfr_manuscript_statintype));
 ci_ptau217_carrier_gfr_manuscript_alcohol = exp(coefCI(mdl_ptau217_carrier_gfr_manuscript_alcohol));
 ci_ptau217_carrier_gfr_manuscript_notriglycerides = exp(coefCI(mdl_ptau217_carrier_gfr_manuscript_notriglycerides));
+ci_ptau217_carrier_gfr_manuscript_apoe2 = exp(coefCI(mdl_ptau217_carrier_gfr_manuscript_apoe2));
 
 ci_ptau217_carrier_supplementary = exp(coefCI(mdl_ptau217_carrier_supplementary));
 ci_ptau217_carrier_supplementary_education = exp(coefCI(mdl_ptau217_carrier_supplementary_education));
 ci_ptau217_carrier_supplementary_stopbang = exp(coefCI(mdl_ptau217_carrier_supplementary_stopbang));
 ci_ptau217_carrier_supplementary_bmi = exp(coefCI(mdl_ptau217_carrier_supplementary_bmi));
+
+%% Person correlation analysis
+[r_ptau217_age_gfr, p_ptau217_age_gfr] = corrcoef(cell2mat(table2cell(tbl_ptau217_carrier_gfr_manuscript(:,{'pTau217','Age','GFR','HbA1C','Triglycerides'}))));
 %% Loop of linear mixture models
 X_list = { 'BMI', 'SedatingMed', 'HeadTrauma', 'HTN', 'HLD', 'IHD', 'Tobacco', 'Epworth', 'Stop-Bang', 'Anxiety', ...
     'HbA1C', 'CKD', 'LDL', 'Triglycerides', 'YKL-40', 'HDL', 'AST', 'ALT', 'Insomnia', 'Albumin', 'GFR', 'Education' };
-
 
 
 ptau217 = struct([]);
@@ -1065,6 +1081,12 @@ stats_demography(30,:) = estimate_continuous_stats('pTau181','pTau181',0,adai,da
 stats_demography(31,:) = estimate_continuous_stats('pTau217','pTau217',2,adai,data_names,adai_all_pos,adai_hc_pos,adai_mci_pos,adai_ad_pos);
 stats_demography(32,:) = estimate_continuous_stats('GFAP','GFAP',0,adai,data_names,adai_all_pos,adai_hc_pos,adai_mci_pos,adai_ad_pos);
 stats_demography(33,:) = estimate_continuous_stats('YKL-40','YKL-40',0,adai,data_names,adai_all_pos,adai_hc_pos,adai_mci_pos,adai_ad_pos);
+stats_demography(34,:) = estimate_binary_stats('Anxiety','Anxiety','No','Yes',0,adai,data_names,adai_all_pos,adai_hc_pos,adai_mci_pos,adai_ad_pos);
+stats_demography(35,:) = estimate_binary_stats('SedatingMed','SedatingMed','No','Yes',0,adai,data_names,adai_all_pos,adai_hc_pos,adai_mci_pos,adai_ad_pos);
+stats_demography(36,:) = estimate_binary_stats('Insomnia','Insomnia','No','Yes',0,adai,data_names,adai_all_pos,adai_hc_pos,adai_mci_pos,adai_ad_pos);
+stats_demography(37,:) = estimate_continuous_stats('Epworth','Epworth',0,adai,data_names,adai_all_pos,adai_hc_pos,adai_mci_pos,adai_ad_pos);
+stats_demography(38,:) = estimate_continuous_stats('Stop-Bang','Stop-Bang',0,adai,data_names,adai_all_pos,adai_hc_pos,adai_mci_pos,adai_ad_pos);
+
 
 % stats_demography
 
@@ -1166,7 +1188,11 @@ stats_demography_ptau217(35,:) = estimate_binary_stats_included('SCI+MCI','SCI+M
 stats_demography_ptau217(36,:) = estimate_binary_stats_included('Dementia','Dementia','No','Yes',0,adai_ad,{'Dementia'},pos_all,pos_included,pos_excluded);
 stats_demography_ptau217(37,:) = estimate_binary_stats_included('Statin','Statin','No','Yes',0,adai,data_names,pos_all,pos_included,pos_excluded);
 stats_demography_ptau217(38,:) = estimate_continuous_stats_included('Triglycerides','Triglycerides',1,adai,data_names,pos_all,pos_included,pos_excluded);
-%% Build table with regression results
+
+stats_statin_lipophilic{1,1} = sum(strcmp(adai_statin_type2(pos_included,1),'Lipophilic'));
+stats_statin_lipophilic{1,2} = sum(contains(adai_statin_type2(pos_included,1),'Lipophilic'));
+stats_statin_lipophilic{1,3} = 100*stats_statin_lipophilic{1,1}/stats_statin_lipophilic{1,2};
+%% Build table with regression results/
 
 stats_regression_ptau217{1,2} = 'Baseline';
 stats_regression_ptau217{1,3} = 'LDL';
@@ -1181,6 +1207,7 @@ stats_regression_ptau217{1,11} = 'BMI';
 stats_regression_ptau217{1,12} = 'BMI samples only';
 stats_regression_ptau217{1,13} = 'No Impairment';
 stats_regression_ptau217{1,14} = 'Impairment';
+stats_regression_ptau217{1,15} = 'APOE2';
 
 stats_regression_ptau217{2,1} = 'N (R^2)';
 stats_regression_ptau217{3,1} = 'log2(HbA1C)';
@@ -1202,6 +1229,7 @@ stats_regression_ptau217{18,1} = 'Statin: Lipophilic';
 stats_regression_ptau217{19,1} = 'Tobacco';
 stats_regression_ptau217{20,1} = 'Alcohol';
 stats_regression_ptau217{21,1} = 'BMI';
+stats_regression_ptau217{22,1} = 'APOE2';
 
 stats_regression_ptau217 = assemble_regression_result_table(2,stats_regression_ptau217,mdl_ptau217_carrier_gfr_manuscript,ci_ptau217_carrier_gfr_manuscript);
 stats_regression_ptau217 = assemble_regression_result_table(3,stats_regression_ptau217,mdl_ptau217_carrier_gfr_manuscript_ldl,ci_ptau217_carrier_gfr_manuscript_ldl);
@@ -1217,7 +1245,7 @@ stats_regression_ptau217 = assemble_regression_result_table(11,stats_regression_
 stats_regression_ptau217 = assemble_regression_result_table(12,stats_regression_ptau217,mdl_ptau217_carrier_gfr_manuscript_bmisamplesonly,ci_ptau217_carrier_gfr_manuscript_bmisamplesonly);
 stats_regression_ptau217 = assemble_regression_result_table(13,stats_regression_ptau217,mdl_ptau217_carrier_gfr_manuscript_noimpairment,ci_ptau217_carrier_gfr_manuscript_noimpairment);
 stats_regression_ptau217 = assemble_regression_result_table(14,stats_regression_ptau217,mdl_ptau217_carrier_gfr_manuscript_impairment,ci_ptau217_carrier_gfr_manuscript_impairment);
-
+stats_regression_ptau217 = assemble_regression_result_table(15,stats_regression_ptau217,mdl_ptau217_carrier_gfr_manuscript_apoe2,ci_ptau217_carrier_gfr_manuscript_apoe2);
 %% Build table with regression supplementary results
 
 stats_regression_ptau217_supplementary{1,2} = 'Baseline';
@@ -1235,9 +1263,10 @@ stats_regression_ptau217_supplementary{8,1} = 'Tobacco';
 stats_regression_ptau217_supplementary{9,1} = 'Alcohol';
 stats_regression_ptau217_supplementary{10,1} = 'Insomnia';
 stats_regression_ptau217_supplementary{11,1} = 'Head Trauma';
-stats_regression_ptau217_supplementary{12,1} = 'Education';
-stats_regression_ptau217_supplementary{13,1} = 'Stop-Bang';
-stats_regression_ptau217_supplementary{14,1} = 'BMI';
+stats_regression_ptau217_supplementary{12,1} = 'Hypertension';
+stats_regression_ptau217_supplementary{13,1} = 'Education';
+stats_regression_ptau217_supplementary{14,1} = 'Stop-Bang';
+stats_regression_ptau217_supplementary{15,1} = 'BMI';
 
 
 stats_regression_ptau217_supplementary = assemble_regression_supplementary_result_table(2,stats_regression_ptau217_supplementary,mdl_ptau217_carrier_supplementary,ci_ptau217_carrier_supplementary);
@@ -1252,7 +1281,62 @@ set(h(1).fig,'Position',[50 50 2200 600])
 draw_scatterplot( 1,3,1, cell2mat(table2cell(tbl_ptau217_carrier_gfr_manuscript(:,'Triglycerides'))) , cell2mat(table2cell(tbl_ptau217_carrier_gfr_manuscript(:,'HbA1C'))), tbl_ptau217_carrier_gfr_manuscript.Statin, 'Triglycerides [mg/dL]' , 'HbA1C [%]', {'On Statin','No Statin'} )
 draw_scatterplot( 1,3,2, cell2mat(table2cell(tbl_ptau217_carrier_gfr_manuscript(:,'Triglycerides'))) , cell2mat(table2cell(tbl_ptau217_carrier_gfr_manuscript(:,'pTau217'))), tbl_ptau217_carrier_gfr_manuscript.Statin, 'Triglycerides [mg/dL]' , 'p\tau_{217}', cell(0,0) )
 draw_scatterplot( 1,3,3, cell2mat(table2cell(tbl_ptau217_carrier_gfr_manuscript(:,'HbA1C'))) , cell2mat(table2cell(tbl_ptau217_carrier_gfr_manuscript(:,'pTau217'))), tbl_ptau217_carrier_gfr_manuscript.Statin, 'HbA1C [%]' , 'p\tau_{217}', cell(0,0) )
+
+%% Adjusted regression plots
+h(2).fig = figure(2);
+set(h(2).fig,'Position',[50 50 2200 600])
+
+tbl = renamevars(tbl_ptau217_carrier_gfr_manuscript,'YKL-40','YKL40');
+mdl = fitlm(tbl,'pTau217 ~ Age + Sex + APOE4 + GFR + HbA1C + YKL40 + Statin + Triglycerides');
+
+subplot(1,3,1)
+draw_plotadded(mdl,tbl,'HbA1C','Adjusted HbA1C [%]','Adjusted p-tau217 [pg/mL]')
+
+
+subplot(1,3,3)
+draw_plotadded(mdl,tbl,'Triglycerides','Adjusted Triglycerides [mg/dL]','Adjusted p-tau217 [pg/mL]')
+
+% plotAdjustedResponse(mdl,'Triglycerides')
+% plotAdjustedResponse(mdl_ptau217_carrier_gfr_manuscript,'Triglycerides')
+% plotAdded(mdl_ptau217_carrier_gfr_manuscript,'Triglycerides')
+% plotAdjustedResponse(mdl_ptau217_carrier_gfr_manuscript,9)
+
+
 %% FUNCTIONS
+function draw_plotadded(mdl,tbl,var,xlbl,ylbl)
+    gg = plotAdded(mdl,var);
+    slope=str2double(extractBefore(extractAfter(gg(2,1).DisplayName,'y='),'*x'));
+    ttl = ['ln(p-tau217) ∝ ' num2str(slope,'%.3f') ' * log2(' var ')' ];
+    hold on
+    plot(gg(1,1).XData(tbl.Statin=='No'),gg(1,1).YData(tbl.Statin=='No'),'x','Color',[173, 216, 230]/255,'Markersize',14,'LineWidth',3,'DisplayName','No Statin')
+    plot(gg(1,1).XData(tbl.Statin=='Yes'),gg(1,1).YData(tbl.Statin=='Yes'),'x','Color',[255,192,203]/255,'Markersize',14,'LineWidth',3,'DisplayName','On Statin')
+    hold off
+    gg(1,1).Marker = 'none';
+    gg(2,1).LineWidth = 3;
+    gg(3,1).LineWidth = 3;
+    grid on
+    ylabel(ylbl)
+    xlabel(xlbl)
+%     title(ttl)
+    title('')
+    axis([min(gg(1,1).XData) max(gg(1,1).XData) min(gg(1,1).YData) max(gg(1,1).YData)])
+    
+    if contains(ylbl,'HbA1C')
+        set(gca,'YTick',log2(1:25),'YtickLabel',1:25)
+    elseif contains(ylbl,'p-tau217')
+        set(gca,'YTick',log(0.1:0.2:2),'YtickLabel',0.1:0.2:2)
+    end
+    
+    if contains(xlbl,'HbA1C')
+        set(gca,'XTick',log2(1:25),'XtickLabel',1:25)
+    elseif contains(xlbl,'Triglycerides')
+        set(gca,'XTick',log2(50:100:1024),'XtickLabel',50:100:1024)
+        xtickangle(40)
+    end
+    
+    set(gca,'Fontsize',16,'Linewidth',3)
+end
+
 
 function draw_scatterplot(sbpl1,sbpl2,sbpl3,x,y,grp,xlbl,ylbl,lgnd)
 
@@ -1356,6 +1440,9 @@ function stats = assemble_regression_result_table(col,stats,mdl,ci)
     if sum(strcmp(mdl.CoefficientNames,'BMI')) == 1
         stats{21,col} = make_regression_string(mdl,ci,'BMI');
     end
+    if sum(strcmp(mdl.CoefficientNames,'APOE2_1')) == 1
+        stats{22,col} = make_regression_string(mdl,ci,'APOE2_1');
+    end
 end
 
 function stats = assemble_regression_supplementary_result_table(col,stats,mdl,ci)
@@ -1377,14 +1464,17 @@ function stats = assemble_regression_supplementary_result_table(col,stats,mdl,ci
     if sum(strcmp(mdl.CoefficientNames,'HeadTrauma_Yes')) == 1
         stats{11,col} = make_regression_string(mdl,ci,'HeadTrauma_Yes');
     end
+    if sum(strcmp(mdl.CoefficientNames,'Hypertension_Yes')) == 1
+        stats{12,col} = make_regression_string(mdl,ci,'Hypertension_Yes');
+    end
     if sum(strcmp(mdl.CoefficientNames,'Education')) == 1
-        stats{12,col} = make_regression_string(mdl,ci,'Education');
+        stats{13,col} = make_regression_string(mdl,ci,'Education');
     end
     if sum(strcmp(mdl.CoefficientNames,'Stop-Bang')) == 1
-        stats{13,col} = make_regression_string(mdl,ci,'Stop-Bang');
+        stats{14,col} = make_regression_string(mdl,ci,'Stop-Bang');
     end
     if sum(strcmp(mdl.CoefficientNames,'BMI')) == 1
-        stats{14,col} = make_regression_string(mdl,ci,'BMI');
+        stats{15,col} = make_regression_string(mdl,ci,'BMI');
     end
 end
 
