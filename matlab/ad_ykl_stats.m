@@ -30,6 +30,9 @@ include_bmi = 1; % values: 0 1 2
 % xls_file = fullfile(project_folder,'HeartDataset','MasterDataset_03-30.xlsx');
 xls_file = fullfile(project_folder,'HeartDataset','MasterDataset_05-19-26.xlsx');
 
+% xts_file = fullfile(project_folder,'HeartDataset','Analysis V2.xlsx');
+xts_file = fullfile(project_folder,'HeartDataset','Analysis_V3.xlsx');
+
  
 [~, ~, raw] = xlsread(xls_file);
 raw(strcmp(raw,'Male ')) = {'Male'};
@@ -38,6 +41,61 @@ raw(strcmp(raw,'Female ')) = {'Female'};
 [a,b]=find(strcmp(raw,'NA')==1);
 for ind = 1:size(a,1)
     raw{a(ind,1),b(ind,1)} = NaN;
+end
+
+
+[~, ~, xts] = xlsread(xts_file);
+[a,b]=find(strcmp(xts,'#N/A')==1);
+for ind = 1:size(a,1)
+    xts{a(ind,1),b(ind,1)} = NaN;
+end
+for a = 1:size(xts,1)
+    for b = 1:size(xts,2)
+        if xts{a,b} < -9000
+            xts{a,b} = NaN;
+        end
+    end
+    if a>1
+        if xts{a,strcmp(xts(1,:),'Gender (0=male)')} == 0
+            xts{a,strcmp(xts(1,:),'Gender (0=male)')} = 'Male';
+        elseif xts{a,strcmp(xts(1,:),'Gender (0=male)')} == 1
+            xts{a,strcmp(xts(1,:),'Gender (0=male)')} = 'Female';
+        end
+    end
+end
+xts{1,strcmp(xts(1,:),'Gender (0=male)')} = 'Sex';
+
+texas_gfr = NaN*ones(size(xts,1)-1,1);
+texas_gfr_type = cell(size(xts,1)-1,1);
+for ind = 1:(size(xts,1)-1)
+    if ~isnan(xts{ind+1,strcmp(xts(1,:),'BW_EGFRnonAA')})
+        texas_gfr(ind,1) = xts{ind+1,strcmp(xts(1,:),'BW_EGFRnonAA')};
+        texas_gfr_type{ind,1} = 'EGFRnonAA';
+    elseif ~isnan(xts{ind+1,strcmp(xts(1,:),'BW_EGFR')})
+        texas_gfr(ind,1) = xts{ind+1,strcmp(xts(1,:),'BW_EGFR')};
+        texas_gfr_type{ind,1} = 'EGFR';
+    end
+end
+
+texas_statin = cell(size(xts,1)-1,1);
+texas_hispanic = cell(size(xts,1)-1,1);
+texas_black = cell(size(xts,1)-1,1);
+for ind = 1:(size(xts,1)-1)
+    if xts{ind+1,strcmp(xts(1,:),'Statin status')} == 1
+        texas_statin{ind,1} = 'Yes';
+    elseif xts{ind+1,strcmp(xts(1,:),'Statin status')} == 0
+        texas_statin{ind,1} = 'No';
+    end
+    if strcmp(xts{ind+1,strcmp(xts(1,:),'Ethnicity')},'Hispanic')
+        texas_hispanic{ind,1} = 'Yes';
+        texas_black{ind,1} = 'No';
+    elseif strcmp(xts{ind+1,strcmp(xts(1,:),'Ethnicity')},'Black')
+        texas_hispanic{ind,1} = 'No';
+        texas_black{ind,1} = 'Yes';
+    elseif strcmp(xts{ind+1,strcmp(xts(1,:),'Ethnicity')},'White')
+        texas_hispanic{ind,1} = 'No';
+        texas_black{ind,1} = 'No';
+    end
 end
 
 adai_gfr = zeros(size(raw,1)-1,1);
@@ -394,6 +452,116 @@ adai = [
     adai_impairment ...
     ];
 
+texas_names = {'pTau217', 'Age', 'Sex', 'BMI', 'APOE4', 'Ethnicity', 'HbA1C', 'HDL', 'LDL', 'Triglycerides', 'TotalCholesterol', ...
+    'AmyloidPET', 'GFAP','eGFR', 'eGFR_type', 'Statin', 'Hispanic', 'Black', 'Med_ID', 'Visit_ID'};
+
+texas = [
+    xts(2:end,strcmp(xts(1,:),'r7_QTX_Plasma_pTau217_PLUS')), ...
+    xts(2:end,strcmp(xts(1,:),'Age')), ...
+    xts(2:end,strcmp(xts(1,:),'Sex')), ...
+    xts(2:end,strcmp(xts(1,:),'BMI')), ...
+    xts(2:end,strcmp(xts(1,:),'APOE carrier status')), ...
+    xts(2:end,strcmp(xts(1,:),'Ethnicity')), ...
+    xts(2:end,strcmp(xts(1,:),'BW_HBA1c')), ...
+    xts(2:end,strcmp(xts(1,:),'BW_HDLChol')), ...
+    xts(2:end,strcmp(xts(1,:),'BW_LDLchol')), ...
+    xts(2:end,strcmp(xts(1,:),'BW_Triglycerides')), ...
+    xts(2:end,strcmp(xts(1,:),'BW_CholTotal')), ...
+    xts(2:end,strcmp(xts(1,:),'Amyloid-PET SUVR')), ...
+    xts(2:end,strcmp(xts(1,:),'r7_QTX_Plasma_GFAP_PLUS')), ...
+    num2cell(texas_gfr), ...
+    texas_gfr_type, ...
+    texas_statin, ...
+    texas_hispanic, ...
+    texas_black, ...
+    xts(2:end,strcmp(xts(1,:),'Med_ID')), ...
+    xts(2:end,strcmp(xts(1,:),'Visit_ID')), ...
+    ];
+
+for ind = 1:size(texas,1)
+    if strcmp(texas{ind,strcmp(texas_names,'AmyloidPET')},'NA')
+        texas{ind,strcmp(texas_names,'AmyloidPET')} = NaN;
+    end
+end
+
+% Pick only samples with pTau217
+texas_ptau217_longitudinal_pos = ~isnan(cell2mat(texas(:,strcmp(texas_names,'pTau217'))));
+texas_ptau217_longitudinal = texas(texas_ptau217_longitudinal_pos,:);
+texas_ptau217_subunique = unique(cell2mat(texas_ptau217_longitudinal(:,strcmp(texas_names,'Med_ID'))));
+
+% Pick only cross-sectional samples with pTau217 and maximized number of recorded variables
+texas_ptau217 = cell(size(texas_ptau217_subunique,1),size(texas,2));
+for ind = 1:size(texas_ptau217_subunique,1)
+    tx_sub_pos = cell2mat(texas_ptau217_longitudinal(:,strcmp(texas_names,'Med_ID'))) == texas_ptau217_subunique(ind,1);
+    if sum(tx_sub_pos) == 1
+        texas_ptau217(ind,:) = texas_ptau217_longitudinal(tx_sub_pos,:);
+    elseif sum(tx_sub_pos) > 1
+        tmp = texas_ptau217_longitudinal(tx_sub_pos,:);
+        tmp_nan = zeros(size(tmp,1),size(tmp,2));
+        for rw = 1:size(tmp,1)
+            for cl = 1:size(tmp,2)
+                if isnumeric(tmp{rw,cl})
+                    if isempty(tmp{rw,cl})
+                        tmp_nan(rw,cl) = isempty(tmp{rw,cl});
+                    else
+                        tmp_nan(rw,cl) = isnan(tmp{rw,cl});
+                    end
+                else
+                    tmp_nan(rw,cl) = isempty(tmp{rw,cl});
+                end
+            end
+        end
+        tmp_nan = sum(tmp_nan,2);
+        if sum(tmp_nan) == 0
+            texas_ptau217(ind,:) = tmp(1,:);
+        else
+            tmp_nan_pos = find(tmp_nan == min(tmp_nan),1,'first');
+            texas_ptau217(ind,:) = tmp(tmp_nan_pos,:);
+%             disp('Yes')
+        end
+        clear tmp tmp_nan tmp_nan_pos
+    end
+end
+
+
+% Pick only samples with amyloid-PET
+texas_apet_longitudinal_pos = ~isnan(cell2mat(texas(:,strcmp(texas_names,'AmyloidPET'))));
+texas_apet_longitudinal = texas(texas_apet_longitudinal_pos,:);
+texas_apet_subunique = unique(cell2mat(texas_apet_longitudinal(:,strcmp(texas_names,'Med_ID'))));
+
+% Pick only cross-sectional samples with amyloid-PET and maximized number of recorded variables
+texas_apet = cell(size(texas_apet_subunique,1),size(texas,2));
+for ind = 1:size(texas_apet_subunique,1)
+    tx_sub_pos = cell2mat(texas_apet_longitudinal(:,strcmp(texas_names,'Med_ID'))) == texas_apet_subunique(ind,1);
+    if sum(tx_sub_pos) == 1
+        texas_apet(ind,:) = texas_apet_longitudinal(tx_sub_pos,:);
+    elseif sum(tx_sub_pos) > 1
+        tmp = texas_apet_longitudinal(tx_sub_pos,:);
+        tmp_nan = zeros(size(tmp,1),size(tmp,2));
+        for rw = 1:size(tmp,1)
+            for cl = 1:size(tmp,2)
+                if isnumeric(tmp{rw,cl})
+                    if isempty(tmp{rw,cl})
+                        tmp_nan(rw,cl) = isempty(tmp{rw,cl});
+                    else
+                        tmp_nan(rw,cl) = isnan(tmp{rw,cl});
+                    end
+                else
+                    tmp_nan(rw,cl) = isempty(tmp{rw,cl});
+                end
+            end
+        end
+        tmp_nan = sum(tmp_nan,2);
+        if sum(tmp_nan) == 0
+            texas_apet(ind,:) = tmp(1,:);
+        else
+            tmp_nan_pos = find(tmp_nan == min(tmp_nan),1,'first');
+            texas_apet(ind,:) = tmp(tmp_nan_pos,:);
+%             disp('Yes')
+        end
+        clear tmp tmp_nan tmp_nan_pos
+    end
+end
 %% Fix dataset typos
 for ind = find(strcmp(adai(:,strcmp(data_names,'HTN')),'No ')==1)
     adai{ind,strcmp(data_names,'HTN')} = 'No';
@@ -543,6 +711,50 @@ tbl_ptau217_carrier_gfr.Statin = categorical(tbl_ptau217_carrier_gfr.Statin);
 tbl_ptau217_carrier_gfr.Tobacco = categorical(tbl_ptau217_carrier_gfr.Tobacco);
 tbl_ptau217_carrier_gfr.SedatingMed = categorical(tbl_ptau217_carrier_gfr.SedatingMed);
 
+%% Model texas
+tbl_ptau217_texas = table( log(cell2mat(texas_ptau217(:,strcmp(texas_names,'pTau217')))), ...
+    cell2mat(texas_ptau217(:,strcmp(texas_names,'Age')))/10, ...
+    texas_ptau217(:,strcmp(texas_names,'Sex')), ...
+    cell2mat(texas_ptau217(:,strcmp(texas_names,'APOE4'))), ...
+    cell2mat(texas_ptau217(:,strcmp(texas_names,'BMI'))), ...
+    cell2mat(texas_ptau217(:,strcmp(texas_names,'eGFR')))/10, ...
+    texas_ptau217(:,strcmp(texas_names,'Statin')), ...
+    log2(cell2mat(texas_ptau217(:,strcmp(texas_names,'HbA1C')))), ...
+    log2(cell2mat(texas_ptau217(:,strcmp(texas_names,'Triglycerides')))), ...
+    'VariableNames', {'pTau217','Age','Sex','APOE4','BMI','GFR','Statin','HbA1C','Triglycerides'} );
+tbl_ptau217_texas.Sex = categorical(tbl_ptau217_texas.Sex);
+tbl_ptau217_texas.APOE4 = categorical(tbl_ptau217_texas.APOE4);
+tbl_ptau217_texas.Statin = categorical(tbl_ptau217_texas.Statin);
+
+tbl_ptau217_texas_race = [tbl_ptau217_texas table( texas_ptau217(:,strcmp(texas_names,'Hispanic')), texas_ptau217(:,strcmp(texas_names,'Black')), 'VariableNames',{'Hispanic','Black'} ) ];
+tbl_ptau217_texas_race.Hispanic = categorical(tbl_ptau217_texas_race.Hispanic);
+tbl_ptau217_texas_race.Black = categorical(tbl_ptau217_texas_race.Black);
+
+tbl_gfap_texas = [ table(log(cell2mat(texas_ptau217(:,strcmp(texas_names,'GFAP')))),'VariableNames',{'GFAP'}) tbl_ptau217_texas ];
+tbl_gfap_texas = tbl_gfap_texas(:,~strcmp(tbl_gfap_texas.Properties.VariableNames,'pTau217'));
+
+tbl_gfap_texas_race = [tbl_gfap_texas table( texas_ptau217(:,strcmp(texas_names,'Hispanic')), texas_ptau217(:,strcmp(texas_names,'Black')), 'VariableNames',{'Hispanic','Black'} ) ];
+tbl_gfap_texas_race.Hispanic = categorical(tbl_gfap_texas_race.Hispanic);
+tbl_gfap_texas_race.Black = categorical(tbl_gfap_texas_race.Black);
+
+tbl_apet_texas = table( log(cell2mat(texas_apet(:,strcmp(texas_names,'AmyloidPET')))), ...
+    cell2mat(texas_apet(:,strcmp(texas_names,'Age')))/10, ...
+    texas_apet(:,strcmp(texas_names,'Sex')), ...
+    cell2mat(texas_apet(:,strcmp(texas_names,'APOE4'))), ...
+    cell2mat(texas_apet(:,strcmp(texas_names,'BMI'))), ...
+    cell2mat(texas_apet(:,strcmp(texas_names,'eGFR')))/10, ...
+    texas_apet(:,strcmp(texas_names,'Statin')), ...
+    log2(cell2mat(texas_apet(:,strcmp(texas_names,'HbA1C')))), ...
+    log2(cell2mat(texas_apet(:,strcmp(texas_names,'Triglycerides')))), ...
+    'VariableNames', {'AmyloidPET','Age','Sex','APOE4','BMI','GFR','Statin','HbA1C','Triglycerides'} );
+tbl_apet_texas.Sex = categorical(tbl_apet_texas.Sex);
+tbl_apet_texas.APOE4 = categorical(tbl_apet_texas.APOE4);
+tbl_apet_texas.Statin = categorical(tbl_apet_texas.Statin);
+
+tbl_apet_texas_race = [tbl_apet_texas table( texas_apet(:,strcmp(texas_names,'Hispanic')), texas_apet(:,strcmp(texas_names,'Black')), 'VariableNames',{'Hispanic','Black'} ) ];
+tbl_apet_texas_race.Hispanic = categorical(tbl_apet_texas_race.Hispanic);
+tbl_apet_texas_race.Black = categorical(tbl_apet_texas_race.Black);
+
 %% Model ptau217 manusciprt
 tbl_ptau217_carrier_gfr_manuscript = table( log(cell2mat(adai(pos_ptau217,strcmp(data_names,'pTau217')))), ...
     cell2mat(adai(pos_ptau217,strcmp(data_names,'Age')))/10, ...
@@ -557,6 +769,9 @@ tbl_ptau217_carrier_gfr_manuscript = table( log(cell2mat(adai(pos_ptau217,strcmp
 tbl_ptau217_carrier_gfr_manuscript.Sex = categorical(tbl_ptau217_carrier_gfr_manuscript.Sex);
 tbl_ptau217_carrier_gfr_manuscript.APOE4 = categorical(tbl_ptau217_carrier_gfr_manuscript.APOE4);
 tbl_ptau217_carrier_gfr_manuscript.Statin = categorical(tbl_ptau217_carrier_gfr_manuscript.Statin);
+
+tbl_gfap_carrier_gfr_manuscript = [ table(log(cell2mat(adai(pos_ptau217,strcmp(data_names,'GFAP')))),'VariableNames',{'GFAP'}) tbl_ptau217_carrier_gfr_manuscript ];
+tbl_gfap_carrier_gfr_manuscript = tbl_gfap_carrier_gfr_manuscript(:,~strcmp(tbl_gfap_carrier_gfr_manuscript.Properties.VariableNames,'pTau217'));
 
 tbl_ptau217_carrier_gfr_manuscript_apoe2 = [ tbl_ptau217_carrier_gfr_manuscript table(adai_apoe2_carrier(pos_ptau217,1),'VariableNames',{'APOE2'}) ];
 tbl_ptau217_carrier_gfr_manuscript_apoe2.APOE2 = categorical(tbl_ptau217_carrier_gfr_manuscript_apoe2.APOE2);
@@ -755,6 +970,7 @@ T_ptau217_carrier_gfr(end+1,1:6) = [0 0 0 1 0 1];
 T_ptau217_carrier_gfr_baseline = eye(5);
 T_ptau217_carrier_gfr_baseline(1,1) = 0;
 
+
 T_ptau217_carrier_gfr_manuscript = eye(size(tbl_ptau217_carrier_gfr_manuscript,2));
 T_ptau217_carrier_gfr_manuscript(1,1) = 0;
 
@@ -780,6 +996,23 @@ T_ptau217_carrier_supplementary_education = eye(size(tbl_ptau217_carrier_supplem
 T_ptau217_carrier_supplementary_education(1,1) = 0;
 
 
+T_ptau217_texas = eye(size(tbl_ptau217_texas,2));
+T_ptau217_texas(1,1) = 0;
+
+
+T_ptau217_texas_race_trigly = eye(size(tbl_ptau217_texas_race,2));
+T_ptau217_texas_race_trigly(1,1) = 0;
+T_ptau217_texas_race_trigly(end+1:end+2,:) = [
+    0 0 0 0 0 0 0 0 1 1 0
+    0 0 0 0 0 0 0 0 1 0 1
+    ];
+
+T_ptau217_texas_race_hba1c = eye(size(tbl_ptau217_texas_race,2));
+T_ptau217_texas_race_hba1c(1,1) = 0;
+T_ptau217_texas_race_hba1c(end+1:end+2,:) = [
+    0 0 0 0 0 0 0 1 0 1 0
+    0 0 0 0 0 0 0 1 0 0 1
+    ];
 
 
 
@@ -827,6 +1060,21 @@ mdl_ptau217_carrier_supplementary_education = fitglm(tbl_ptau217_carrier_supplem
 mdl_ptau217_carrier_supplementary_stopbang = fitglm(tbl_ptau217_carrier_supplementary_stopbang,T_ptau217_carrier_supplementary_education);
 mdl_ptau217_carrier_supplementary_bmi = fitglm(tbl_ptau217_carrier_supplementary_bmi,T_ptau217_carrier_supplementary_education);
 
+
+mdl_gfap_carrier_gfr_manuscript = fitglm(tbl_gfap_carrier_gfr_manuscript,T_ptau217_carrier_gfr_manuscript);
+
+mdl_ptau217_texas = fitglm(tbl_ptau217_texas,T_ptau217_texas);
+mdl_gfap_texas = fitglm(tbl_gfap_texas,T_ptau217_texas);
+mdl_apet_texas = fitglm(tbl_apet_texas,T_ptau217_texas);
+
+mdl_ptau217_texas_race_trigly = fitglm(tbl_ptau217_texas_race,T_ptau217_texas_race_trigly);
+mdl_gfap_texas_race_trigly = fitglm(tbl_gfap_texas_race,T_ptau217_texas_race_trigly);
+mdl_apet_texas_race_trigly = fitglm(tbl_apet_texas_race,T_ptau217_texas_race_trigly);
+
+mdl_ptau217_texas_race_hba1c = fitglm(tbl_ptau217_texas_race,T_ptau217_texas_race_hba1c);
+mdl_gfap_texas_race_hba1c = fitglm(tbl_gfap_texas_race,T_ptau217_texas_race_hba1c);
+mdl_apet_texas_race_hba1c = fitglm(tbl_apet_texas_race,T_ptau217_texas_race_hba1c);
+
 ci_abeta4240 = exp(coefCI(mdl_abeta4240));
 ci_abeta42 = exp(coefCI(mdl_abeta42));
 ci_abeta40 = exp(coefCI(mdl_abeta40));
@@ -869,6 +1117,21 @@ ci_ptau217_carrier_supplementary = exp(coefCI(mdl_ptau217_carrier_supplementary)
 ci_ptau217_carrier_supplementary_education = exp(coefCI(mdl_ptau217_carrier_supplementary_education));
 ci_ptau217_carrier_supplementary_stopbang = exp(coefCI(mdl_ptau217_carrier_supplementary_stopbang));
 ci_ptau217_carrier_supplementary_bmi = exp(coefCI(mdl_ptau217_carrier_supplementary_bmi));
+
+ci_gfap_carrier_gfr_manuscript = exp(coefCI(mdl_gfap_carrier_gfr_manuscript));
+
+
+ci_ptau217_texas = exp(coefCI(mdl_ptau217_texas));
+ci_gfap_texas = exp(coefCI(mdl_gfap_texas));
+ci_apet_texas = exp(coefCI(mdl_apet_texas));
+
+ci_ptau217_texas_race_trigly = exp(coefCI(mdl_ptau217_texas_race_trigly));
+ci_gfap_texas_race_trigly = exp(coefCI(mdl_gfap_texas_race_trigly));
+ci_apet_texas_race_trigly = exp(coefCI(mdl_apet_texas_race_trigly));
+
+ci_ptau217_texas_race_hba1c = exp(coefCI(mdl_ptau217_texas_race_hba1c));
+ci_gfap_texas_race_hba1c = exp(coefCI(mdl_gfap_texas_race_hba1c));
+ci_apet_texas_race_hba1c = exp(coefCI(mdl_apet_texas_race_hba1c));
 
 %% Person correlation analysis
 [r_ptau217_age_gfr, p_ptau217_age_gfr] = corrcoef(cell2mat(table2cell(tbl_ptau217_carrier_gfr_manuscript(:,{'pTau217','Age','GFR','HbA1C','Triglycerides'}))));
@@ -1301,6 +1564,26 @@ draw_plotadded(mdl,tbl,'Triglycerides','Adjusted Triglycerides [mg/dL]','Adjuste
 % plotAdded(mdl_ptau217_carrier_gfr_manuscript,'Triglycerides')
 % plotAdjustedResponse(mdl_ptau217_carrier_gfr_manuscript,9)
 
+%% Figure HbA1C - triglyceride correlation
+
+h(3).fig = figure(3);
+set(h(3).fig,'Position',[50 50 2200 600])
+draw_scatterplot( 1,3,1, cell2mat(table2cell(tbl_ptau217_texas(:,'Triglycerides'))) , cell2mat(table2cell(tbl_ptau217_texas(:,'HbA1C'))), tbl_ptau217_texas.Statin, 'Triglycerides [mg/dL]' , 'HbA1C [%]', {'On Statin','No Statin'} )
+draw_scatterplot( 1,3,2, cell2mat(table2cell(tbl_ptau217_texas(:,'Triglycerides'))) , cell2mat(table2cell(tbl_ptau217_texas(:,'pTau217'))), tbl_ptau217_texas.Statin, 'Triglycerides [mg/dL]' , 'p\tau_{217}', cell(0,0) )
+draw_scatterplot( 1,3,3, cell2mat(table2cell(tbl_ptau217_texas(:,'HbA1C'))) , cell2mat(table2cell(tbl_ptau217_texas(:,'pTau217'))), tbl_ptau217_texas.Statin, 'HbA1C [%]' , 'p\tau_{217}', cell(0,0) )
+
+%% Adjusted regression plot - TEXAS
+h(4).fig = figure(4);
+set(h(4).fig,'Position',[50 50 2200 600])
+
+tbl = tbl_ptau217_texas;
+mdl = fitlm(tbl,'pTau217 ~ Age + Sex + APOE4 + BMI + GFR + Statin + HbA1C + Triglycerides');
+
+subplot(1,3,1)
+draw_plotadded(mdl,tbl,'HbA1C','Adjusted HbA1C [%]','Adjusted p-tau217 [pg/mL]')
+
+subplot(1,3,3)
+draw_plotadded(mdl,tbl,'Triglycerides','Adjusted Triglycerides [mg/dL]','Adjusted p-tau217 [pg/mL]')
 
 %% FUNCTIONS
 function draw_plotadded(mdl,tbl,var,xlbl,ylbl)
@@ -1324,7 +1607,7 @@ function draw_plotadded(mdl,tbl,var,xlbl,ylbl)
     if contains(ylbl,'HbA1C')
         set(gca,'YTick',log2(1:25),'YtickLabel',1:25)
     elseif contains(ylbl,'p-tau217')
-        set(gca,'YTick',log(0.1:0.2:2),'YtickLabel',0.1:0.2:2)
+        set(gca,'YTick',log(0.1:0.2:2.4),'YtickLabel',0.1:0.2:2.4)
     end
     
     if contains(xlbl,'HbA1C')
@@ -1342,6 +1625,11 @@ function draw_scatterplot(sbpl1,sbpl2,sbpl3,x,y,grp,xlbl,ylbl,lgnd)
 
     clr1 = [1 0 0];
     clr2 = [0 0 1];
+    
+    ps = ~isnan(x) & ~isnan(y);
+    x = x(ps);
+    y = y(ps);
+    grp = grp(ps);
 
     xx = [min(x) max(x)];
     yy = [min(y) max(y)];
@@ -1380,7 +1668,7 @@ function draw_scatterplot(sbpl1,sbpl2,sbpl3,x,y,grp,xlbl,ylbl,lgnd)
     if contains(ylbl,'HbA1C')
         set(gca,'YTick',log2(1:25),'YtickLabel',1:25)
     elseif contains(ylbl,'p\tau_{217}')
-        set(gca,'YTick',log(0.1:0.2:2),'YtickLabel',0.1:0.2:2)
+        set(gca,'YTick',log(0.1:0.2:2.4),'YtickLabel',0.1:0.2:2.4)
     end
     
     
