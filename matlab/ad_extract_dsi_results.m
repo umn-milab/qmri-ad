@@ -20,9 +20,14 @@ adni_connectivity_folder = fullfile(project_folder2,'results','dmri-hamza','adni
 
 
 
-atlas='HCP-MMP';
+% atlas='HCP-MMP';
+atlas='Brodmann';
+if strcmp (atlas,'HCP-MMP')
+    num_altals_rois = 360;
+elseif strcmp (atlas,'Brodmann')
+    num_altals_rois = 78;
+end
 num_nodes_networkmeasures = 7;
-num_altals_rois = 360;
 num_global_networkmeasures = 14;
 
 adai_curv_nodes_file = fullfile(adai_connectivity_folder,'derivatives',[atlas '_node_curv_adai.csv']);
@@ -64,7 +69,7 @@ adai_networkx_global_file = fullfile(adai_connectivity_folder,'derivatives','glo
 adni_networkx_global_file = fullfile(adni_connectivity_folder,'derivatives','global_measures',[atlas '_global_measures_adni_adai.csv']);
 
 jhu_roi = 'reconstruction_specific';
-save_path = fullfile(project_folder,'pictures','ad_paper_export_20260504');
+save_path = fullfile(project_folder,'pictures','ad_paper_export_20260619');
 % jhu_roi = 'same'; % Use NORDIC JHU mask for JHU-atlas based dMRI value extraction
 % save_folder = fullfile(project_folder,'pictures','bcp_paper_export_same_jhu_roi');
 extract_data_file = fullfile(project_folder,'results',extract_data_filename);
@@ -1682,10 +1687,13 @@ stats_con_global_regression = [
 
 %% FDR correction of node structural connectivity results
 stats_con_nodes_regression_bh = stats_con_nodes_regression;
+stats_con_nodes_regression_holm = stats_con_nodes_regression;
 for cl = 2:size(stats_con_nodes_regression_bh,2)
     p_uncor = cell2mat(stats_con_nodes_regression(3:end,cl));
     [~, ~, ~, p_bh ] = fdr_bh(p_uncor);
+    [p_holm, h_holm]=bonf_holm(p_uncor,0.05);
     stats_con_nodes_regression_bh(3:end,cl) = num2cell(p_bh);
+    stats_con_nodes_regression_holm(3:end,cl) = num2cell(p_holm);
 end
 con_nodes_p_mdl1_apoe4AmongWhiteNonHisp_bh = con_nodes_p_mdl1_apoe4AmongWhiteNonHisp;
 con_nodes_p_mdl1_apoe4AmongNatAm_bh = con_nodes_p_mdl1_apoe4AmongNatAm;
@@ -1696,8 +1704,13 @@ for cl = 1:size(con_nodes_p_mdl1_apoe4AmongWhiteNonHisp,2)
     [~, ~, ~, con_nodes_p_mdl1_apoe4Xrace_bh(:,cl) ] = fdr_bh(con_nodes_p_mdl1_apoe4Xrace(:,cl));
 end
 %% Identify node connectivity measurements that provide p<0.001
-pos_nodes = sum([con_nodes_p_mdl1_apoe4AmongWhiteNonHisp con_nodes_p_mdl1_apoe4AmongNatAm con_nodes_p_mdl1_apoe4Xrace] < 0.001,2)>0;
-pos_nodes_bh = sum([con_nodes_p_mdl1_apoe4AmongWhiteNonHisp_bh con_nodes_p_mdl1_apoe4AmongNatAm_bh con_nodes_p_mdl1_apoe4Xrace_bh] < 0.05,2)>0;
+if strcmp(atlas,'Brodmann')
+    pos_nodes = sum([con_nodes_p_mdl1_apoe4AmongWhiteNonHisp con_nodes_p_mdl1_apoe4AmongNatAm con_nodes_p_mdl1_apoe4Xrace] < 0.01,2)>0;
+    pos_nodes_bh = sum([con_nodes_p_mdl1_apoe4AmongWhiteNonHisp_bh con_nodes_p_mdl1_apoe4AmongNatAm_bh con_nodes_p_mdl1_apoe4Xrace_bh] < 0.05,2)>0;
+else
+    pos_nodes = sum([con_nodes_p_mdl1_apoe4AmongWhiteNonHisp con_nodes_p_mdl1_apoe4AmongNatAm con_nodes_p_mdl1_apoe4Xrace] < 0.001,2)>0;
+    pos_nodes_bh = sum([con_nodes_p_mdl1_apoe4AmongWhiteNonHisp_bh con_nodes_p_mdl1_apoe4AmongNatAm_bh con_nodes_p_mdl1_apoe4Xrace_bh] < 0.05,2)>0;
+end
 %% Select variables of interest
 tract_data_name_dsi_select_pos = [1 3 4 5 6 7 8 9 10 21 23 24 25 28 30];
 
@@ -1877,7 +1890,11 @@ dmri_pos = tract_data_name_dsi_select_pos(end-5:end);
 draw_forest_plot(mdl1,mdl2,ci1,ci2,'APOE4_1','apoe4',tract_keywords,tract_data_name,dmri_pos,save_path,'between APOE4 carriers vs. non-carriers')
 draw_forest_plot(mdl_age1,mdl_age2,ci_age1,ci_age2,'Age','age',tract_keywords,tract_data_name,dmri_pos,save_path,'for Age effects')
 
-draw_forest_plot(con_nodes_mdl1(pos_nodes_bh,:),con_nodes_mdl2(pos_nodes_bh,:),con_nodes_ci1(pos_nodes_bh,:),con_nodes_ci2(pos_nodes_bh,:),'APOE4_1','con_apoe4',con_nodes_names(1,pos_nodes_bh)',con_networkmeasure_names',1:18,save_path,'between APOE4 carriers vs. non-carriers')
+if strcmp(atlas,'Brodmann')
+    draw_forest_plot(con_nodes_mdl1(pos_nodes,:),con_nodes_mdl2(pos_nodes,:),con_nodes_ci1(pos_nodes,:),con_nodes_ci2(pos_nodes,:),'APOE4_1',[atlas '_con_apoe4'],con_nodes_names(1,pos_nodes)',con_networkmeasure_names',1:18,save_path,'between APOE4 carriers vs. non-carriers')
+else
+    draw_forest_plot(con_nodes_mdl1(pos_nodes_bh,:),con_nodes_mdl2(pos_nodes_bh,:),con_nodes_ci1(pos_nodes_bh,:),con_nodes_ci2(pos_nodes_bh,:),'APOE4_1',[atlas '_con_apoe4'],con_nodes_names(1,pos_nodes_bh)',con_networkmeasure_names',1:18,save_path,'between APOE4 carriers vs. non-carriers')
+end
 
 % Failed when draw graph for hypertension.
 draw_forest_plot(mdl_hypertension1,mdl_hypertension2,ci_hypertension1,ci_hypertension2,'Hypertension_1','hypertension',tract_keywords,tract_data_name,dmri_pos,save_path,'for Hypertension effects')
