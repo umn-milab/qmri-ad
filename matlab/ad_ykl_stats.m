@@ -793,6 +793,9 @@ tbl_ptau217_carrier_gfr_manuscript_cholesterol = tbl_ptau217_carrier_gfr_manuscr
 
 tbl_ptau217_carrier_gfr_manuscript_triglyhdlldl = [ tbl_ptau217_carrier_gfr_manuscript table(log2(cell2mat(adai(pos_ptau217,strcmp(data_names,'HDL')))),'VariableNames',{'HDL'}) table(log2(cell2mat(adai(pos_ptau217,strcmp(data_names,'LDL')))),'VariableNames',{'LDL'}) ];
 
+tbl_ptau217_carrier_gfr_manuscript_tghdl = [ tbl_ptau217_carrier_gfr_manuscript table(log2(cell2mat(adai(pos_ptau217,strcmp(data_names,'Triglycerides')))./cell2mat(adai(pos_ptau217,strcmp(data_names,'HDL')))),'VariableNames',{'TG/HDL'}) ];
+tbl_ptau217_carrier_gfr_manuscript_tghdl = tbl_ptau217_carrier_gfr_manuscript_tghdl(:,~strcmp(tbl_ptau217_carrier_gfr_manuscript_tghdl.Properties.VariableNames,'Triglycerides'));
+
 tbl_ptau217_carrier_gfr_manuscript_noimpairment = tbl_ptau217_carrier_gfr_manuscript(strcmp(adai_impairment(pos_ptau217,1),'No impairment'),:);
 tbl_ptau217_carrier_gfr_manuscript_impairment = tbl_ptau217_carrier_gfr_manuscript(~strcmp(adai_impairment(pos_ptau217,1),'No impairment'),:);
 
@@ -1046,6 +1049,7 @@ mdl_ptau217_carrier_gfr_manuscript_hdl = fitglm(tbl_ptau217_carrier_gfr_manuscri
 mdl_ptau217_carrier_gfr_manuscript_ldl = fitglm(tbl_ptau217_carrier_gfr_manuscript_ldl,T_ptau217_carrier_gfr_manuscript);
 mdl_ptau217_carrier_gfr_manuscript_cholesterol = fitglm(tbl_ptau217_carrier_gfr_manuscript_cholesterol,T_ptau217_carrier_gfr_manuscript);
 mdl_ptau217_carrier_gfr_manuscript_triglyhdlldl = fitglm(tbl_ptau217_carrier_gfr_manuscript_triglyhdlldl,T_ptau217_carrier_gfr_manuscript_triglyhdlldl);
+mdl_ptau217_carrier_gfr_manuscript_tghdl = fitglm(tbl_ptau217_carrier_gfr_manuscript_tghdl,T_ptau217_carrier_gfr_manuscript);
 mdl_ptau217_carrier_gfr_manuscript_interaction = fitglm(tbl_ptau217_carrier_gfr_manuscript,T_ptau217_carrier_gfr_manuscript_interaction);
 mdl_ptau217_carrier_gfr_manuscript_interactiononstatin = fitglm(tbl_ptau217_carrier_gfr_manuscript_triglyonstatin,T_ptau217_carrier_gfr_manuscript_interaction);
 mdl_ptau217_carrier_gfr_manuscript_noimpairment = fitglm(tbl_ptau217_carrier_gfr_manuscript_noimpairment,T_ptau217_carrier_gfr_manuscript);
@@ -1104,6 +1108,7 @@ ci_ptau217_carrier_gfr_manuscript_hdl = exp(coefCI(mdl_ptau217_carrier_gfr_manus
 ci_ptau217_carrier_gfr_manuscript_ldl = exp(coefCI(mdl_ptau217_carrier_gfr_manuscript_ldl));
 ci_ptau217_carrier_gfr_manuscript_cholesterol = exp(coefCI(mdl_ptau217_carrier_gfr_manuscript_cholesterol));
 ci_ptau217_carrier_gfr_manuscript_triglyhdlldl = exp(coefCI(mdl_ptau217_carrier_gfr_manuscript_triglyhdlldl));
+ci_ptau217_carrier_gfr_manuscript_tghdl = exp(coefCI(mdl_ptau217_carrier_gfr_manuscript_tghdl));
 ci_ptau217_carrier_gfr_manuscript_interaction = exp(coefCI(mdl_ptau217_carrier_gfr_manuscript_interaction));
 ci_ptau217_carrier_gfr_manuscript_interactiononstatin = exp(coefCI(mdl_ptau217_carrier_gfr_manuscript_interactiononstatin));
 ci_ptau217_carrier_gfr_manuscript_noimpairment = exp(coefCI(mdl_ptau217_carrier_gfr_manuscript_noimpairment));
@@ -1471,6 +1476,7 @@ stats_regression_ptau217{1,12} = 'BMI samples only';
 stats_regression_ptau217{1,13} = 'No Impairment';
 stats_regression_ptau217{1,14} = 'Impairment';
 stats_regression_ptau217{1,15} = 'APOE2';
+stats_regression_ptau217{1,16} = 'Triglycerides/HDL';
 
 stats_regression_ptau217{2,1} = 'N (R^2)';
 stats_regression_ptau217{3,1} = 'log2(HbA1C)';
@@ -1493,6 +1499,7 @@ stats_regression_ptau217{19,1} = 'Tobacco';
 stats_regression_ptau217{20,1} = 'Alcohol';
 stats_regression_ptau217{21,1} = 'BMI';
 stats_regression_ptau217{22,1} = 'APOE2';
+stats_regression_ptau217{23,1} = 'log2(Triglycerides/HDL)';
 
 stats_regression_ptau217 = assemble_regression_result_table(2,stats_regression_ptau217,mdl_ptau217_carrier_gfr_manuscript,ci_ptau217_carrier_gfr_manuscript);
 stats_regression_ptau217 = assemble_regression_result_table(3,stats_regression_ptau217,mdl_ptau217_carrier_gfr_manuscript_ldl,ci_ptau217_carrier_gfr_manuscript_ldl);
@@ -1509,6 +1516,7 @@ stats_regression_ptau217 = assemble_regression_result_table(12,stats_regression_
 stats_regression_ptau217 = assemble_regression_result_table(13,stats_regression_ptau217,mdl_ptau217_carrier_gfr_manuscript_noimpairment,ci_ptau217_carrier_gfr_manuscript_noimpairment);
 stats_regression_ptau217 = assemble_regression_result_table(14,stats_regression_ptau217,mdl_ptau217_carrier_gfr_manuscript_impairment,ci_ptau217_carrier_gfr_manuscript_impairment);
 stats_regression_ptau217 = assemble_regression_result_table(15,stats_regression_ptau217,mdl_ptau217_carrier_gfr_manuscript_apoe2,ci_ptau217_carrier_gfr_manuscript_apoe2);
+stats_regression_ptau217 = assemble_regression_result_table(16,stats_regression_ptau217,mdl_ptau217_carrier_gfr_manuscript_tghdl,ci_ptau217_carrier_gfr_manuscript_tghdl);
 %% Build table with regression supplementary results
 
 stats_regression_ptau217_supplementary{1,2} = 'Baseline';
@@ -1730,6 +1738,9 @@ function stats = assemble_regression_result_table(col,stats,mdl,ci)
     end
     if sum(strcmp(mdl.CoefficientNames,'APOE2_1')) == 1
         stats{22,col} = make_regression_string(mdl,ci,'APOE2_1');
+    end
+    if sum(strcmp(mdl.CoefficientNames,'TG/HDL')) == 1
+        stats{23,col} = make_regression_string(mdl,ci,'TG/HDL');
     end
 end
 

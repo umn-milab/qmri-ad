@@ -20,8 +20,8 @@ adni_connectivity_folder = fullfile(project_folder2,'results','dmri-hamza','adni
 
 
 
-% atlas='HCP-MMP';
-atlas='Brodmann';
+atlas='HCP-MMP';
+% atlas='Brodmann';
 if strcmp (atlas,'HCP-MMP')
     num_altals_rois = 360;
 elseif strcmp (atlas,'Brodmann')
@@ -1703,6 +1703,8 @@ for cl = 1:size(con_nodes_p_mdl1_apoe4AmongWhiteNonHisp,2)
     [~, ~, ~, con_nodes_p_mdl1_apoe4AmongNatAm_bh(:,cl) ] = fdr_bh(con_nodes_p_mdl1_apoe4AmongNatAm(:,cl));
     [~, ~, ~, con_nodes_p_mdl1_apoe4Xrace_bh(:,cl) ] = fdr_bh(con_nodes_p_mdl1_apoe4Xrace(:,cl));
 end
+%% Write p-values to csv files
+writecell(stats_con_nodes_regression,fullfile(save_path,[atlas '_p_values.csv']))
 %% Identify node connectivity measurements that provide p<0.001
 if strcmp(atlas,'Brodmann')
     pos_nodes = sum([con_nodes_p_mdl1_apoe4AmongWhiteNonHisp con_nodes_p_mdl1_apoe4AmongNatAm con_nodes_p_mdl1_apoe4Xrace] < 0.01,2)>0;
