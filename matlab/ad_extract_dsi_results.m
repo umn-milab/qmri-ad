@@ -5,6 +5,7 @@
 clear all;
 clc;
 close all;
+
 data_folder='/home/range1-raid1/labounek/data-on-porto';
 extract_data_filename='extract_data_20251121.mat';
 project_folder=fullfile(data_folder,'ADAI');
@@ -14,8 +15,61 @@ project_folder2=fullfile(data_folder,'ADNI','ADNI_ADAI_match');
 table_folder2=fullfile(project_folder2,'tables');
 adnistudydata_folder = fullfile(data_folder,'ADNI','StudyData');
 
+adai_connectivity_folder = fullfile(project_folder,'results','dmri-hamza','adai_pass_10M_connectivity');
+adni_connectivity_folder = fullfile(project_folder2,'results','dmri-hamza','adni_adai_match_pass_10M_connectivity');
+
+
+
+atlas='HCP-MMP';
+% atlas='Brodmann';
+if strcmp (atlas,'HCP-MMP')
+    num_altals_rois = 360;
+elseif strcmp (atlas,'Brodmann')
+    num_altals_rois = 78;
+end
+num_nodes_networkmeasures = 7;
+num_global_networkmeasures = 14;
+
+adai_curv_nodes_file = fullfile(adai_connectivity_folder,'derivatives',[atlas '_node_curv_adai.csv']);
+adai_curv_global_file = fullfile(adai_connectivity_folder,'derivatives',[atlas '_global_curv_adai.csv']);
+adni_curv_nodes_file = fullfile(adni_connectivity_folder,'derivatives',[atlas '_node_curv_adni_adai.csv']);
+adni_curv_global_file = fullfile(adni_connectivity_folder,'derivatives',[atlas '_global_curv_adni_adai.csv']);
+
+adai_networkx_betweenness_nodes_file = fullfile(adai_connectivity_folder,'derivatives','nodal_measures',[atlas '_betweenness_adai.csv']);
+adni_networkx_betweenness_nodes_file = fullfile(adni_connectivity_folder,'derivatives','nodal_measures',[atlas '_betweenness_adni_adai.csv']);
+
+adai_networkx_closeness_nodes_file = fullfile(adai_connectivity_folder,'derivatives','nodal_measures',[atlas '_closeness_adai.csv']);
+adni_networkx_closeness_nodes_file = fullfile(adni_connectivity_folder,'derivatives','nodal_measures',[atlas '_closeness_adni_adai.csv']);
+
+adai_networkx_clusteringcoeff_nodes_file = fullfile(adai_connectivity_folder,'derivatives','nodal_measures',[atlas '_clustering_coeff_adai.csv']);
+adni_networkx_clusteringcoeff_nodes_file = fullfile(adni_connectivity_folder,'derivatives','nodal_measures',[atlas '_clustering_coeff_adni_adai.csv']);
+
+adai_networkx_degree_nodes_file = fullfile(adai_connectivity_folder,'derivatives','nodal_measures',[atlas '_degree_adai.csv']);
+adni_networkx_degree_nodes_file = fullfile(adni_connectivity_folder,'derivatives','nodal_measures',[atlas '_degree_adni_adai.csv']);
+
+adai_networkx_degreecentrality_nodes_file = fullfile(adai_connectivity_folder,'derivatives','nodal_measures',[atlas '_degree_centrality_adai.csv']);
+adni_networkx_degreecentrality_nodes_file = fullfile(adni_connectivity_folder,'derivatives','nodal_measures',[atlas '_degree_centrality_adni_adai.csv']);
+
+adai_networkx_eigenvector_nodes_file = fullfile(adai_connectivity_folder,'derivatives','nodal_measures',[atlas '_eigenvector_adai.csv']);
+adni_networkx_eigenvector_nodes_file = fullfile(adni_connectivity_folder,'derivatives','nodal_measures',[atlas '_eigenvector_adni_adai.csv']);
+
+adai_networkx_harmonic_nodes_file = fullfile(adai_connectivity_folder,'derivatives','nodal_measures',[atlas '_harmonic_adai.csv']);
+adni_networkx_harmonic_nodes_file = fullfile(adni_connectivity_folder,'derivatives','nodal_measures',[atlas '_harmonic_adni_adai.csv']);
+
+adai_networkx_loadcentrality_nodes_file = fullfile(adai_connectivity_folder,'derivatives','nodal_measures',[atlas '_load_centrality_adai.csv']);
+adni_networkx_loadcentrality_nodes_file = fullfile(adni_connectivity_folder,'derivatives','nodal_measures',[atlas '_load_centrality_adni_adai.csv']);
+
+adai_networkx_pagerank_nodes_file = fullfile(adai_connectivity_folder,'derivatives','nodal_measures',[atlas '_pagerank_adai.csv']);
+adni_networkx_pagerank_nodes_file = fullfile(adni_connectivity_folder,'derivatives','nodal_measures',[atlas '_pagerank_adni_adai.csv']);
+
+adai_networkx_subgraphcentrality_nodes_file = fullfile(adai_connectivity_folder,'derivatives','nodal_measures',[atlas '_subgraph_centrality_adai.csv']);
+adni_networkx_subgraphcentrality_nodes_file = fullfile(adni_connectivity_folder,'derivatives','nodal_measures',[atlas '_subgraph_centrality_adni_adai.csv']);
+
+adai_networkx_global_file = fullfile(adai_connectivity_folder,'derivatives','global_measures',[atlas '_global_measures_adai.csv']);
+adni_networkx_global_file = fullfile(adni_connectivity_folder,'derivatives','global_measures',[atlas '_global_measures_adni_adai.csv']);
+
 jhu_roi = 'reconstruction_specific';
-save_path = fullfile(project_folder,'pictures','ad_paper_export_20251121');
+save_path = fullfile(project_folder,'pictures','ad_paper_export_20260619');
 % jhu_roi = 'same'; % Use NORDIC JHU mask for JHU-atlas based dMRI value extraction
 % save_folder = fullfile(project_folder,'pictures','bcp_paper_export_same_jhu_roi');
 extract_data_file = fullfile(project_folder,'results',extract_data_filename);
@@ -66,6 +120,47 @@ tbl_adni = readtable(adni_file,'PreserveVariableNames',1);
 
 adniplasma2_file = fullfile(adnistudydata_folder,'C2N_PRECIVITYAD2_PLASMA_03Mar2026.csv');
 tbl_adni_plasma2 = readtable(adniplasma2_file,'PreserveVariableNames',1);
+
+adai_curv_nodes = readtable(adai_curv_nodes_file,'PreserveVariableNames',1);
+adai_curv_global = readtable(adai_curv_global_file,'PreserveVariableNames',1);
+adni_curv_nodes = readtable(adni_curv_nodes_file,'PreserveVariableNames',1);
+adni_curv_global = readtable(adni_curv_global_file,'PreserveVariableNames',1);
+
+
+adai_networkx_betweenness_nodes = readtable(adai_networkx_betweenness_nodes_file,'PreserveVariableNames',1);
+adni_networkx_betweenness_nodes = readtable(adni_networkx_betweenness_nodes_file,'PreserveVariableNames',1);
+
+adai_networkx_closeness_nodes = readtable(adai_networkx_closeness_nodes_file,'PreserveVariableNames',1);
+adni_networkx_closeness_nodes = readtable(adni_networkx_closeness_nodes_file,'PreserveVariableNames',1);
+
+adai_networkx_clusteringcoeff_nodes = readtable(adai_networkx_clusteringcoeff_nodes_file,'PreserveVariableNames',1);
+adni_networkx_clusteringcoeff_nodes = readtable(adni_networkx_clusteringcoeff_nodes_file,'PreserveVariableNames',1);
+
+adai_networkx_degree_nodes = readtable(adai_networkx_degree_nodes_file,'PreserveVariableNames',1);
+adni_networkx_degree_nodes = readtable(adni_networkx_degree_nodes_file,'PreserveVariableNames',1);
+
+adai_networkx_degreecentrality_nodes = readtable(adai_networkx_degreecentrality_nodes_file,'PreserveVariableNames',1);
+adni_networkx_degreecentrality_nodes = readtable(adni_networkx_degreecentrality_nodes_file,'PreserveVariableNames',1);
+
+adai_networkx_eigenvector_nodes = readtable(adai_networkx_eigenvector_nodes_file,'PreserveVariableNames',1);
+adni_networkx_eigenvector_nodes = readtable(adni_networkx_eigenvector_nodes_file,'PreserveVariableNames',1);
+
+adai_networkx_harmonic_nodes = readtable(adai_networkx_harmonic_nodes_file,'PreserveVariableNames',1);
+adni_networkx_harmonic_nodes = readtable(adni_networkx_harmonic_nodes_file,'PreserveVariableNames',1);
+
+adai_networkx_loadcentrality_nodes = readtable(adai_networkx_loadcentrality_nodes_file,'PreserveVariableNames',1);
+adni_networkx_loadcentrality_nodes = readtable(adni_networkx_loadcentrality_nodes_file,'PreserveVariableNames',1);
+
+adai_networkx_pagerank_nodes = readtable(adai_networkx_pagerank_nodes_file,'PreserveVariableNames',1);
+adni_networkx_pagerank_nodes = readtable(adni_networkx_pagerank_nodes_file,'PreserveVariableNames',1);
+
+adai_networkx_subgraphcentrality_nodes = readtable(adai_networkx_subgraphcentrality_nodes_file,'PreserveVariableNames',1);
+adni_networkx_subgraphcentrality_nodes = readtable(adni_networkx_subgraphcentrality_nodes_file,'PreserveVariableNames',1);
+
+adai_networkx_global = readtable(adai_networkx_global_file,'PreserveVariableNames',1);
+adni_networkx_global = readtable(adni_networkx_global_file,'PreserveVariableNames',1);
+adai_networkx_global = adai_networkx_global(3:end-1,:);
+adni_networkx_global = adni_networkx_global(3:end-1,:);
 
 adai_master_subnum = raw(:,strcmp(raw(1,:),'PIDN'));
 adai_master_subnum{1,1} = NaN;
@@ -1215,23 +1310,101 @@ if extract_data == 1
     %                        dimension 2 = number of tracts of interest listed in tract_keywords
     %                        dimension 3 = number of subjects/sessions/etc.
     %                        dimension 4 (if available) = number of dMRI protocols of preprocessing strategies
-    tmp = zeros(size(tract_data,1), size(tract_data,2), size(subsess,1));
+    
+    tmp = NaN*ones(size(tract_data,1), size(tract_data,2), size(subsess,1));
+    con_nodes_data = NaN*ones(num_nodes_networkmeasures+1+10, num_altals_rois, size(subsess,1));
+    con_global_data = NaN*ones(size(subsess,1),num_global_networkmeasures+1+10);
     for ind = 1:size(subsess,1)
         tmp(:,:,ind) = tract_data(:,:,strcmp(tractometry(1,1).SUBID,subsess{ind,1}));
+        
+        connectivity_folder = fullfile(project_folder,'results','dmri',subsess{ind,1},'dsistudio-connectivity');
+        if ~isfolder(connectivity_folder)
+            connectivity_folder = fullfile(project_folder2,'results','dmri',subsess{ind,1},'dsistudio-connectivity');
+        end
+        
+        if isfolder(connectivity_folder)
+    %         t = fopen(fullfile(adai_connectivity_folder,'dsi_studio_output',extractBefore(subsess{ind,1},'/'),[ 'track_' extractBefore(subsess{ind,1},'/') '.tt.gz.HCP-MMP.count.pass.network_measures.txt']));
+            sb = extractBefore(subsess{ind,1},'/ses');
+            con_nodes = readtable(fullfile(connectivity_folder,['track_' sb '.tt.gz.' atlas '.count.pass.network_measures.nodes.tsv']), 'FileType','text','Delimiter', '\t','VariableNamingRule','preserve');
+            con_global = readtable(fullfile(connectivity_folder,['track_' sb '.tt.gz.' atlas '.count.pass.network_measures.global.tsv']), 'FileType','text','Delimiter', '\t','VariableNamingRule','preserve');
+
+
+            con_nodes = con_nodes( contains(table2cell(con_nodes(:,'network_measures')),'(weighted)') , : );
+            con_global = con_global( strcmp(table2cell(con_global(:,'network_measures')),'density') | contains(table2cell(con_global(:,'network_measures')),'(weighted)') , : );
+
+            if ind == 1
+                con_nodes_names = con_nodes.Properties.VariableNames(2:end);
+                con_networkmeasure_names = table2cell(con_nodes(:,'network_measures'));
+                con_networkmeasure_names = extractBefore(con_networkmeasure_names,'(weighted)');
+                con_networkmeasure_names{end+1,1} = 'or_curv';
+                con_networkmeasure_names = [con_networkmeasure_names; ...
+                    {'netx-betweenness'; 'netx-closeness'; 'netx-clustering-coeff'; 'netx-degree'; 'netx-degree-centrality'; 'netx-eigenvector'; ...
+                    'netx-harmonic'; 'netx-load-centrality'; 'netx-pagerank'; 'netx-subgraph-centrality'}];
+                
+                con_globalnetworkmeasure_names = table2cell(con_global(:,'network_measures'));
+                for rw=1:size(con_globalnetworkmeasure_names,1)
+                    if contains(con_globalnetworkmeasure_names(rw,1),'(weighted)')
+                        con_globalnetworkmeasure_names(rw,1) = extractBefore(con_globalnetworkmeasure_names(rw,1),'(weighted)');
+                    end
+                end
+                con_globalnetworkmeasure_names{end+1,1} = 'or_curv';
+                con_globalnetworkmeasure_names = [con_globalnetworkmeasure_names; table2cell(adai_networkx_global(:,1))];               
+            end
+
+            con_nodes = cell2mat(table2cell(con_nodes(:,2:end)));
+            if sum(strcmp(adai_curv_nodes.Properties.VariableNames,sb))==1
+                curv_nodes = cell2mat(table2cell(adai_curv_nodes(:,sb)))';
+                curv_global = cell2mat(table2cell(adai_curv_global(:,sb)));
+                
+                betweenness_nodes = cell2mat(table2cell(adai_networkx_betweenness_nodes(:,sb)))';
+                closeness_nodes = cell2mat(table2cell(adai_networkx_closeness_nodes(:,sb)))';
+                clusteringcoeff_nodes = cell2mat(table2cell(adai_networkx_clusteringcoeff_nodes(:,sb)))';
+                degree_nodes = cell2mat(table2cell(adai_networkx_degree_nodes(:,sb)))';
+                degreecentrality_nodes = cell2mat(table2cell(adai_networkx_degreecentrality_nodes(:,sb)))';
+                eigenvector_nodes = cell2mat(table2cell(adai_networkx_eigenvector_nodes(:,sb)))';
+                harmonic_nodes = cell2mat(table2cell(adai_networkx_harmonic_nodes(:,sb)))';
+                loadcentrality_nodes = cell2mat(table2cell(adai_networkx_loadcentrality_nodes(:,sb)))';
+                pagerank_nodes = cell2mat(table2cell(adai_networkx_pagerank_nodes(:,sb)))';
+                subgraphcentrality_nodes = cell2mat(table2cell(adai_networkx_subgraphcentrality_nodes(:,sb)))';
+                
+                networkx_global = cell2mat(table2cell(adai_networkx_global(:,sb)));
+            else
+                curv_nodes = cell2mat(table2cell(adni_curv_nodes(:,sb)))';
+                curv_global = cell2mat(table2cell(adni_curv_global(:,sb)));
+                
+                betweenness_nodes = cell2mat(table2cell(adni_networkx_betweenness_nodes(:,sb)))';
+                closeness_nodes = cell2mat(table2cell(adni_networkx_closeness_nodes(:,sb)))';
+                clusteringcoeff_nodes = cell2mat(table2cell(adni_networkx_clusteringcoeff_nodes(:,sb)))';
+                degree_nodes = cell2mat(table2cell(adni_networkx_degree_nodes(:,sb)))';
+                degreecentrality_nodes = cell2mat(table2cell(adni_networkx_degreecentrality_nodes(:,sb)))';
+                eigenvector_nodes = cell2mat(table2cell(adni_networkx_eigenvector_nodes(:,sb)))';
+                harmonic_nodes = cell2mat(table2cell(adni_networkx_harmonic_nodes(:,sb)))';
+                loadcentrality_nodes = cell2mat(table2cell(adni_networkx_loadcentrality_nodes(:,sb)))';
+                pagerank_nodes = cell2mat(table2cell(adni_networkx_pagerank_nodes(:,sb)))';
+                subgraphcentrality_nodes = cell2mat(table2cell(adni_networkx_subgraphcentrality_nodes(:,sb)))';
+                
+                networkx_global = cell2mat(table2cell(adni_networkx_global(:,sb)));
+            end
+            con_nodes_data(:,:,ind) = [con_nodes; curv_nodes; ...
+                betweenness_nodes; closeness_nodes; clusteringcoeff_nodes; degree_nodes; degreecentrality_nodes; ...
+                eigenvector_nodes; harmonic_nodes; loadcentrality_nodes; pagerank_nodes; subgraphcentrality_nodes];
+
+            con_global_data(ind,:) = [ cell2mat(table2cell(con_global(:,'value'))); curv_global; networkx_global];
+        end
     end
     tract_data = tmp;
     clear tmp
     tract_data_name_dsi = tract_data_name;
     tract_data_name = correct_tract_data_name(tract_data_name);
     
-    tmp = zeros(size(tract_data,1), size(tract_data,2), size(adai_subsess,1));
+    tmp = NaN*ones(size(tract_data,1), size(tract_data,2), size(adai_subsess,1));
     for ind = 1:size(adai_subsess,1)
         tmp(:,:,ind) = adai_tract_data(:,:,strcmp(adai_tractometry(1,1).SUBID,adai_subsess{ind,1}));
     end
     adai_tract_data = tmp;
     clear tmp
     
-    tmp = zeros(size(tract_data,1), size(tract_data,2), size(adni_subsess,1));
+    tmp = NaN*ones(size(tract_data,1), size(tract_data,2), size(adni_subsess,1));
     for ind = 1:size(adni_subsess,1)
         tmp(:,:,ind) = adni_tract_data(:,:,strcmp(adni_tractometry(1,1).SUBID,adni_subsess{ind,1}));
     end
@@ -1381,8 +1554,165 @@ if estimate_stats == 1
            tract_data_apoe4_carrier_iqr(trct,metr,:) = quantile(apoe4_carrier,[0.15 0.5 0.85]);
        end
    end
+   
+    %% Estimate linear regression models for connectivity measures - NODES
+    con_nodes_mdl1 = cell(0,0);
+    con_nodes_mdl2 = cell(0,0);
+    con_nodes_mdl_hypertension1 = cell(0,0);
+    con_nodes_mdl_hypertension2 = cell(0,0);
+    con_nodes_mdl_age1 = cell(0,0);
+    con_nodes_mdl_age2 = cell(0,0);
+    con_nodes_mdl_sex1 = cell(0,0);
+    con_nodes_mdl_sex2 = cell(0,0);
+    con_nodes_ci1 = cell(0,0);
+    con_nodes_ci2 = cell(0,0);
+    ci_hypertension1 = cell(0,0);
+    ci_hypertension2 = cell(0,0);
+    con_nodes_ci_age1 = cell(0,0);
+    con_nodes_ci_age2 = cell(0,0);
+    con_nodes_ci_sex1 = cell(0,0);
+    con_nodes_ci_sex2 = cell(0,0);
+    for roi = 1:size(con_nodes_data,2)
+           for metr = 1:size(con_nodes_data,1)
+               vec = squeeze(con_nodes_data(metr,roi,selection2==1));
+
+               tbl = table(vec,apoe4_bin==1,sex,age/10,hypertension==1,race_cat,'VariableNames',{'y','APOE4','Sex','Age','Hypertension','Race'});
+               tbl2 = table(vec,apoe4_bin==1,sex,age/10,hypertension==1,race==1,'VariableNames',{'y','APOE4','Sex','Age','Hypertension','Race'});
+
+               con_nodes_mdl1{roi,metr} = fitlm(tbl,T);
+               con_nodes_mdl2{roi,metr} = fitlm(tbl2,T);
+               con_nodes_mdl_hypertension1{roi,metr} = fitlm(tbl,Thypertension);
+               con_nodes_mdl_hypertension2{roi,metr} = fitlm(tbl2,Thypertension);
+               con_nodes_mdl_age1{roi,metr} = fitlm(tbl,Tage);
+               con_nodes_mdl_age2{roi,metr} = fitlm(tbl2,Tage);
+               con_nodes_mdl_sex1{roi,metr} = fitlm(tbl,Tsex);
+               con_nodes_mdl_sex2{roi,metr} = fitlm(tbl2,Tsex);
+               con_nodes_ci1{roi,metr} = coefCI(con_nodes_mdl1{roi,metr});
+               con_nodes_ci2{roi,metr} = coefCI(con_nodes_mdl2{roi,metr});
+               ci_hypertension1{roi,metr} = coefCI(con_nodes_mdl_hypertension1{roi,metr});
+               ci_hypertension2{roi,metr} = coefCI(con_nodes_mdl_hypertension2{roi,metr});
+               con_nodes_ci_age1{roi,metr} = coefCI(con_nodes_mdl_age1{roi,metr});
+               con_nodes_ci_age2{roi,metr} = coefCI(con_nodes_mdl_age2{roi,metr});
+               con_nodes_ci_sex1{roi,metr} = coefCI(con_nodes_mdl_sex1{roi,metr});
+               con_nodes_ci_sex2{roi,metr} = coefCI(con_nodes_mdl_sex2{roi,metr});
+
+               con_nodes_p_mdl1_apoe4Xrace(roi,metr) = cell2mat(table2cell(con_nodes_mdl1{roi,metr}.Coefficients('APOE4_1:Race_White','pValue')));
+               con_nodes_p_mdl1_apoe4AmongNatAm(roi,metr) = cell2mat(table2cell(con_nodes_mdl1{roi,metr}.Coefficients('APOE4_1','pValue')));
+               con_nodes_p_mdl1_apoe4AmongWhiteNonHisp(roi,metr) = cell2mat(table2cell(con_nodes_mdl2{roi,metr}.Coefficients('APOE4_1','pValue')));
+
+               con_nodes_p_mdl_hypertensionXrace(roi,metr) = cell2mat(table2cell(con_nodes_mdl_hypertension1{roi,metr}.Coefficients('Hypertension_1:Race_White','pValue')));
+               con_nodes_p_mdl_hypertensionAmongNatAm(roi,metr) = cell2mat(table2cell(con_nodes_mdl_hypertension1{roi,metr}.Coefficients('Hypertension_1','pValue')));
+               con_nodes_p_mdl_hypertensionAmongWhiteNonHisp(roi,metr) = cell2mat(table2cell(con_nodes_mdl_hypertension2{roi,metr}.Coefficients('Hypertension_1','pValue')));
+
+               con_nodes_p_mdl_ageXrace(roi,metr) = cell2mat(table2cell(con_nodes_mdl_age1{roi,metr}.Coefficients('Age:Race_White','pValue')));
+               con_nodes_p_mdl_ageAmongNatAm(roi,metr) = cell2mat(table2cell(con_nodes_mdl_age1{roi,metr}.Coefficients('Age','pValue')));
+               con_nodes_p_mdl_ageAmongWhiteNonHisp(roi,metr) = cell2mat(table2cell(con_nodes_mdl_age2{roi,metr}.Coefficients('Age','pValue')));
+
+               con_nodes_p_mdl_sexXrace(roi,metr) = cell2mat(table2cell(con_nodes_mdl_sex1{roi,metr}.Coefficients('Sex_M:Race_White','pValue')));
+               con_nodes_p_mdl_sexAmongNatAm(roi,metr) = cell2mat(table2cell(con_nodes_mdl_sex1{roi,metr}.Coefficients('Sex_M','pValue')));
+               con_nodes_p_mdl_sexAmongWhiteNonHisp(roi,metr) = cell2mat(table2cell(con_nodes_mdl_sex2{roi,metr}.Coefficients('Sex_M','pValue')));
+           end
+    end
+    
+    %% Estimate linear regression models for connetivity measures - GLOBAL
+    con_global_mdl1 = cell(0,0);
+    con_global_mdl2 = cell(0,0);
+    con_global_mdl_hypertension1 = cell(0,0);
+    con_global_mdl_hypertension2 = cell(0,0);
+    con_global_mdl_age1 = cell(0,0);
+    con_global_mdl_age2 = cell(0,0);
+    con_global_mdl_sex1 = cell(0,0);
+    con_global_mdl_sex2 = cell(0,0);
+    con_global_ci1 = cell(0,0);
+    con_global_ci2 = cell(0,0);
+    ci_hypertension1 = cell(0,0);
+    ci_hypertension2 = cell(0,0);
+    con_global_ci_age1 = cell(0,0);
+    con_global_ci_age2 = cell(0,0);
+    con_global_ci_sex1 = cell(0,0);
+    con_global_ci_sex2 = cell(0,0);
+    for metr = 1:size(con_global_data,2)
+        vec = con_global_data(selection2==1,metr);
+
+        tbl = table(vec,apoe4_bin==1,sex,age/10,hypertension==1,race_cat,'VariableNames',{'y','APOE4','Sex','Age','Hypertension','Race'});
+        tbl2 = table(vec,apoe4_bin==1,sex,age/10,hypertension==1,race==1,'VariableNames',{'y','APOE4','Sex','Age','Hypertension','Race'});
+
+        con_global_mdl1{metr,1} = fitlm(tbl,T);
+        con_global_mdl2{metr,1} = fitlm(tbl2,T);
+        con_global_mdl_hypertension1{metr,1} = fitlm(tbl,Thypertension);
+        con_global_mdl_hypertension2{metr,1} = fitlm(tbl2,Thypertension);
+        con_global_mdl_age1{metr,1} = fitlm(tbl,Tage);
+        con_global_mdl_age2{metr,1} = fitlm(tbl2,Tage);
+        con_global_mdl_sex1{metr,1} = fitlm(tbl,Tsex);
+        con_global_mdl_sex2{metr,1} = fitlm(tbl2,Tsex);
+        con_global_ci1{metr,1} = coefCI(con_global_mdl1{metr,1});
+        con_global_ci2{metr,1} = coefCI(con_global_mdl2{metr,1});
+        ci_hypertension1{metr,1} = coefCI(con_global_mdl_hypertension1{metr,1});
+        ci_hypertension2{metr,1} = coefCI(con_global_mdl_hypertension2{metr,1});
+        con_global_ci_age1{metr,1} = coefCI(con_global_mdl_age1{metr,1});
+        con_global_ci_age2{metr,1} = coefCI(con_global_mdl_age2{metr,1});
+        con_global_ci_sex1{metr,1} = coefCI(con_global_mdl_sex1{metr,1});
+        con_global_ci_sex2{metr,1} = coefCI(con_global_mdl_sex2{metr,1});
+
+        con_global_p_mdl1_apoe4Xrace(metr,1) = cell2mat(table2cell(con_global_mdl1{metr,1}.Coefficients('APOE4_1:Race_White','pValue')));
+        con_global_p_mdl1_apoe4AmongNatAm(metr,1) = cell2mat(table2cell(con_global_mdl1{metr,1}.Coefficients('APOE4_1','pValue')));
+        con_global_p_mdl1_apoe4AmongWhiteNonHisp(metr,1) = cell2mat(table2cell(con_global_mdl2{metr,1}.Coefficients('APOE4_1','pValue')));
+
+        con_global_p_mdl_hypertensionXrace(metr,1) = cell2mat(table2cell(con_global_mdl_hypertension1{metr,1}.Coefficients('Hypertension_1:Race_White','pValue')));
+        con_global_p_mdl_hypertensionAmongNatAm(metr,1) = cell2mat(table2cell(con_global_mdl_hypertension1{metr,1}.Coefficients('Hypertension_1','pValue')));
+        con_global_p_mdl_hypertensionAmongWhiteNonHisp(metr,1) = cell2mat(table2cell(con_global_mdl_hypertension2{metr,1}.Coefficients('Hypertension_1','pValue')));
+
+        con_global_p_mdl_ageXrace(metr,1) = cell2mat(table2cell(con_global_mdl_age1{metr,1}.Coefficients('Age:Race_White','pValue')));
+        con_global_p_mdl_ageAmongNatAm(metr,1) = cell2mat(table2cell(con_global_mdl_age1{metr,1}.Coefficients('Age','pValue')));
+        con_global_p_mdl_ageAmongWhiteNonHisp(metr,1) = cell2mat(table2cell(con_global_mdl_age2{metr,1}.Coefficients('Age','pValue')));
+
+        con_global_p_mdl_sexXrace(metr,1) = cell2mat(table2cell(con_global_mdl_sex1{metr,1}.Coefficients('Sex_M:Race_White','pValue')));
+        con_global_p_mdl_sexAmongNatAm(metr,1) = cell2mat(table2cell(con_global_mdl_sex1{metr,1}.Coefficients('Sex_M','pValue')));
+        con_global_p_mdl_sexAmongWhiteNonHisp(metr,1) = cell2mat(table2cell(con_global_mdl_sex2{metr,1}.Coefficients('Sex_M','pValue')));
+    end
 end
 
+%% Merge connectivity p-value results
+
+stats_con_nodes_regression = [ 
+    cell(1,1) {'non-Hispanic white'} cell(1,17) {'American Indian'} cell(1,17) {'APOE4*Race'} cell(1,17)
+    {''} con_networkmeasure_names' con_networkmeasure_names' con_networkmeasure_names'
+    con_nodes_names' num2cell([con_nodes_p_mdl1_apoe4AmongWhiteNonHisp con_nodes_p_mdl1_apoe4AmongNatAm con_nodes_p_mdl1_apoe4Xrace])
+    ];
+
+stats_con_global_regression = [ 
+    cell(1,1) {'non-Hispanic white' 'American Indian' 'APOE4*Race'}
+    con_globalnetworkmeasure_names num2cell([con_global_p_mdl1_apoe4AmongWhiteNonHisp con_global_p_mdl1_apoe4AmongNatAm con_global_p_mdl1_apoe4Xrace])
+    ];
+
+%% FDR correction of node structural connectivity results
+stats_con_nodes_regression_bh = stats_con_nodes_regression;
+stats_con_nodes_regression_holm = stats_con_nodes_regression;
+for cl = 2:size(stats_con_nodes_regression_bh,2)
+    p_uncor = cell2mat(stats_con_nodes_regression(3:end,cl));
+    [~, ~, ~, p_bh ] = fdr_bh(p_uncor);
+    [p_holm, h_holm]=bonf_holm(p_uncor,0.05);
+    stats_con_nodes_regression_bh(3:end,cl) = num2cell(p_bh);
+    stats_con_nodes_regression_holm(3:end,cl) = num2cell(p_holm);
+end
+con_nodes_p_mdl1_apoe4AmongWhiteNonHisp_bh = con_nodes_p_mdl1_apoe4AmongWhiteNonHisp;
+con_nodes_p_mdl1_apoe4AmongNatAm_bh = con_nodes_p_mdl1_apoe4AmongNatAm;
+con_nodes_p_mdl1_apoe4Xrace_bh = con_nodes_p_mdl1_apoe4Xrace;
+for cl = 1:size(con_nodes_p_mdl1_apoe4AmongWhiteNonHisp,2)
+    [~, ~, ~, con_nodes_p_mdl1_apoe4AmongWhiteNonHisp_bh(:,cl) ] = fdr_bh(con_nodes_p_mdl1_apoe4AmongWhiteNonHisp(:,cl));
+    [~, ~, ~, con_nodes_p_mdl1_apoe4AmongNatAm_bh(:,cl) ] = fdr_bh(con_nodes_p_mdl1_apoe4AmongNatAm(:,cl));
+    [~, ~, ~, con_nodes_p_mdl1_apoe4Xrace_bh(:,cl) ] = fdr_bh(con_nodes_p_mdl1_apoe4Xrace(:,cl));
+end
+%% Write p-values to csv files
+writecell(stats_con_nodes_regression,fullfile(save_path,[atlas '_p_values.csv']))
+%% Identify node connectivity measurements that provide p<0.001
+if strcmp(atlas,'Brodmann')
+    pos_nodes = sum([con_nodes_p_mdl1_apoe4AmongWhiteNonHisp con_nodes_p_mdl1_apoe4AmongNatAm con_nodes_p_mdl1_apoe4Xrace] < 0.01,2)>0;
+    pos_nodes_bh = sum([con_nodes_p_mdl1_apoe4AmongWhiteNonHisp_bh con_nodes_p_mdl1_apoe4AmongNatAm_bh con_nodes_p_mdl1_apoe4Xrace_bh] < 0.05,2)>0;
+else
+    pos_nodes = sum([con_nodes_p_mdl1_apoe4AmongWhiteNonHisp con_nodes_p_mdl1_apoe4AmongNatAm con_nodes_p_mdl1_apoe4Xrace] < 0.001,2)>0;
+    pos_nodes_bh = sum([con_nodes_p_mdl1_apoe4AmongWhiteNonHisp_bh con_nodes_p_mdl1_apoe4AmongNatAm_bh con_nodes_p_mdl1_apoe4Xrace_bh] < 0.05,2)>0;
+end
 %% Select variables of interest
 tract_data_name_dsi_select_pos = [1 3 4 5 6 7 8 9 10 21 23 24 25 28 30];
 
@@ -1561,10 +1891,19 @@ dmri_pos = tract_data_name_dsi_select_pos(end-5:end);
 %% Visualize forest graphs
 draw_forest_plot(mdl1,mdl2,ci1,ci2,'APOE4_1','apoe4',tract_keywords,tract_data_name,dmri_pos,save_path,'between APOE4 carriers vs. non-carriers')
 draw_forest_plot(mdl_age1,mdl_age2,ci_age1,ci_age2,'Age','age',tract_keywords,tract_data_name,dmri_pos,save_path,'for Age effects')
+
+if strcmp(atlas,'Brodmann')
+    draw_forest_plot(con_nodes_mdl1(pos_nodes,:),con_nodes_mdl2(pos_nodes,:),con_nodes_ci1(pos_nodes,:),con_nodes_ci2(pos_nodes,:),'APOE4_1',[atlas '_con_apoe4'],con_nodes_names(1,pos_nodes)',con_networkmeasure_names',1:18,save_path,'between APOE4 carriers vs. non-carriers')
+else
+    draw_forest_plot(con_nodes_mdl1(pos_nodes_bh,:),con_nodes_mdl2(pos_nodes_bh,:),con_nodes_ci1(pos_nodes_bh,:),con_nodes_ci2(pos_nodes_bh,:),'APOE4_1',[atlas '_con_apoe4'],con_nodes_names(1,pos_nodes_bh)',con_networkmeasure_names',1:18,save_path,'between APOE4 carriers vs. non-carriers')
+end
+
+% Failed when draw graph for hypertension.
 draw_forest_plot(mdl_hypertension1,mdl_hypertension2,ci_hypertension1,ci_hypertension2,'Hypertension_1','hypertension',tract_keywords,tract_data_name,dmri_pos,save_path,'for Hypertension effects')
 draw_forest_plot(mdl_sex1,mdl_sex2,ci_sex1,ci_sex2,'Sex_M','sex',tract_keywords,tract_data_name,dmri_pos,save_path,'for Male sex effects')
 % draw_forest_plot(mdl_hypertension,mdl_hypertension,ci_hypertension,ci_hypertension,'Hypertension_1:Race_1','hypertension*race',tract_keywords,tract_data_name,dmri_pos,save_path,'Hypertension*Race')
 % draw_forest_plot(mdl_age,mdl_age,ci_age,ci_age,'Age:Race_1','age*race',tract_keywords,tract_data_name,dmri_pos,save_path,'Age*Race')
+
 
 
 %% ADAI, ADNI variable mean and STD stats
@@ -1666,7 +2005,8 @@ function draw_forest_plot(mdl1,mdl2,ci1,ci2,coefficient_name,basename,tract_keyw
     %     end
         hold off
         grid on
-        ylim([0 8.6])
+%         ylim([0 8.6])
+        ylim([0 ymax+0.6])
         xlim(1.05*[-max(abs(cii(:))) max(abs(cii(:)))])
         if ~contains(basename,'*')
             xlabel({['Differences in ' tract_data_name{1,dmri_pos(1,vr)}];

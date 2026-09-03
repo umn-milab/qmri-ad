@@ -81,6 +81,10 @@ for ind = 1:size(a,1)
     raw{a(ind,1),b(ind,1)} = NaN;
 end
 
+% adai_visit_file = fullfile(project_folder,'HeartDataset','BloodDrawDataAudit_1117.xlsx');
+adai_visit_file = fullfile(project_folder,'HeartDataset','TimeBetweenVisits2.xlsx');
+[~, ~, adai_visit] = xlsread(adai_visit_file);
+
 adni_file = fullfile(project_folder,'HeartDataset','adni_plasma_table.csv');
 tbl_adni = readtable(adni_file,'PreserveVariableNames',1);
 % tbl_adni = tbl_adni( ~isnan(cell2mat(table2cell(tbl_adni(:,'eGFR')))) , : );
@@ -172,6 +176,24 @@ for ind = 1:size(adai_allldl,1)
         adai_allldl{ind,1} = 0.99;
     end
 end
+
+adai_pidn = cell2mat(raw(2:end,strcmp(raw(1,:),'PIDN')));
+adai_visit_pidn = adai_visit(:,strcmp(adai_visit(1,:),'PIDN'));
+adai_visit_pidn(1,1) = {NaN};
+adai_visit_pidn = cell2mat(adai_visit_pidn);
+adai_visit_timegap = NaN*ones(size(adai_pidn,1)+1,1);
+for ind = 1:size(adai_pidn,1)
+    ps = adai_visit_pidn==adai_pidn(ind,1);
+    if sum(ps) > 0
+%     if ~strcmp(adai_visit(ps,strcmp(adai_visit(1,:),'Blood Comp.')),'NA') && ~strcmp(adai_visit(ps,strcmp(adai_visit(1,:),'Blood Comp.')),'LTF') && ~strcmp(adai_visit(ps,strcmp(adai_visit(1,:),'Consent/Interview Comp.')),'LTF')
+%         adai_visit_timegap(ind+1,1) = cell2mat(adai_visit(ps,strcmp(adai_visit(1,:),'Blood Comp.'))) - cell2mat(adai_visit(ps,strcmp(adai_visit(1,:),'Consent/Interview Comp.')));
+        adai_visit_timegap(ind+1,1) = cell2mat(adai_visit(ps,strcmp(adai_visit(1,:),'days between visits')));
+%     dt = datetime(num, 'ConvertFrom', 'datenum')
+    else
+        disp(adai_pidn(ind,1))
+    end
+end
+adai_visit_timegap = adai_visit_timegap/12;
 
 adai_excludedldl = raw(pos_alladaiexcluded,strcmp(raw(1,:),'LDL'));
 for ind = 1:size(adai_excludedldl,1)
@@ -313,8 +335,8 @@ for ind = 1:size(tbl_adni,1)
 end
 
 data_names = {'pTau217', 'Age', 'Sex', 'APOE4', 'Abeta42', 'Abeta40',...
-    'Height', 'Weight', 'BMI', 'HbA1C', 'LDL', 'HTN', 'IHD', 'Stroke', 'CKD', 'GFR', 'pTau181', 'GFAP', 'NfL', 'MMSE', 'Ancestry', 'Homeless', 'Education', ...
-    'NoImpairment', 'Impaired', 'Dementia', 'SMCIAD'};
+    'Height', 'Weight', 'BMI', 'HbA1C', 'LDL', 'HTN', 'IHD', 'Stroke', 'CKD', 'GFR', 'pTau181', 'GFAP', 'NfL', 'MMSE', 'Ancestry' 'Homeless' 'Education', 'APOE2', 'APOE3', ...
+    'TimeGap','NoImpairment', 'Impaired', 'Dementia', 'SMCIAD' };
 
 adai = [
     raw(pos_gfr,strcmp(raw(1,:),'pTau 217')), ...
@@ -340,6 +362,9 @@ adai = [
     adai_ancestry(pos_gfr,1), ...
     adai_homeless(pos_gfr,1), ...
     raw(pos_gfr,strcmp(raw(1,:),'Years of formal schooling')), ...
+    raw(pos_gfr,strcmp(raw(1,:),'APOE e2 mutations')), ...
+    raw(pos_gfr,strcmp(raw(1,:),'APOE e3 mutations')), ...
+    num2cell(adai_visit_timegap(pos_gfr,1)), ...
     adai_noimpairment(pos_gfr,1), ...
     adai_smci(pos_gfr,1), ...
     adai_ad(pos_gfr,1), ...
@@ -370,6 +395,9 @@ adai_all = [
     adai_ancestry(pos_allgfr,1), ...
     adai_homeless(pos_allgfr,1), ...
     raw(pos_allgfr,strcmp(raw(1,:),'Years of formal schooling')), ...
+    raw(pos_allgfr,strcmp(raw(1,:),'APOE e2 mutations')), ...
+    raw(pos_allgfr,strcmp(raw(1,:),'APOE e3 mutations')), ...
+    num2cell(adai_visit_timegap(pos_allgfr,1)), ...
     adai_noimpairment(pos_allgfr,1), ...
     adai_smci(pos_allgfr,1), ...
     adai_ad(pos_allgfr,1), ...
@@ -400,6 +428,9 @@ adai_excluded = [
     adai_ancestry(pos_alladaiexcluded,1), ...
     adai_homeless(pos_alladaiexcluded,1), ...
     raw(pos_alladaiexcluded,strcmp(raw(1,:),'Years of formal schooling')), ...
+    raw(pos_alladaiexcluded,strcmp(raw(1,:),'APOE e2 mutations')), ...
+    raw(pos_alladaiexcluded,strcmp(raw(1,:),'APOE e3 mutations')), ...
+    num2cell(adai_visit_timegap(pos_alladaiexcluded,1)), ...
     adai_noimpairment(pos_alladaiexcluded,1), ...
     adai_smci(pos_alladaiexcluded,1), ...
     adai_ad(pos_alladaiexcluded,1), ...
@@ -430,11 +461,16 @@ adni_all = [
     num2cell(ones(size(tbl_adni,1),1)*NaN), ... % AI ancestry
     num2cell(ones(size(tbl_adni,1),1)*NaN), ... % Homeless
     table2cell(tbl_adni(:,'PTEDUCAT')), ...
+    table2cell(tbl_adni(:,'APOE2COUNT')), ...
+    table2cell(tbl_adni(:,'APOE3COUNT')), ...
+    num2cell(NaN*ones(size(tbl_adni,1),1)), ...
     adni_noimpairment, ...
     adni_smci, ...
     adni_ad, ...
     adni_smciad, ...
     ];
+
+
 
 tblexport_adni_all = array2table(adni_all,...
     'VariableNames',data_names);
@@ -480,6 +516,15 @@ adni_abeta4240ratio = cell2mat(adni(:,strcmp(data_names,'Abeta42'))) ./ cell2mat
 
 adai_excluded_abeta4240ratio = cell2mat(adai_excluded(:,strcmp(data_names,'Abeta42'))) ./ cell2mat(adai_excluded(:,strcmp(data_names,'Abeta40')));
 
+%% APOE2 and APOE3 stats
+stats_adai_genotype_e2e4(1,1) = sum(cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE2')))==1 & cell2mat(adai_all_apoe4(:,strcmp(data_names,'APOE4')))==1);
+stats_adai_genotype_e2e4(1,2) = size(adai_all_apoe4,1);
+stats_adni_genotype_e2e4(1,1) = sum(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE2')))==1 & cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE4')))==1);
+stats_adni_genotype_e2e4(1,2) = size(adni_all_apoe4,1);
+stats_adni_genotype_e2e4(1,3) = sum(~isnan(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE2')))));
+stats_adni_genotype_e2e4(2,1) = sum(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE2')))==1 & cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE4')))==1 & ~isnan(cell2mat(adni_all(:,strcmp(data_names,'GFR')))) );
+stats_adni_genotype_e2e4(2,2) = sum(~isnan(cell2mat(adni_all(:,strcmp(data_names,'GFR')))));
+stats_adni_genotype_e2e4(2,3) = sum( ~isnan(cell2mat(adni_all_apoe4(:,strcmp(data_names,'APOE2')))) & ~isnan(cell2mat(adni_all(:,strcmp(data_names,'GFR')))) );
 %% Data histogram visualization
 
 showvar_names = { 'Age', 'Height', 'Weight', 'BMI', 'pTau217', 'Abeta42/40', 'GFAP', 'NfL', 'GFR'};
@@ -4219,6 +4264,11 @@ mdl_ai_model1_all_allelle_gfr = fitglm(tblrace_model1_allele_gfr(tblrace_model1_
 mdl_nhw_model1_all_carrier_gfr = fitglm(tblrace_model1_carrier_gfr(tblrace_model1_carrier_gfr.Race=='NHW',{'pTau217','APOE4','Age','Sex','CKD'}),Tnhw_model2);
 mdl_ai_model1_all_carrier_gfr = fitglm(tblrace_model1_carrier_gfr(tblrace_model1_carrier_gfr.Race=='AI',{'pTau217','APOE4','Age','Sex','CKD'}),Tnhw_model2);
 
+Tnhw_model2_timegap = Tnhw_model2;
+Tnhw_model2_timegap(end+1,end+1) = 1;
+tblrace_model1_carrier_gfr_ai_timegap = [tblrace_model1_carrier_gfr(tblrace_model1_carrier_gfr.Race=='AI',{'pTau217','APOE4','Age','Sex','CKD'}) table(cell2mat(adai_all(:,strcmp(data_names,'TimeGap'))),'VariableNames',{'TimeGap'}) ];
+mdl_ai_model1_all_carrier_gfr_timegap = fitglm(tblrace_model1_carrier_gfr_ai_timegap,Tnhw_model2_timegap);
+
 mdl_nhw_model1_all_allelle_egfr = fitglm([ tblrace_model1_allele_gfr(tblrace_model1_allele_gfr.Race=='NHW',{'pTau217','APOE4','Age','Sex'}) tbl_egfr(tblrace_model1_allele_gfr.Race=='NHW',:) ],Tnhw_model2);
 mdl_ai_model1_all_allelle_egfr = fitglm([ tblrace_model1_allele_gfr(tblrace_model1_allele_gfr.Race=='AI',{'pTau217','APOE4','Age','Sex'}) tbl_egfr(tblrace_model1_allele_gfr.Race=='AI',:) ],Tnhw_model2);
 mdl_nhw_model1_all_carrier_egfr = fitglm([ tblrace_model1_carrier_gfr(tblrace_model1_carrier_gfr.Race=='NHW',{'pTau217','APOE4','Age','Sex'}) tbl_egfr(tblrace_model1_carrier_gfr.Race=='NHW',:) ],Tnhw_model2);
@@ -4359,6 +4409,8 @@ ci_nhw_model3_all_allelle_gfr = exp(coefCI(mdl_nhw_model3_all_allelle_gfr));
 ci_ai_model3_all_allelle_gfr = exp(coefCI(mdl_ai_model3_all_allelle_gfr));
 ci_nhw_model3_all_carrier_gfr = exp(coefCI(mdl_nhw_model3_all_carrier_gfr));
 ci_ai_model3_all_carrier_gfr = exp(coefCI(mdl_ai_model3_all_carrier_gfr));
+
+ci_ai_model1_all_carrier_gfr_timegap = exp(coefCI(mdl_ai_model1_all_carrier_gfr_timegap));
 
 ci_nhw_model1_all_allelle_egfr = exp(coefCI(mdl_nhw_model1_all_allelle_egfr));
 ci_ai_model1_all_allelle_egfr = exp(coefCI(mdl_ai_model1_all_allelle_egfr));
@@ -10931,6 +10983,71 @@ supplementary_table3{18,2} = 'Abeta42/40 (Doubling)';
 supplementary_table3{10,2} = 'eGFR (Doubling)';
 supplementary_table3{19,2} = 'eGFR (Doubling)';
 
+stats_separate_regression = stats_separate_regression';
+tmp = cell(size(stats_separate_regression,1),1);
+tmp{2,1} = 'Race';
+tmp{4,1} = 'AI';
+tmp{13,1} = 'NHW';
+stats_separate_regression = [tmp stats_separate_regression];
+stats_separate_regression(3,:) = [];
+
+%% Make stats table for time gap analysis
+stats_model1_carrier_timegap = stats_separate_regression([1:5 8:11],[2 6]);
+stats_model1_carrier_timegap{7,1} = 'Time gap [mo]';
+stats_model1_carrier_timegap{2,3} = 'Time gap';
+stats_model1_carrier_timegap = stats_model1_carrier_timegap';
+
+%% ptau217  model1 - carrier including gfr TIMEGAP
+stats_model1_carrier_timegap{3,3} = mdl_ai_model1_all_carrier_gfr_timegap.NumObservations;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_ai_model1_all_carrier_gfr_timegap.Coefficients('Age','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_ai_model1_all_carrier_gfr_timegap(strcmp(mdl_ai_model1_all_carrier_gfr_timegap.CoefficientNames,'Age'),1) , '%.2f' ) '; ' ...
+    num2str( ci_ai_model1_all_carrier_gfr_timegap(strcmp(mdl_ai_model1_all_carrier_gfr_timegap.CoefficientNames,'Age'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_ai_model1_all_carrier_gfr_timegap.Coefficients('Age','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_model1_carrier_timegap{3,4} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_ai_model1_all_carrier_gfr_timegap.Coefficients('Sex_Male','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_ai_model1_all_carrier_gfr_timegap(strcmp(mdl_ai_model1_all_carrier_gfr_timegap.CoefficientNames,'Sex_Male'),1) , '%.2f' ) '; ' ...
+    num2str( ci_ai_model1_all_carrier_gfr_timegap(strcmp(mdl_ai_model1_all_carrier_gfr_timegap.CoefficientNames,'Sex_Male'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_ai_model1_all_carrier_gfr_timegap.Coefficients('Sex_Male','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_model1_carrier_timegap{3,5} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_ai_model1_all_carrier_gfr_timegap.Coefficients('APOE4_1','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_ai_model1_all_carrier_gfr_timegap(strcmp(mdl_ai_model1_all_carrier_gfr_timegap.CoefficientNames,'APOE4_1'),1) , '%.2f' ) '; ' ...
+    num2str( ci_ai_model1_all_carrier_gfr_timegap(strcmp(mdl_ai_model1_all_carrier_gfr_timegap.CoefficientNames,'APOE4_1'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_ai_model1_all_carrier_gfr_timegap.Coefficients('APOE4_1','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_model1_carrier_timegap{3,6} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_ai_model1_all_carrier_gfr_timegap.Coefficients('TimeGap','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_ai_model1_all_carrier_gfr_timegap(strcmp(mdl_ai_model1_all_carrier_gfr_timegap.CoefficientNames,'TimeGap'),1) , '%.2f' ) '; ' ...
+    num2str( ci_ai_model1_all_carrier_gfr_timegap(strcmp(mdl_ai_model1_all_carrier_gfr_timegap.CoefficientNames,'TimeGap'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_ai_model1_all_carrier_gfr_timegap.Coefficients('TimeGap','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_model1_carrier_timegap{3,7} = tmp;
+
+tmp = [ num2str( exp(cell2mat(table2cell(mdl_ai_model1_all_carrier_gfr_timegap.Coefficients('CKD_1','Estimate')))) , '%.2f' ) ' (' ...
+    num2str( ci_ai_model1_all_carrier_gfr_timegap(strcmp(mdl_ai_model1_all_carrier_gfr_timegap.CoefficientNames,'CKD_1'),1) , '%.2f' ) '; ' ...
+    num2str( ci_ai_model1_all_carrier_gfr_timegap(strcmp(mdl_ai_model1_all_carrier_gfr_timegap.CoefficientNames,'CKD_1'),2) , '%.2f' ) ')' ...
+    ];
+if cell2mat(table2cell(mdl_ai_model1_all_carrier_gfr_timegap.Coefficients('CKD_1','pValue'))) < 0.05
+    tmp = [tmp '*'];
+end
+stats_model1_carrier_timegap{3,8} = tmp;
+
+stats_model1_carrier_timegap{3,9} = mdl_ai_model1_all_carrier_gfr_timegap.Rsquared.Ordinary;
+
+stats_model1_carrier_timegap = stats_model1_carrier_timegap';
 %% Forest plot ADAI+ADNI
 clr_nhw = [0 0 1];
 clr_ai = [1 0 0];
