@@ -14,12 +14,12 @@ close all;
 % 
 % Hypothesis: Homelessness will be the #1 factor in raising systemic inflammation, as measured by YKL-40.
 
-data_folder='/home/range1-raid1/labounek/data-on-porto';
+data_folder='/home/naxos3-raid1/labounek/data-on-porto';
 project_folder=fullfile(data_folder,'ADAI');
 table_folder=fullfile(project_folder,'tables');
 
 include_bmi = 1; % values: 0 1 2
-use_bd_assay = 1; % values: 0 1
+use_bd_assay = 0; % values: 0 1
 exclude_bmarker_samples = 0; % values: 0 1 2
 exclude_trigly_outlier = 0; % values: 0 1
 
@@ -1690,9 +1690,11 @@ stats_apet_texas_perdecade = assemble_perdecade_regression_result_table(stats_ap
 if use_bd_assay == 1
     ptau217_label = 'BD p\tau_{217} [NPQ]';
     adjustedptau217_label = 'Adjusted BD p-tau217 [NPQ]';
+    adjustedgfap_label = 'Adjusted BD GFAP [NPQ]';
 else
     ptau217_label = 'p\tau_{217} [pg/mL]';
     adjustedptau217_label = 'Adjusted p-tau217 [pg/mL]';
+    adjustedgfap_label = 'Adjusted GFAP [pg/mL]';
 end
 
 h(1).fig = figure(1);
@@ -1741,6 +1743,34 @@ draw_plotadded(mdl,tbl,'HbA1C','Adjusted HbA1C [%]','Adjusted p-tau217 [pg/mL]')
 subplot(1,3,3)
 draw_plotadded(mdl,tbl,'Triglycerides','Adjusted Triglycerides [mg/dL]','Adjusted p-tau217 [pg/mL]')
 
+%% GFAP Adjusted regression plots 
+h(5).fig = figure(5);
+set(h(5).fig,'Position',[50 50 2200 600])
+
+tbl = renamevars(tbl_gfap_carrier_gfr_manuscript,'YKL-40','YKL40');
+mdl = fitlm(tbl,'GFAP ~ Age + Sex + APOE4 + GFR + HbA1C + YKL40 + Statin + Triglycerides');
+
+subplot(1,3,1)
+draw_plotadded(mdl,tbl,'HbA1C','Adjusted HbA1C [%]',adjustedgfap_label)
+
+
+subplot(1,3,3)
+draw_plotadded(mdl,tbl,'Triglycerides','Adjusted Triglycerides [mg/dL]',adjustedgfap_label)
+
+%% Adjusted regression plot - TEXAS
+h(6).fig = figure(6);
+set(h(6).fig,'Position',[50 50 2200 600])
+
+tbl = tbl_gfap_texas;
+mdl = fitlm(tbl,'GFAP ~ Age + Sex + APOE4 + BMI + GFR + Statin + HbA1C + Triglycerides');
+
+subplot(1,3,1)
+draw_plotadded(mdl,tbl,'HbA1C','Adjusted HbA1C [%]','Adjusted GFAP [pg/mL]')
+
+subplot(1,3,3)
+draw_plotadded(mdl,tbl,'Triglycerides','Adjusted Triglycerides [mg/dL]','Adjusted GFAP [pg/mL]')
+
+disp('yes')
 %% FUNCTIONS
 function draw_plotadded(mdl,tbl,var,xlbl,ylbl)
     gg = plotAdded(mdl,var);
