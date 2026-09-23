@@ -6,7 +6,7 @@ clear all;
 clc;
 close all;
 
-data_folder='/home/range1-raid1/labounek/data-on-porto';
+data_folder='/home/naxos3-raid1/labounek/data-on-porto';
 extract_data_filename='extract_data_20251121.mat';
 project_folder=fullfile(data_folder,'ADAI');
 table_folder=fullfile(project_folder,'tables');
@@ -20,8 +20,8 @@ adni_connectivity_folder = fullfile(project_folder2,'results','dmri-hamza','adni
 
 
 
-atlas='HCP-MMP';
-% atlas='Brodmann';
+% atlas='HCP-MMP';
+atlas='Brodmann';
 if strcmp (atlas,'HCP-MMP')
     num_altals_rois = 360;
 elseif strcmp (atlas,'Brodmann')
@@ -69,7 +69,7 @@ adai_networkx_global_file = fullfile(adai_connectivity_folder,'derivatives','glo
 adni_networkx_global_file = fullfile(adni_connectivity_folder,'derivatives','global_measures',[atlas '_global_measures_adni_adai.csv']);
 
 jhu_roi = 'reconstruction_specific';
-save_path = fullfile(project_folder,'pictures','ad_paper_export_20260619');
+save_path = fullfile(project_folder,'pictures','ad_paper_export_20260922');
 % jhu_roi = 'same'; % Use NORDIC JHU mask for JHU-atlas based dMRI value extraction
 % save_folder = fullfile(project_folder,'pictures','bcp_paper_export_same_jhu_roi');
 extract_data_file = fullfile(project_folder,'results',extract_data_filename);
@@ -109,8 +109,8 @@ fig_scatterplot_size=[50 50 1600 1200];
 dmri_plasma_time_gap_thr = 5;
 % dmri_plasma_time_gap_thr = 2;
 
-addpath('/home/range1-raid1/labounek/toolbox/matlab/spm12');
-addpath('/home/range1-raid1/labounek/toolbox/matlab/path_functions');
+addpath('/home/naxos3-raid1/labounek/toolbox/matlab/spm12');
+addpath('/home/naxos3-raid1/labounek/toolbox/matlab/path_functions');
 
 xls_file = fullfile(project_folder,'HeartDataset','MasterDataset_01-13.xlsx');
 [~, ~, raw] = xlsread(xls_file);
@@ -1894,6 +1894,7 @@ draw_forest_plot(mdl_age1,mdl_age2,ci_age1,ci_age2,'Age','age',tract_keywords,tr
 
 if strcmp(atlas,'Brodmann')
     draw_forest_plot(con_nodes_mdl1(pos_nodes,:),con_nodes_mdl2(pos_nodes,:),con_nodes_ci1(pos_nodes,:),con_nodes_ci2(pos_nodes,:),'APOE4_1',[atlas '_con_apoe4'],con_nodes_names(1,pos_nodes)',con_networkmeasure_names',1:18,save_path,'between APOE4 carriers vs. non-carriers')
+    draw_forest_plot(con_nodes_mdl2(pos_nodes,strcmp(con_networkmeasure_names,'strength')),con_nodes_mdl2(pos_nodes,strcmp(con_networkmeasure_names,'or_curv')),con_nodes_ci2(pos_nodes,strcmp(con_networkmeasure_names,'strength')),con_nodes_ci2(pos_nodes,strcmp(con_networkmeasure_names,'or_curv')),'APOE4_1',[atlas '_con_apoe4_ORC_vs_strength'],con_nodes_names(1,pos_nodes)',{'strength:or_curv'},1,save_path,'between APOE4 carriers vs. non-carriers')
 else
     draw_forest_plot(con_nodes_mdl1(pos_nodes_bh,:),con_nodes_mdl2(pos_nodes_bh,:),con_nodes_ci1(pos_nodes_bh,:),con_nodes_ci2(pos_nodes_bh,:),'APOE4_1',[atlas '_con_apoe4'],con_nodes_names(1,pos_nodes_bh)',con_networkmeasure_names',1:18,save_path,'between APOE4 carriers vs. non-carriers')
 end
@@ -1948,8 +1949,14 @@ set(gca,'Fontsize',14,'Linewidth',2)
 %% Functions
 
 function draw_forest_plot(mdl1,mdl2,ci1,ci2,coefficient_name,basename,tract_keywords,tract_data_name,dmri_pos,save_path,xlbl)
-    clr_wh = [0 0 1];
-    clr_na = [1 0 0];
+    
+    if size(tract_data_name,1) == 1 && contains(tract_data_name{1,1},':')
+        clr_wh = [0 0 0];
+        clr_na = [0.5 0.5 0.5];
+    else
+        clr_wh = [0 0 1];
+        clr_na = [1 0 0];
+    end
     clr_ar = [0 0.8 0];
     if contains(basename,'*')
         clr_wh = [0 0 0];
@@ -2008,7 +2015,10 @@ function draw_forest_plot(mdl1,mdl2,ci1,ci2,coefficient_name,basename,tract_keyw
 %         ylim([0 8.6])
         ylim([0 ymax+0.6])
         xlim(1.05*[-max(abs(cii(:))) max(abs(cii(:)))])
-        if ~contains(basename,'*')
+        if strcmp(tract_data_name{1,dmri_pos(1,vr)},'strength:or_curv')
+            xlabel({['Differences ' xlbl];
+                '[Regression coefficients with 95% CI]'})
+        elseif ~contains(basename,'*')
             xlabel({['Differences in ' tract_data_name{1,dmri_pos(1,vr)}];
                 xlbl})
         elseif strcmp(basename,'ageXXX')
@@ -2024,6 +2034,13 @@ function draw_forest_plot(mdl1,mdl2,ci1,ci2,coefficient_name,basename,tract_keyw
     %     end
         set(gca,'Linewidth',2,'FontSize',14,'YTick',1:ymax,'YTickLabel',tract_labels)
         ytickangle(45)
+        
+        if strcmp(tract_data_name{1,dmri_pos(1,vr)},'strength:or_curv')
+            set(h(vr).fig,'Position',[1400 50 600 500])
+            set(gca,'XTick',-1:0.2:1,'XTickLabel',-1:0.2:1)
+            ylim([0 ymax+0.6+1.2])
+            legend([H1 H2(1,1)],{'Ollivier-Ricci curvature','Strength'},'Location','NorthWest')
+        end
 
         print(fullfile(save_path,[basename num2str(vr) '-forest-plot']),'-dpng','-r300')
         pause(0.15)
